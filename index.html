@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="사이트를 여러 모바일·폴더블 CSS 뷰포트에서 확인하는 반응형 퍼블리싱 테스트 도구">
+  <meta name="theme-color" content="#111827">
+  <title>반응형 테스트랩</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111827'/%3E%3Crect x='17' y='10' width='30' height='44' rx='7' fill='none' stroke='%236ee7f9' stroke-width='4'/%3E%3Cpath d='M25 17h14M28 47h8' stroke='%236ee7f9' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip_link" href="#previewMain">미리보기 영역으로 건너뛰기</a>
+  <div class="app_shell">
+    <header class="app_header">
+      <div class="brand_wrap">
+        <span class="brand_mark" aria-hidden="true"><span></span></span>
+        <div>
+          <h1>반응형 테스트랩</h1>
+          <p>CSS 뷰포트 기준 퍼블리싱 점검</p>
+        </div>
+      </div>
+      <form class="site_form" id="siteForm" novalidate>
+        <label class="sr_only" for="siteUrl">테스트할 사이트 주소</label>
+        <span class="url_icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </span>
+        <input type="url" id="siteUrl" placeholder="https://example.com" autocomplete="url" spellcheck="false" aria-describedby="urlHelp urlError">
+        <button type="submit" class="btn_primary">사이트 열기</button>
+      </form>
+      <p class="sr_only" id="urlHelp">주소에 프로토콜이 없으면 HTTPS로 연결합니다.</p>
+      <p class="form_error" id="urlError" role="alert" hidden></p>
+    </header>
+
+    <div class="workspace">
+      <aside class="device_panel" aria-labelledby="deviceTitle">
+        <div class="panel_head">
+          <div>
+            <h2 id="deviceTitle">테스트 기기</h2>
+            <p>반응형 점검용 CSS 뷰포트</p>
+          </div>
+          <span class="device_count">12</span>
+        </div>
+
+        <nav class="device_nav" aria-label="기기 프리셋">
+          <section class="device_group" aria-labelledby="baseGroup">
+            <h3 id="baseGroup">기준 폭</h3>
+            <div class="device_list">
+              <button type="button" class="device_btn" data-device="mobile-320">
+                <span><strong>최소 모바일</strong><small>작은 화면·최소폭 점검</small></span><em>320 × 568</em>
+              </button>
+              <button type="button" class="device_btn" data-device="mobile-360">
+                <span><strong>Android 기본</strong><small>가장 좁은 실무 기준</small></span><em>360 × 800</em>
+              </button>
+              <button type="button" class="device_btn is_current" data-device="mobile-390" aria-pressed="true">
+                <span><strong>iPhone 기본</strong><small>일반형 iPhone 기준</small></span><em>390 × 844</em>
+              </button>
+              <button type="button" class="device_btn" data-device="mobile-430">
+                <span><strong>대형 모바일</strong><small>Max·Ultra급 점검</small></span><em>430 × 932</em>
+              </button>
+            </div>
+          </section>
+
+          <section class="device_group" aria-labelledby="phoneGroup">
+            <h3 id="phoneGroup">주요 스마트폰</h3>
+            <div class="device_list">
+              <button type="button" class="device_btn" data-device="iphone-se">
+                <span><strong>iPhone SE</strong><small>홈 버튼형 화면</small></span><em>375 × 667</em>
+              </button>
+              <button type="button" class="device_btn" data-device="iphone-pro">
+                <span><strong>iPhone 18 Pro</strong><small>다이내믹 아일랜드</small></span><em>402 × 873</em>
+              </button>
+              <button type="button" class="device_btn" data-device="pixel">
+                <span><strong>Google Pixel 10</strong><small>중앙 펀치홀 카메라</small></span><em>412 × 923</em>
+              </button>
+            </div>
+          </section>
+
+          <section class="device_group" aria-labelledby="foldGroup">
+            <h3 id="foldGroup">폴더블·듀얼스크린</h3>
+            <div class="device_list">
+              <button type="button" class="device_btn" data-device="z-flip8">
+                <span><strong>Galaxy Z Flip8</strong><small>커버·펼침·Flex</small></span><em>3개 상태</em>
+              </button>
+              <button type="button" class="device_btn" data-device="z-fold">
+                <span><strong>Galaxy Z Fold8</strong><small>커버·펼침</small></span><em>2개 상태</em>
+              </button>
+              <button type="button" class="device_btn" data-device="iphone-duo">
+                <span><strong>iPhone Duo</strong><small>외부·내부 화면</small></span><em>2개 상태</em>
+              </button>
+            </div>
+          </section>
+
+          <section class="device_group" aria-labelledby="tabletGroup">
+            <h3 id="tabletGroup">태블릿 경계</h3>
+            <div class="device_list">
+              <button type="button" class="device_btn" data-device="tablet-768">
+                <span><strong>소형 태블릿</strong><small>모바일→태블릿 전환점</small></span><em>768 × 1024</em>
+              </button>
+              <button type="button" class="device_btn" data-device="tablet-1024">
+                <span><strong>태블릿 가로</strong><small>PC 전환 직전 점검</small></span><em>1024 × 768</em>
+              </button>
+            </div>
+          </section>
+        </nav>
+      </aside>
+
+      <main class="preview_main" id="previewMain">
+        <section class="control_panel" aria-label="미리보기 설정">
+          <div class="current_device">
+            <span class="state_dot" aria-hidden="true"></span>
+            <div>
+              <strong id="currentDevice">iPhone 기본</strong>
+              <span id="currentMeta">390 × 844 · 세로</span>
+            </div>
+          </div>
+
+          <fieldset class="fold_controls" id="foldControls" hidden>
+            <legend>화면 상태</legend>
+            <div class="state_list" id="stateList"></div>
+          </fieldset>
+
+          <div class="size_controls">
+            <div class="size_field">
+              <label for="viewportWidth">화면 너비</label>
+              <input type="number" id="viewportWidth" min="240" max="2560" step="1" value="390" inputmode="numeric">
+              <span>px</span>
+            </div>
+            <span class="size_cross" aria-hidden="true">×</span>
+            <div class="size_field">
+              <label for="viewportHeight">화면 높이</label>
+              <input type="number" id="viewportHeight" min="240" max="2560" step="1" value="844" inputmode="numeric">
+              <span>px</span>
+            </div>
+            <button type="button" class="btn_apply" id="applySize">적용</button>
+          </div>
+
+          <div class="browser_controls" role="group" aria-labelledby="browserControlLabel">
+            <span class="browser_label" id="browserControlLabel">Chrome</span>
+            <label class="switch_control">
+              <input type="checkbox" id="addressBarToggle" checked>
+              <span>주소창</span>
+            </label>
+            <label class="switch_control">
+              <input type="checkbox" id="bottomBarToggle" checked>
+              <span>하단 버튼</span>
+            </label>
+          </div>
+
+          <div class="tool_actions">
+            <button type="button" class="icon_btn" id="rotateBtn" aria-label="가로·세로 회전" title="가로·세로 회전">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4M20 16v4h-4M5.6 5.6A9 9 0 0 1 20.5 9M18.4 18.4A9 9 0 0 1 3.5 15"/></svg>
+            </button>
+            <button type="button" class="icon_btn" id="refreshBtn" aria-label="미리보기 새로고침" title="미리보기 새로고침" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 1 0 2 5M20 4v7h-7"/></svg>
+            </button>
+            <fieldset class="scale_controls">
+              <legend class="sr_only">미리보기 표시 배율</legend>
+              <label><input type="radio" name="scaleMode" value="device" checked><span>실기기</span></label>
+              <label><input type="radio" name="scaleMode" value="fit"><span>맞춤</span></label>
+              <label><input type="radio" name="scaleMode" value="actual"><span>100%</span></label>
+              <output id="scaleValue" aria-label="현재 표시 배율">63%</output>
+            </fieldset>
+            <a class="icon_btn is_disabled" id="openLink" href="#" target="_blank" rel="noopener noreferrer" aria-label="사이트를 새 창에서 열기" title="사이트를 새 창에서 열기" aria-disabled="true" tabindex="-1">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+            </a>
+          </div>
+          <p class="size_error" id="sizeError" role="alert" hidden></p>
+        </section>
+
+        <section class="preview_area" aria-labelledby="previewTitle">
+          <h2 class="sr_only" id="previewTitle">사이트 반응형 미리보기</h2>
+          <div class="ruler_top" aria-hidden="true"><span>0</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+          <div class="preview_stage" id="previewStage">
+            <div class="preview_mount" id="previewMount">
+              <div class="device_shell" id="deviceShell" data-frame="iphone-notch" data-hinge="none" data-orientation="portrait">
+                <div class="frame_detail" aria-hidden="true">
+                  <span class="frame_speaker"></span>
+                  <span class="frame_camera"></span>
+                  <span class="home_button"></span>
+                  <span class="side_key key_volume"></span>
+                  <span class="side_key key_power"></span>
+                </div>
+                <div class="screen_wrap" id="screenWrap">
+                  <div class="browser_top" id="browserTop" aria-hidden="true">
+                    <div class="browser_status">
+                      <span>9:41</span>
+                      <span class="status_signal"></span>
+                    </div>
+                    <div class="browser_address">
+                      <span class="browser_lock">
+                        <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                      </span>
+                      <span class="browser_url" id="browserUrl">example.com</span>
+                      <span class="browser_reload">
+                        <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="site_view" id="siteView">
+                    <iframe id="siteFrame" title="사이트 반응형 미리보기"></iframe>
+                  </div>
+                  <div class="browser_bottom" id="browserBottom" aria-hidden="true">
+                    <span><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></span>
+                    <span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
+                    <span><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg></span>
+                    <span class="tab_count">1</span>
+                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
+                  </div>
+                  <span class="screen_cutout" aria-hidden="true"></span>
+                  <span class="hinge_line" id="hingeLine" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="preview_footer">
+            <div class="load_status" aria-live="polite">
+              <span class="status_icon" aria-hidden="true"></span>
+              <span id="frameStatus">사이트 주소를 입력해 주세요.</span>
+            </div>
+            <span id="presetNote">일반형 iPhone 반응형 점검값</span>
+          </div>
+        </section>
+
+        <details class="test_notice">
+          <summary>이 도구에서 확인되는 범위</summary>
+          <div class="notice_content">
+            <p><strong>확인 가능</strong> 기기별 CSS 화면과 사이트 표시 영역, 물리 해상도·DPR 정보, 미디어쿼리, 줄바꿈, 레이아웃, 가로 스크롤, Chrome 주소창·하단 버튼에 의해 줄어드는 영역</p>
+            <p><strong>실기기 배율</strong> 공개된 화면 크기와 CSS 뷰포트를 기준으로 계산한 물리 크기 근사값입니다. 모니터 크기와 운영체제 배율에 따라 실제 크기와 차이가 날 수 있습니다.</p>
+            <p><strong>실기기 확인 필요</strong> iframe에서 바꿀 수 없는 UA, 실제 DPR 렌더링, 터치, safe-area 환경변수, 가상 키보드, 브라우저 자동 숨김, 실제 힌지·화면 분할 API</p>
+            <p>Chrome UI와 검은 노치·카메라·접힘선은 콘텐츠와 가시 영역을 확인하기 위한 시각적 근사치이므로 최종 검수는 실기기에서 진행해 주세요.</p>
+            <p>화면이 비어 있다면 대상 사이트가 <code>X-Frame-Options</code> 또는 <code>CSP frame-ancestors</code>로 iframe 표시를 막은 경우일 수 있습니다. 이때는 오른쪽 위 새 창 버튼으로 확인해 주세요.</p>
+          </div>
+        </details>
+      </main>
+    </div>
+  </div>
+
+  <div class="sr_only" id="viewportStatus" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
