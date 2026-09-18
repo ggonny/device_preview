@@ -39,70 +39,17 @@
             <h2 id="deviceTitle">테스트 기기</h2>
             <p>반응형 점검용 CSS 뷰포트</p>
           </div>
-          <span class="device_count">12</span>
+          <span class="device_count" id="deviceCount">0</span>
         </div>
+        <!-- 보기 모드: 단일 보기(버튼 목록) / 다중 비교(체크박스 목록, 최대 4개) -->
+        <fieldset class="mode_controls" id="viewModeControls">
+          <legend class="sr_only">보기 모드</legend>
+          <label><input type="radio" name="viewMode" value="single" checked><span>단일 보기</span></label>
+          <label><input type="radio" name="viewMode" value="compare"><span>다중 비교</span></label>
+        </fieldset>
 
-        <nav class="device_nav" aria-label="기기 프리셋">
-          <section class="device_group" aria-labelledby="baseGroup">
-            <h3 id="baseGroup">기준 폭</h3>
-            <div class="device_list">
-              <button type="button" class="device_btn" data-device="mobile-320">
-                <span><strong>최소 모바일</strong><small>작은 화면·최소폭 점검</small></span><em>320 × 568</em>
-              </button>
-              <button type="button" class="device_btn" data-device="mobile-360">
-                <span><strong>Android 기본</strong><small>가장 좁은 실무 기준</small></span><em>360 × 800</em>
-              </button>
-              <button type="button" class="device_btn is_current" data-device="mobile-390" aria-pressed="true">
-                <span><strong>iPhone 기본</strong><small>일반형 iPhone 기준</small></span><em>390 × 844</em>
-              </button>
-              <button type="button" class="device_btn" data-device="mobile-430">
-                <span><strong>대형 모바일</strong><small>Max·Ultra급 점검</small></span><em>430 × 932</em>
-              </button>
-            </div>
-          </section>
-
-          <section class="device_group" aria-labelledby="phoneGroup">
-            <h3 id="phoneGroup">주요 스마트폰</h3>
-            <div class="device_list">
-              <button type="button" class="device_btn" data-device="iphone-se">
-                <span><strong>iPhone SE</strong><small>홈 버튼형 화면</small></span><em>375 × 667</em>
-              </button>
-              <button type="button" class="device_btn" data-device="iphone-pro">
-                <span><strong>iPhone 18 Pro</strong><small>다이내믹 아일랜드</small></span><em>402 × 873</em>
-              </button>
-              <button type="button" class="device_btn" data-device="pixel">
-                <span><strong>Google Pixel 10</strong><small>중앙 펀치홀 카메라</small></span><em>412 × 923</em>
-              </button>
-            </div>
-          </section>
-
-          <section class="device_group" aria-labelledby="foldGroup">
-            <h3 id="foldGroup">폴더블·듀얼스크린</h3>
-            <div class="device_list">
-              <button type="button" class="device_btn" data-device="z-flip8">
-                <span><strong>Galaxy Z Flip8</strong><small>커버·펼침·Flex</small></span><em>3개 상태</em>
-              </button>
-              <button type="button" class="device_btn" data-device="z-fold">
-                <span><strong>Galaxy Z Fold8</strong><small>커버·펼침</small></span><em>2개 상태</em>
-              </button>
-              <button type="button" class="device_btn" data-device="iphone-duo">
-                <span><strong>iPhone Duo</strong><small>외부·내부 화면</small></span><em>2개 상태</em>
-              </button>
-            </div>
-          </section>
-
-          <section class="device_group" aria-labelledby="tabletGroup">
-            <h3 id="tabletGroup">태블릿 경계</h3>
-            <div class="device_list">
-              <button type="button" class="device_btn" data-device="tablet-768">
-                <span><strong>소형 태블릿</strong><small>모바일→태블릿 전환점</small></span><em>768 × 1024</em>
-              </button>
-              <button type="button" class="device_btn" data-device="tablet-1024">
-                <span><strong>태블릿 가로</strong><small>PC 전환 직전 점검</small></span><em>1024 × 768</em>
-              </button>
-            </div>
-          </section>
-        </nav>
+        <!-- 기기 목록은 app.js 의 devices 데이터로 렌더링됩니다. 단일 보기는 button, 다중 비교는 checkbox 로 렌더링. -->
+        <nav class="device_nav" id="deviceNav" aria-label="기기 프리셋"></nav>
       </aside>
 
       <main class="preview_main" id="previewMain">
@@ -115,9 +62,10 @@
             </div>
           </div>
 
-          <fieldset class="fold_controls" id="foldControls" hidden>
+          <!-- 접힘/펼침 상태. 단일 화면 기기에서도 자리를 유지해 다른 컨트롤 위치가 바뀌지 않게 한다. -->
+          <fieldset class="fold_controls is_single" id="foldControls">
             <legend>화면 상태</legend>
-            <div class="state_list" id="stateList"></div>
+            <div class="state_list" id="stateList"><span class="state_single">단일 화면</span></div>
           </fieldset>
 
           <div class="size_controls">
@@ -135,24 +83,41 @@
             <button type="button" class="btn_apply" id="applySize">적용</button>
           </div>
 
-          <div class="browser_controls" role="group" aria-labelledby="browserControlLabel">
-            <span class="browser_label" id="browserControlLabel">Chrome</span>
-            <label class="switch_control">
+          <!-- 브라우저 UI: 1행 브라우저 선택 · 주소창 위치, 2행 주소창 · 툴바 · UI 겹침 (grid-area 로 배치, DOM 순서는 탭 순서) -->
+          <div class="browser_controls" role="group" aria-label="브라우저 UI 표시">
+            <label class="sr_only" for="browserSelect">브라우저 종류</label>
+            <select class="browser_select" id="browserSelect"></select>
+            <label class="switch_control switch_address">
               <input type="checkbox" id="addressBarToggle" checked>
               <span>주소창</span>
             </label>
-            <label class="switch_control">
+            <fieldset class="position_controls" id="urlPositionControls">
+              <legend class="sr_only">주소창 위치 (세로 모드)</legend>
+              <label><input type="radio" name="urlPosition" value="top"><span>상단</span></label>
+              <label><input type="radio" name="urlPosition" value="bottom" checked><span>하단</span></label>
+            </fieldset>
+            <label class="switch_control switch_toolbar">
               <input type="checkbox" id="bottomBarToggle" checked>
-              <span>하단 버튼</span>
+              <span>툴바</span>
             </label>
+            <label class="switch_control switch_overlay" title="브라우저 UI를 콘텐츠 위에 겹쳐 100vh·하단 고정 요소 가림을 확인합니다">
+              <input type="checkbox" id="uiOverlayToggle" aria-describedby="overlayHelp">
+              <span>UI 겹침</span>
+            </label>
+            <span class="sr_only" id="overlayHelp">켜면 주소창과 툴바가 사이트 영역을 줄이지 않고 콘텐츠 위에 겹쳐 표시되어 100vh 기준 하단 가림을 확인할 수 있습니다.</span>
           </div>
 
+          <!-- 아이콘 규칙: 24×24 viewBox · 전역 svg 스타일(outline, stroke 1.8, currentColor) · aria-hidden, 의미는 버튼 aria-label 이 전달.
+               경로는 body 끝의 SVG sprite(<symbol>) 에 한 번만 정의하고 <use> 로 참조 (다중 비교 카드와 공유) -->
           <div class="tool_actions">
-            <button type="button" class="icon_btn" id="rotateBtn" aria-label="가로·세로 회전" title="가로·세로 회전">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V4h4M20 16v4h-4M5.6 5.6A9 9 0 0 1 20.5 9M18.4 18.4A9 9 0 0 1 3.5 15"/></svg>
+            <button type="button" class="icon_btn" id="rotateBtn" aria-label="가로·세로 회전" aria-pressed="false" title="가로·세로 회전">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rotate"/></svg>
+            </button>
+            <button type="button" class="icon_btn" id="safeAreaBtn" aria-label="safe-area 가이드 표시" aria-pressed="false" title="safe-area 가이드 표시">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-safe-area"/></svg>
             </button>
             <button type="button" class="icon_btn" id="refreshBtn" aria-label="미리보기 새로고침" title="미리보기 새로고침" disabled>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 1 0 2 5M20 4v7h-7"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-refresh"/></svg>
             </button>
             <fieldset class="scale_controls">
               <legend class="sr_only">미리보기 표시 배율</legend>
@@ -162,56 +127,32 @@
               <output id="scaleValue" aria-label="현재 표시 배율">63%</output>
             </fieldset>
             <a class="icon_btn is_disabled" id="openLink" href="#" target="_blank" rel="noopener noreferrer" aria-label="사이트를 새 창에서 열기" title="사이트를 새 창에서 열기" aria-disabled="true" tabindex="-1">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-external"/></svg>
             </a>
           </div>
           <p class="size_error" id="sizeError" role="alert" hidden></p>
         </section>
 
-        <section class="preview_area" aria-labelledby="previewTitle">
+        <section class="preview_area" id="previewArea" aria-labelledby="previewTitle" data-view-mode="single">
           <h2 class="sr_only" id="previewTitle">사이트 반응형 미리보기</h2>
           <div class="ruler_top" aria-hidden="true"><span>0</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+          <!-- 다중 비교 모드 전용 바: 선택 개수(라이브 리전) · 동기화 옵션 · 안내 -->
+          <div class="compare_bar" id="compareBar" hidden>
+            <span class="compare_count" id="compareCount" aria-live="polite">비교 기기 0 / 4</span>
+            <fieldset class="sync_controls">
+              <legend class="sr_only">동기화 옵션</legend>
+              <label class="switch_control"><input type="checkbox" id="syncScroll" checked aria-describedby="compareNote"><span>스크롤 동기화</span></label>
+              <label class="switch_control"><input type="checkbox" id="syncRotate" checked><span>회전 동기화</span></label>
+              <label class="switch_control"><input type="checkbox" id="syncRefresh" checked><span>새로고침 동기화</span></label>
+            </fieldset>
+            <span class="compare_note" id="compareNote"></span>
+          </div>
           <div class="preview_stage" id="previewStage">
-            <div class="preview_mount" id="previewMount">
-              <div class="device_shell" id="deviceShell" data-frame="iphone-notch" data-hinge="none" data-orientation="portrait">
-                <div class="frame_detail" aria-hidden="true">
-                  <span class="frame_speaker"></span>
-                  <span class="frame_camera"></span>
-                  <span class="home_button"></span>
-                  <span class="side_key key_volume"></span>
-                  <span class="side_key key_power"></span>
-                </div>
-                <div class="screen_wrap" id="screenWrap">
-                  <div class="browser_top" id="browserTop" aria-hidden="true">
-                    <div class="browser_status">
-                      <span>9:41</span>
-                      <span class="status_signal"></span>
-                    </div>
-                    <div class="browser_address">
-                      <span class="browser_lock">
-                        <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-                      </span>
-                      <span class="browser_url" id="browserUrl">example.com</span>
-                      <span class="browser_reload">
-                        <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
-                      </span>
-                    </div>
-                  </div>
-                  <div class="site_view" id="siteView">
-                    <iframe id="siteFrame" title="사이트 반응형 미리보기"></iframe>
-                  </div>
-                  <div class="browser_bottom" id="browserBottom" aria-hidden="true">
-                    <span><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></span>
-                    <span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
-                    <span><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg></span>
-                    <span class="tab_count">1</span>
-                    <span><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
-                  </div>
-                  <span class="screen_cutout" aria-hidden="true"></span>
-                  <span class="hinge_line" id="hingeLine" aria-hidden="true"></span>
-                </div>
-              </div>
-            </div>
+            <!-- 단일 보기: 기기 셸은 #deviceShellTemplate 에서 생성되어 이 컨테이너에 들어갑니다 (id 는 JS 가 부여). -->
+            <div class="preview_mount" id="previewMount"></div>
+            <!-- 다중 비교: 선택한 기기마다 #compareItemTemplate 을 복제해 CSS Grid 로 배치 -->
+            <div class="compare_grid" id="compareGrid" hidden></div>
+            <p class="compare_empty" id="compareEmpty" hidden>왼쪽 기기 목록에서 비교할 기기를 최대 4개까지 선택해 주세요.</p>
           </div>
           <div class="preview_footer">
             <div class="load_status" aria-live="polite">
@@ -225,16 +166,126 @@
         <details class="test_notice">
           <summary>이 도구에서 확인되는 범위</summary>
           <div class="notice_content">
-            <p><strong>확인 가능</strong> 기기별 CSS 화면과 사이트 표시 영역, 물리 해상도·DPR 정보, 미디어쿼리, 줄바꿈, 레이아웃, 가로 스크롤, Chrome 주소창·하단 버튼에 의해 줄어드는 영역</p>
+            <p><strong>확인 가능</strong> 기기별 CSS 화면과 사이트 표시 영역, 물리 해상도·DPR 정보, 미디어쿼리, 줄바꿈, 레이아웃, 가로 스크롤, 브라우저 상태바·주소창·툴바·홈 인디케이터에 의해 줄어드는 영역, 가로 모드에서 safe-area 만큼 줄어드는 폭(iOS Safari·Android Chrome 기본 동작)</p>
+            <p><strong>브라우저 UI</strong> Safari·Chrome·Samsung Internet 의 일반적인 UI 높이를 바탕으로 한 근사치입니다. 주소창 스위치를 끄면 스크롤로 URL 바가 숨은 상태(상태바·홈 인디케이터는 유지)가 됩니다. <strong>UI 겹침</strong>을 켜면 URL 바와 툴바가 사이트 영역을 줄이지 않고 콘텐츠 위에 겹쳐지므로, 실기기에서 <code>100vh</code>·하단 고정 요소가 브라우저 UI에 가려지는 현상을 확인할 수 있습니다.</p>
+            <p><strong>다중 비교</strong> 왼쪽 상단에서 ‘다중 비교’를 선택하면 기기를 최대 4개까지 체크해 나란히 볼 수 있습니다. URL·새로고침·회전·브라우저 UI·주소창 위치·safe-area 가이드·배율은 모든 기기에 함께 적용되고, 카드마다 회전·새로고침·화면 상태·제거를 개별로 조작할 수 있습니다. <strong>스크롤 동기화</strong>는 각 문서의 스크롤 비율(scrollTop ÷ 스크롤 가능 높이)로 맞추며, 브라우저 보안 정책상 이 도구와 <em>같은 출처(same-origin)</em>에서 열린 페이지에서만 동작합니다.</p>
+            <p><strong>safe-area 가이드</strong> iframe 안의 페이지는 <code>env(safe-area-inset-*)</code> 값을 받을 수 없으므로, 노치·다이내믹 아일랜드·펀치홀·홈 인디케이터가 차지하는 영역을 빗금 가이드로 표시합니다. 가이드와 겹치는 콘텐츠는 실기기에서 가려질 수 있습니다.</p>
             <p><strong>실기기 배율</strong> 공개된 화면 크기와 CSS 뷰포트를 기준으로 계산한 물리 크기 근사값입니다. 모니터 크기와 운영체제 배율에 따라 실제 크기와 차이가 날 수 있습니다.</p>
-            <p><strong>실기기 확인 필요</strong> iframe에서 바꿀 수 없는 UA, 실제 DPR 렌더링, 터치, safe-area 환경변수, 가상 키보드, 브라우저 자동 숨김, 실제 힌지·화면 분할 API</p>
-            <p>Chrome UI와 검은 노치·카메라·접힘선은 콘텐츠와 가시 영역을 확인하기 위한 시각적 근사치이므로 최종 검수는 실기기에서 진행해 주세요.</p>
+            <p><strong>실기기 확인 필요</strong> iframe에서 바꿀 수 없는 UA, 실제 DPR 렌더링, 터치·<code>hover</code>·<code>pointer</code> 미디어, safe-area 환경변수, <code>dvh/svh/lvh</code> 단위, 대상 페이지의 <code>&lt;meta name="viewport"&gt;</code> 처리, 가상 키보드, 브라우저 자동 숨김, 실제 힌지·화면 분할 API. Windows 브라우저에서는 iframe 안에 데스크톱 스크롤바(약 17px)가 생겨 콘텐츠 폭이 줄어들 수 있습니다.</p>
+            <p>브라우저 UI와 검은 노치·카메라·접힘선은 콘텐츠와 가시 영역을 확인하기 위한 시각적 근사치이므로 최종 검수는 실기기에서 진행해 주세요.</p>
             <p>화면이 비어 있다면 대상 사이트가 <code>X-Frame-Options</code> 또는 <code>CSP frame-ancestors</code>로 iframe 표시를 막은 경우일 수 있습니다. 이때는 오른쪽 위 새 창 버튼으로 확인해 주세요.</p>
           </div>
         </details>
       </main>
     </div>
   </div>
+
+  <!-- 컨트롤 아이콘 sprite: 24×24, outline. 컨트롤 패널과 다중 비교 카드가 <use href="#icon-…"> 로 공유 -->
+  <svg class="icon_sprite" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+    <!-- 회전: 세로 스마트폰 + 시계 방향 회전 화살표 -->
+    <symbol id="icon-rotate" viewBox="0 0 24 24"><rect x="2.5" y="4" width="9" height="16" rx="2"/><path d="M7 17h.01"/><path d="M11.5 4.5h2.5a6 6 0 0 1 6 6V14"/><path d="M17.5 11.5 20 14l2.5-2.5"/></symbol>
+    <!-- safe-area 가이드: 스마트폰 + 안쪽 점선 안전 영역 -->
+    <symbol id="icon-safe-area" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><rect x="8.5" y="6.5" width="7" height="11" rx="1" stroke-dasharray="2 1.5"/><path d="M12 19.5h.01"/></symbol>
+    <!-- 새로고침: 단일 시계 방향 화살표 -->
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-8.5-8.5c2.4 0 4.6.98 6.2 2.6L20.5 8.4"/><path d="M20.5 3.5v4.9h-4.9"/></symbol>
+    <!-- 새 창: 사각형 + 우상향 화살표 -->
+    <symbol id="icon-external" viewBox="0 0 24 24"><path d="M14.5 3.5h6v6"/><path d="M10.5 13.5l10-10"/><path d="M20.5 13.5v5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h5"/></symbol>
+    <!-- 제거: X -->
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  </svg>
+
+  <!--
+    기기 셸 템플릿 (단일 보기·다중 비교 공용). app.js 의 mountShell() 이 복제한다.
+    screen_wrap: 6행 grid (상태바 / 상단 URL / 사이트 / 하단 URL / 툴바 / 홈 인디케이터) × 3열 (좌 safe-area / 사이트 / 우 safe-area).
+    각 밴드의 행 높이는 app.js 가 CSS 변수로 지정하고, 0px 밴드는 hidden 처리된다.
+  -->
+  <template id="deviceShellTemplate">
+    <div class="device_shell" data-frame="neutral" data-cutout="none" data-hinge="none" data-orientation="portrait" data-safe-guide="false">
+      <div class="frame_detail" aria-hidden="true">
+        <span class="frame_speaker"></span>
+        <span class="frame_camera"></span>
+        <span class="home_button"></span>
+        <span class="side_key key_volume"></span>
+        <span class="side_key key_power"></span>
+      </div>
+      <div class="screen_wrap" data-browser="android-chrome" data-platform="any" data-url-position="top" data-ui-mode="shrink">
+        <!-- OS 상태바(시간·신호·Wi-Fi·배터리). 플랫폼별 표시는 app.js updateStatusBar() 가 data-status-* 로 지정.
+             아이콘은 자체 SVG: 동일한 높이 체계(--status-icon-size) · currentColor · 셀룰러는 bars(iOS)/wedge(Android) 중 CSS 로 선택 -->
+        <div class="ui_band band_status" aria-hidden="true">
+          <span class="status_time">9:41</span>
+          <span class="status_icons">
+            <svg class="sb_icon icon_cellular" viewBox="0 0 18 12">
+              <g class="cellular_bars"><rect x="0" y="8.5" width="3.2" height="3.5" rx=".9"/><rect x="4.9" y="6" width="3.2" height="6" rx=".9"/><rect x="9.8" y="3.2" width="3.2" height="8.8" rx=".9"/><rect x="14.7" y="0" width="3.2" height="12" rx=".9"/></g>
+              <g class="cellular_wedge"><path class="wedge_bg" d="M17.2 0 0 12h17.2z"/><path class="wedge_fill" d="M17.2 3.4 4.9 12h12.3z"/></g>
+            </svg>
+            <svg class="sb_icon icon_wifi" viewBox="0 0 17 12"><path d="M1.4 4.4a10.4 10.4 0 0 1 14.2 0"/><path d="M4.1 7.2a6.4 6.4 0 0 1 8.8 0"/><path d="M6.7 9.9a2.7 2.7 0 0 1 3.6 0"/></svg>
+            <svg class="sb_icon icon_battery" viewBox="0 0 27 13"><rect class="battery_body" x=".6" y=".6" width="22.8" height="11.8" rx="3.2"/><rect class="battery_fill" x="2.5" y="2.5" width="15.6" height="8" rx="1.7"/><path class="battery_tip" d="M25 4.3v4.4c.9-.3 1.5-1.1 1.5-2.2S25.9 4.6 25 4.3z"/></svg>
+          </span>
+        </div>
+        <div class="ui_band band_url" aria-hidden="true">
+          <div class="browser_address">
+            <span class="browser_lock">
+              <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            </span>
+            <span class="browser_url">example.com</span>
+            <span class="browser_reload">
+              <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+            </span>
+          </div>
+        </div>
+        <div class="site_view">
+          <iframe title="사이트 반응형 미리보기"></iframe>
+        </div>
+        <div class="ui_band band_toolbar" aria-hidden="true">
+          <span><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></span>
+          <span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
+          <span class="tb_home"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg></span>
+          <span class="tb_share"><svg viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
+          <span class="tb_bookmark"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span>
+          <span class="tab_count">1</span>
+          <span class="tb_menu"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
+        </div>
+        <div class="ui_band band_home" aria-hidden="true">
+          <span class="home_indicator"></span>
+        </div>
+        <span class="screen_cutout" aria-hidden="true">
+          <i class="cutout_lens"></i><i class="cutout_lens"></i><i class="cutout_flash"></i>
+        </span>
+        <span class="hinge_line" aria-hidden="true"></span>
+        <div class="safe_guides" aria-hidden="true">
+          <span class="guide_top"></span>
+          <span class="guide_right"></span>
+          <span class="guide_bottom"></span>
+          <span class="guide_left"></span>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- 다중 비교 카드 템플릿: 개별 제어(기기명 · 사이트 크기 · 화면 상태 · 회전 · 새로고침 · 제거) + 기기 셸이 들어갈 preview_mount -->
+  <template id="compareItemTemplate">
+    <article class="compare_item">
+      <header class="compare_head">
+        <strong class="compare_name"></strong>
+        <div class="compare_tools">
+          <button type="button" class="icon_btn is_small compare_rotate" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rotate"/></svg>
+          </button>
+          <button type="button" class="icon_btn is_small compare_refresh" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-refresh"/></svg>
+          </button>
+          <button type="button" class="icon_btn is_small compare_remove">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-close"/></svg>
+          </button>
+        </div>
+        <span class="compare_meta"><span class="compare_meta_text"></span><span class="compare_badge" hidden></span></span>
+        <select class="compare_state" hidden></select>
+      </header>
+      <div class="compare_body">
+        <div class="preview_mount"></div>
+      </div>
+    </article>
+  </template>
 
   <div class="sr_only" id="viewportStatus" aria-live="polite"></div>
   <script src="./app.js"></script>
