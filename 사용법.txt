@@ -8,14 +8,19 @@
 5. 로컬 파일 실행이 제한되면 VS Code Live Server로 폴더를 실행해 주세요.
 
 포함 기능
-- 320 / 360 / 390 / 430px 기준 모바일 프리셋
-- iPhone SE·iPhone 18 Pro·Google Pixel 10 프리셋
+- 320(범용) / Galaxy S25 360×780 / Android 20:9 범용 360×800 / iPhone 390 / 430 기준 모바일 프리셋
+- iPhone SE(홈 버튼형)·iPhone 18 Pro·Google Pixel 10 프리셋
+- iPad 9.7형(홈 버튼형) 세로/가로
 - Galaxy Z Flip8: 커버 / 펼침 / Flex 90°
 - Galaxy Z Fold8: 커버 / 펼침
-- iPhone Duo: 접힘 외부 / 펼침 내부
+- iPhone Duo(2026, 북 타입 폴더블): 접힘 외부 5.4" / 펼침 내부 7.6" 단일 폴딩 화면 + 접힘선
+  · 접힘 상태는 실제 제품처럼 힌지 쪽 코너가 거의 각지고 바깥쪽만 둥근 비대칭이며, 힌지 쪽에 힌지 커버(스파인) 가 별도로 보입니다. 외부 카메라는 우상단.
+  · 펼침 상태는 4코너가 같은 둥근 형태이고 접힘선은 공식 이미지 수준으로 희미하게만 표시됩니다(위치 확인용).
+  · iOS 27 UI: 일반 iPhone 의 가로 상태바·주소창 대신 카메라 쪽 세로 축에 코너 상태 클러스터(시간 → 링 안 Wi-Fi → 셀룰러 점) 와
+    세로 Dynamic Island(외부 화면), 그 아래 Safari 측면 컨트롤(뒤로 원형 + 캡슐 / 하단 캡슐) 이 콘텐츠 위에 떠 있습니다. 내부 화면을 세로로 돌리면 표준 가로 바.
 - 가로·세로 회전, 직접 화면 너비·높이 입력 (회전·직접 입력값은 다시 열 때 복원)
 - 실기기 배율 / 화면 맞춤 / 100% 보기
-- 브라우저 종류 선택: Safari, Chrome (iOS), Chrome, Samsung Internet, Chrome (태블릿), Safari (iPad)
+- 브라우저 종류 선택: Safari, Chrome (iOS), Chrome, Samsung Internet, Chrome (태블릿), Safari (iPad), Safari (iPhone Duo — Duo 에서만)
   · 기기 플랫폼에 맞는 브라우저만 목록에 나오고, 선택은 플랫폼별로 기억됩니다.
 - 상태바 / 주소창 / 툴바 / 홈 인디케이터 밴드를 브라우저별 위치·높이로 표시
   · 주소창 스위치: URL 바 표시 여부 (끄면 스크롤로 숨은 상태. 상태바·홈 인디케이터는 유지)
@@ -54,6 +59,17 @@
   · 프레임의 platform 으로 프로필을 고르고 frameProfiles[*].statusBar 로 항목을 덮어씁니다(예: iPhone SE 의 compact).
   · 아이콘은 자체 SVG(외부 라이브러리·제조사 이미지 없음) 이며 좌/우 정렬 컷아웃(Fold 펼침 카메라 등) 만큼 자동으로 비켜납니다.
 - Safari / Chrome 주소창·툴바 = 브라우저 UI(browserProfiles, .band_url / .band_toolbar 레이어)
+- iPhone Duo(iOS 27) 는 위 가로 밴드 대신 다음 레이어를 씁니다 (Apple 뉴스룸·HIG "Designing for iPhone Duo" 기준):
+  · 코너 상태 클러스터(statusBarProfiles.duo, layout:'corner', .status_cluster): 시간 → 아래가 트인 링(안쪽 Wi-Fi) → 링 틈의 셀룰러 점 4개.
+    카메라 축(외부 48px · 내부 45px) 에 놓이며 값은 frameProfiles[*].statusBar 가 화면별로 지정. 링 호가 배터리 잔량인지는 미확인(고정 호, approximation).
+  · 세로 Dynamic Island(.dynamic_island, OS UI): 외부 화면 카메라를 감싸는 세로 필 38×62 @ top 26 — 통화(Live Activity) 공식 이미지 실측.
+    정지 상태(홈 화면 이미지·HIG 도식) 는 카메라 원만 보이며 statusBar.island.state:'rest' 로 바꿀 수 있습니다. 내부 화면은 카메라가 화면 뒤(UDC) 라 표시하지 않습니다.
+  · Safari 측면 컨트롤(browserProfiles['duo-safari'], layout:'side', .side_controls): 클러스터 아래에 뒤로 원형(Ø44) + 캡슐(정보·공유·검색), 하단에 캡슐 4개.
+    항목 형태·크기·간격은 뉴스룸 Split View 이미지 실측, 전체 화면 Safari 의 시작 높이는 Netflix 이미지의 시스템 간격(22) 준용(approximation).
+    주소(URL) 필드는 공식 자료에 보이지 않아 그리지 않습니다("실제 Safari UI" 단정 아님). 주소창 스위치 = 위 그룹, 툴바 스위치 = 아래 캡슐, 주소창 위치 라디오는 잠김.
+    사이트 뷰포트는 화면 전체(콘텐츠 위에 겹침) 이며 실제 Safari 의 인셋은 미확인 — safe-area 가이드로 측면 열 영역(우측 92/89px) 을 확인하세요.
+  · 세로 공간이 부족하면(외부 화면 가로) HIG 대로 탭바가 단일 컨트롤로 접히고 툴바 항목은 넘침(…) 으로 들어갑니다.
+  · 회전: 외부 화면은 카메라 쪽 가장자리를 따라 열이 왼쪽으로 이동(반시계 회전 기준). 내부 화면을 세로로 돌리면 HIG 대로 표준 가로 바(Safari 밴드 차용, 상태바 밴드 0) + 코너 클러스터(위치 approximation).
 - safe-area 가이드: 노치·다이내믹 아일랜드·펀치홀·홈 인디케이터가 차지하는 영역을 빗금으로 표시
 - 기기별 둥근 모서리, 홈 버튼, 노치, 다이내믹 아일랜드, 펀치홀, 커버 카메라, 접힘선, 홈 인디케이터 표시
 - 프리셋별 전체 CSS 화면, 실제 사이트 표시 영역, 물리 해상도와 DPR 표시
@@ -88,4 +104,20 @@
   · frame: frameProfiles 의 키, browser: browserProfiles 의 키
   · states[]: width/height(CSS px), diagonal(inch), physicalWidth/Height(생략 시 width×dpr), 필요하면 frame/browser/hinge/orientation 오버라이드
 - 새 컷아웃·safe-area가 필요하면 frameProfiles 에 프로필을 추가합니다. cutout.type 은 none / notch / island / hole / dual-hole.
+- 기기 형상은 전부 frameProfiles 데이터로 정하며, 각 프로필의 source 메타데이터에 값의 근거 등급을 적습니다:
+  · official       : 제조사 공개 수치 (해상도, 바디 mm, iOS safe-area 등)
+  · derived        : 공개 수치에서 환산 (베젤 = (바디 − 활성영역)/2 → CSS px, 동심 가정 바디 코너 = 화면 코너 + 베젤 등)
+  · photo-measured : 렌더 실측 (파일명·비율을 note 에 기록. Commons 벡터 "IPhone SE (2nd generation) white vector.svg", "IPhone 12 Blue.svg",
+                     "Galaxy S25 Black (front).png", "Google Pixel 9 (Obsidian) front.svg", Apple 뉴스룸 "Apple-iPhone-Duo-display-sizes-260909.jpg")
+  · approximation  : 근거 없음 — 실제 사양처럼 취급하지 말 것 (Fold8/Flip8 의 코너·컷아웃, Duo 의 접힘선 굵기·Safari 시작 높이·회전 시 클러스터 위치, Android 하단 제스처 바 등)
+  · controls 필드(홈 버튼·스피커·카메라·센서) 는 CSS 변수로 그려지며 가로 모드는 반시계 규칙으로 옮겨집니다.
+- 기기 형상은 전부 frameProfiles 데이터로 정합니다 (CSS 에 기기명 분기 없음):
+  · family: 형상 언어. iphone-modern / iphone-classic / galaxy-bar / pixel / fold / flip / duo / ipad-classic / neutral
+    → 바디 마감(금속 링 색·하이라이트·글래스 색), 측면 키, 스피커·홈 버튼 표시가 이 값으로 갈립니다. 새 마감이 필요할 때만 CSS 에 family 하나를 추가합니다.
+  · top/right/bottom/left: 베젤 두께(바디 외곽 ~ 디스플레이). ring: 그중 금속 테 두께, 나머지는 검은 글래스로 그려집니다.
+  · radius(바디) / screenRadius(디스플레이): 숫자(px) 또는 {ratio: 0.05}(짧은 변 대비) 또는 {tl,tr,br,bl}(코너별). 가로 모드는 코너를 반시계로 돌립니다.
+  · display.split: 듀얼스크린(물리 분리 패널) 용 {axis, gap, panelRadius}. 현재 프리셋에는 없음(iPhone Duo 는 단일 폴딩 화면). Surface Duo 2 같은 기기를 추가할 때 사용.
+  · hingeBody: 힌지 커버(바디·디스플레이·접힘선과 별개 요소). {type:'spine', side, width, inset, radius} = 접힌 북타입에서 패널 바깥 힌지 쪽에 보이는 스파인,
+    {type:'seam', size} = 펼침 상태에서 접힘선 양끝 테두리의 접합선. 가로 모드는 반시계 규칙으로 옮겨집니다(left → bottom).
+  · 레이어 순서: 바디(금속 링) → 힌지 커버(.hinge_body, 바디 바깥) → 글래스 베젤 → 디스플레이 마스크(.screen_wrap: 상태바·브라우저 UI·사이트가 모두 이 안에서 clipping) → 컷아웃·접힘선(하드웨어 레이어).
 - 필수 값이 빠지거나 키가 틀리면 브라우저 콘솔에 [반응형 테스트랩] 경고가 표시됩니다.

@@ -1,0 +1,140 @@
+# device_preview (반응형 테스트랩) — 작업 규칙과 확정 사항
+
+이 문서는 대화 컨텍스트가 압축되어도 유지되어야 하는 규칙·결정사항의 단일 기준입니다.
+프로젝트 목적: URL 을 입력해 **실제 모바일 기기에서 웹사이트가 어떻게 보이는지 최대한 정확하게 재현**하는 테스트 도구.
+"기기마다 적당히 다르게 보이는 모형"이 아니라 실기기 재현이 목표다.
+
+## 기본 규칙
+
+- 답변과 작업 결과(문서·주석·안내 문구)는 **한국어**로 작성한다.
+- **기존 구조를 최대한 유지**한다. 불필요한 전체 리팩터링 금지. 문제는 구조가 아니라 값일 때가 많다 — 데이터 보정을 우선한다.
+- **HTML / CSS / Vanilla JavaScript** 만 사용. 프레임워크·번들러·외부 라이브러리(아이콘 라이브러리 포함) 임의 추가 금지.
+- 파일 구성: 루트의 `index.html`, `app.js`, `styles.css`, `사용법.txt` 가 현재 버전. `v01/`, `v02/` 는 예전 스냅샷이며 `.gitignore` 로 제외됨(수정 대상 아님).
+- 실행: VS Code Live Server(포트 5501, `.vscode/settings.json`). `file://` 로 열면 스크롤 동기화 등 same-origin 기능이 동작하지 않는다.
+
+## Git
+
+- `git add` / `git commit` / `git push` 는 **실행하지 않는다**. Git 관리는 사용자가 직접 한다.
+- `git status`, `git diff`, `git log` 같은 조회 명령은 허용.
+- 필요하면 커밋 메시지만 제안한다.
+
+## 작업 방식
+
+- 큰 작업은 **기기군 / 기능 단위**로 나누어 진행한다(예: P0 → P1 → P2 → P3 우선순위 표로 합의 후 진행).
+- 수정 전에 필요하면 **현재 상태를 먼저 분석·보고**하고, 사용자가 "먼저 보고"를 요구하면 코드를 수정하지 않는다.
+- 완료 후에는 항상 **변경 파일 / 핵심 변경사항 / 사용자가 직접 확인할 항목**을 정리한다. 값을 바꿨을 때는 `현재 값 → 수정 값 → source 등급` 표를 제공한다.
+- 사용자 결정이 필요한 갈림길(예: 실제 제품 구조 vs 요청 내용이 상충)은 임의로 정하지 말고 명시적으로 묻는다.
+
+## 코드 구조 (확정)
+
+### 데이터 (app.js 상단)
+- `frameProfiles` — 기기 프레임(하드웨어) 프로필. 키: `family`, 베젤 `top/right/bottom/left`, `ring`(금속 테 두께, 나머지 베젤은 검은 글래스), `radius`(바디 코너), `screenRadius`(디스플레이 코너), `cutout{type,width,height,top,align,offset}`, `safeArea` / `safeAreaLandscape`, `homeIndicator`, `homeIndicatorWidth`, `controls{homeButton,speaker,camera,sensor}`, `display.split`(듀얼스크린 전용, 현재 미사용), `hingeBody`(힌지 커버: `{type:'spine',side,width,inset,radius}` | `{type:'seam',size}`), `statusBar`(상태바 프로필 오버라이드), **`source`**(근거 메타데이터).
+  - radius 값은 `숫자(px)` | `{ratio}`(짧은 변 대비) | `{tl,tr,br,bl}`(코너별) 모두 가능. `resolveCorners()` 가 px 로 풀고, 가로 모드는 반시계 규칙으로 회전(새 tl = 이전 tr, tr = 이전 br, br = 이전 bl, bl = 이전 tl).
+  - `family` 값: `iphone-modern | iphone-classic | galaxy-bar | pixel | fold | flip | duo | ipad-classic | neutral`. CSS 는 `data-family` 로만 마감(링 색·글래스 색·측면 키)을 분기한다.
+- `statusBarProfiles` — OS 상태바(`ios | android | generic | duo`): 시간 문자열, 아이콘 순서, `cellularStyle: bars|wedge|dots`, 배터리 잔량, 좌우 padding. 프레임 `platform` 으로 고르고 `frameProfiles[*].statusBar` 로 덮어씀(예: SE·iPad `compact`, Duo `platform:'duo'` + 클러스터 값). `duo` 는 `layout:'corner'`(코너 클러스터, 가로 밴드 0) 이며 `axis / timeCenter / ringCenter / ring{size,stroke,arcGap,wifiWidth,dotSize,dotAngles} / timeSize / island{state,width,height,top,shift}` 를 갖는다.
+- `browserProfiles` — 브라우저 UI 밴드 높이(`statusBar / urlBar / toolbar / homeIndicator`, 세로·가로), `urlBarPosition` 기본값, `sideInset:'safe-area'`(가로 letterbox). 키: `ios-safari | ios-chrome | android-chrome | samsung-internet | tablet-chrome | ipad-safari | duo-safari`. 구 키 `phone/compact/tablet` 은 `browserAliases` 로 호환. `duo-safari` 는 `layout:'side'`(측면 컨트롤 열, 밴드 전부 0) · `exclusive`(Duo 기본일 때만 목록) · `standardFallback:'ios-safari'`(표준 가로 바 상태에서 밴드 차용, 상태바 밴드 0) · `side{circle,capsule,pitch,gap,clusterGap,bottomMargin,top,topCapsule,bottomCapsule}`. state 의 `uiLayout:{natural,rotated}` 가 자세별로 `side | bars` 를 정한다.
+- `devices` — 프리셋. `name, group, subtitle, note, source, frame, browser, dpr, states[]`. state 는 `width/height(CSS px), diagonal, physicalWidth/Height, frame/browser 오버라이드, hinge, hingeSize, hingePosition, orientation('portrait'|'landscape' 기본 자세), scaleWidth/Height`. `deviceGroups`, `deviceAliases` 와 함께 관리. `validateDevices()` 가 누락·오타를 콘솔 경고로 알린다(`source` 누락도 경고).
+- **새 기기는 `devices`(+ 필요 시 `frameProfiles`) 데이터 추가만으로** 사이드바·카운트·WebMCP enum 에 자동 반영되어야 한다. 새 마감이 필요할 때만 CSS 에 `data-family` 하나를 추가한다.
+
+### 뷰 모델
+- `view` 객체 = 기기 프리뷰 1개(`dom, deviceId, stateId, rotated, baseWidth/Height, currentWidth/Height, frameProfile, frameInsets, scale, loaded, compare`). 단일 보기는 `primaryView`, 다중 비교는 `compareViews: Map<deviceId, view>`(최대 4).
+- 지오메트리·렌더 함수는 모두 `view` 인자를 받는다(`getSiteViewport(view)`, `updateFrame(view)`, `updateBrowserChrome(view)`, `updateScale(view)`, `renderView(view)` …). 전역 표시 설정(주소창·툴바·UI 겹침·주소창 위치·safe-area·배율·URL)은 `refreshViews()` 로 모든 view 에 적용.
+- 기기 셸 마크업은 `<template id="deviceShellTemplate">` 하나에서 `mountShell()` 로 생성. 단일 셸에는 기존 id(`deviceShell, screenWrap, siteView, siteFrame, bandStatus, bandUrl, bandToolbar, bandHome, browserUrl, hingeLine`)를 JS 가 부여. 비교 카드는 `<template id="compareItemTemplate">`.
+- 아이콘은 `<svg class="icon_sprite">` 의 `<symbol>` 을 `<use>` 로 공유. 규칙: 24×24 viewBox, outline, 전역 `stroke-width 1.8`, `currentColor`, `aria-hidden="true"`, 버튼에는 `aria-label`.
+
+### 컨트롤 패널
+- CSS Grid 5영역 고정: `device | fold | size | browser | tools` (grid-area). 접힘/펼침 열은 `--fold-col`(200px) 로 **항상 예약**하고 단일 화면 기기는 "단일 화면" 안내로 자리를 유지한다. JS 로 DOM 순서를 바꾸지 않는다.
+- 폭 부족 시 순서 유지한 채 ≤1520px 2행(`device fold size` / `browser browser tools`), ≤700px 1열. `select`·배율 `output` 은 고정 폭(열 폭 흔들림 방지).
+- 상태 전환(커버↔펼침)은 버튼 DOM 을 다시 만들지 않고 `updateStateButtons()` 로 표시만 바꾼다.
+
+### 스타일 규칙
+- 클래스는 snake_case(`device_btn`, `compare_item`), 상태는 `is_*`, JS→CSS 상태는 `data-*` 속성. CSS 에서 id 선택자 사용 안 함. 규칙은 여러 줄 포맷.
+- 소형 텍스트 대비 WCAG AA 4.5:1 이상. `:focus-visible`, `prefers-reduced-motion` 유지.
+
+## 레이어 구조 (반드시 분리)
+
+```
+device body      .device_shell            바디 = 금속 링(--ring-finish), --body-tl/tr/br/bl 코너
+→ bezel          .device_shell::before    글래스 베젤(링 안쪽 검은 유리), 코너 = 바디 − ring
+→ physical display .screen_wrap           디스플레이 마스크: overflow:hidden + --screen-tl/tr/br/bl (듀얼스크린은 clip-path: path())
+→ OS status bar  .band_status             시간·셀룰러·Wi-Fi·배터리 (자체 SVG, statusBarProfiles)
+→ hinge body     .hinge_body (.frame_detail 안)   힌지 커버: spine(셸 바깥 힌지 쪽) / seam(접힘선 양끝 테두리). 바디·디스플레이·접힘선과 별개
+→ Duo OS status UI .status_cluster / .dynamic_island   iPhone Duo(iOS 27) 코너 상태 클러스터 · 세로 Dynamic Island(Live Activity). 가로 상태바 밴드 대신 사용, 컷아웃과 별개
+→ Duo browser UI .side_controls                  측면 컨트롤 열(뒤로 원형 + 캡슐 / 하단 캡슐). 가로 URL·툴바 밴드 대신 사용
+→ hardware cutout .screen_cutout / .hinge_line / .frame_detail   노치·아일랜드·펀치홀·접힘선·홈 버튼·스피커·카메라
+→ browser UI     .band_url / .band_toolbar / .band_home          browserProfiles
+→ webpage viewport .site_view > iframe
+```
+- 하나의 radius 나 하나의 wrapper 로 뭉뚱그리지 않는다. iframe 에 radius 를 주지 않는다(마스크는 `.screen_wrap`).
+- 컷아웃은 상태바·브라우저 UI 와 다른 레이어. 좌/우 정렬 컷아웃(Fold 펼침 우상단 카메라 등)은 상태바 아이콘이 `--status-pad-*` 로 비켜난다.
+- 전면 디테일(홈 버튼·스피커·카메라·센서)은 `frameProfiles[*].controls` → CSS 변수(`--home-*, --speaker-*, --camera-*, --sensor-*`)로 그린다. 가로 모드는 상단→왼쪽, 하단→오른쪽(반시계).
+- 화면 크기 = `--viewport-width/height`(기기 전체 CSS 화면), 실제 웹 뷰포트는 `getSiteViewport()` 결과(밴드를 뺀 값). 축소는 `transform: scale` 이라 iframe 내부 CSS px 는 보존된다.
+
+## 기기 데이터 규칙
+
+- 모든 기기 외형은 `frameProfiles` 등 프로필 데이터로 관리한다. **특정 기기명을 CSS 에 하드코딩하지 않는다**(`data-family` 만 허용).
+- iPhone / Galaxy / Pixel 을 같은 형상으로 처리하지 않는다(각각 다른 코너·베젤·컷아웃·상태바).
+- Fold / Flip / Duo 구조를 서로 구분한다. Fold 는 단일 폴더블 디스플레이 + 접힘선. Flip 은 커버·펼침·Flex 상태별 프로필. Duo 는 **실제 제품 구조 기준**으로 처리한다.
+- 접힘 / 펼침 / cover / flex 등 상태별로 다른 프레임 프로필을 허용한다(`state.frame`).
+- 폴더블 펼침처럼 가로형 비율이지만 세로로 드는 상태는 `orientation:'portrait'` 로 명시한다(방향 판정은 `rotated` + 기본 자세).
+
+## 실기기 정확도 규칙
+
+- **기기 외형 수치를 임의로 만들지 않는다.** 공식 제조사 자료(해상도, 바디 mm, iOS safe-area)를 최우선으로 사용한다.
+- 값의 근거를 `frameProfiles[*].source` 에 항목별로 표기한다: `official`(제조사 공개 수치) · `verified`(외부 자료로 확인) · `derived`(공개 수치에서 환산) · `photo-measured`(공식/신뢰 렌더 실측, 파일명·비율 기록) · `approximation`(근거 없음).
+- `approximation` 값을 실제 공식 수치처럼 표현하지 않는다. "실제 pt 값 기준" 같은 표현은 근거가 확인된 값에만 쓴다.
+- 환산 규칙: `px/mm = CSS 폭 ÷ 디스플레이 활성영역 폭(mm)`, 활성영역은 대각선·해상도 비율에서 계산, `베젤 = (바디 − 활성영역) ÷ 2`. 렌더가 없을 때 바디 코너는 `화면 코너 + 베젤`(동심 가정, derived)로 유도한다.
+- iOS 디스플레이 코너(47.33 / 55 / 62pt 등)는 커뮤니티 측정 `_displayCornerRadius` 값이며 Apple 공식이 아니다 → `derived/reference` 로 표기. Dynamic Island 126×37pt @11 도 커뮤니티 측정.
+- Android 상태바 높이는 "컷아웃을 감싸는 높이(컷아웃 하단 + 여백)" 논리로 유도한 derived 값이다.
+- **자동 테스트 통과와 실기기 외형 정확도 검증은 별개**다. 외형을 바꾸면 반드시 실기기/레퍼런스 렌더와 프리뷰를 비교한다(종횡비, 외곽·화면 곡률, 베젤, 컷아웃, 홈 버튼, 힌지, 상태바 위치).
+- 렌더 실측 파이프라인: 스크래치패드의 `measure-run.js` + `measure-page.js`(헤드리스 Edge canvas 픽셀·기하 분석). SVG 벡터 렌더는 rect/circle 좌표를 직접 읽는 편이 정확하다. 실측에 쓴 파일: Commons `IPhone SE (2nd generation) white vector.svg`, `IPhone 12 Blue.svg`, `Galaxy S25 Black (front).png`(7.0px/mm), `Google Pixel 9 (Obsidian) front.svg`(정확히 10px/mm).
+
+## 브라우저 UI 규칙
+
+- 주소창 위치(상단/하단)와 기기 종류를 분리한다. 브라우저 프로필이 기본값을 갖고, 사용자가 바꾸면 `urlBarPositionByBrowser` 로 브라우저별 기억. 가로 모드는 항상 상단(라디오 비활성). 상단이면 상태바(컷아웃 영역) 아래에서 시작.
+- Chrome / Safari / Samsung Internet(+ Chrome(iOS), Chrome(태블릿), Safari(iPad)) 프로필을 유지한다. 브라우저 선택은 플랫폼별로 기억(`browserByPlatform`); 다중 비교에서는 선택 비활성.
+- 사이트 영역 계산: 기본(축소) 모드 = 모든 밴드를 뺀 svh 상황, UI 겹침(overlay) 모드 = 상태바·홈 인디케이터만 빼고 URL 바·툴바를 콘텐츠 위에 얹는 lvh 상황(100vh 가림 확인용). 주소창 OFF 여도 상태바·홈 인디케이터는 남는다.
+- iOS·Android 가로 모드에서는 컷아웃 쪽 safe-area 만큼 사이트 폭이 줄어든다(`sideInset:'safe-area'`, letterbox 열).
+
+## 다중 비교 · 스크롤 동기화
+
+- 다중 비교(최대 4): 사이드바가 체크박스로 바뀌고 카드는 CSS Grid `auto-fit` 로 1~4열 자동 배치(JS 로 순서 변경 없음). 카드 추가/제거 시 해당 iframe 만 생성/제거하며 설정 변경은 CSS 변수만 갱신한다.
+- 스크롤 동기화는 절대 px 가 아니라 비율 `scrollTop ÷ (scrollHeight − clientHeight)` 로 맞춘다. 프로그램 스크롤의 되돌림은 값·시간 가드로 막는다.
+- **Same-Origin Policy** 때문에 외부 출처 iframe 은 스크롤을 읽거나 옮길 수 없다. 이 경우 스위치를 비활성화하고 비교 바·카드 배지에 이유를 표시한다. **보안 정책을 우회하는 코드는 만들지 않는다.** 향후 cross-origin 은 Chrome Extension content script(all_frames) 방식으로만 가능하며 `getScrollRatio/applyScrollRatio/broadcastScroll` 이 그대로 옮겨질 수 있는 구조다.
+- 같은 출처 판정 함정: 도구를 `file://` 로 연 경우, `localhost` ↔ `127.0.0.1`, 다른 포트.
+
+## 검증 방법
+
+- 기능 검사: 스크래치패드의 파일 기반 헤드리스 Edge 스위트(`make-test.js` → `test.html`, 가상 시간). 가상 시간에서는 rAF·네이티브 scroll 이벤트가 발생하지 않으므로 스크롤 검사는 이벤트를 직접 발생시킨다. 스로틀은 rAF 대신 16ms 타이머.
+- 실시간 검사: `cdp-run.js`(로컬 서버 5601 = 같은 출처, 5602 = 다른 출처 + CDP). 스크롤 동기화·cross-origin 처리·스크린샷은 여기서 확인한다.
+- 값을 의도적으로 바꾸면 테스트 기대치도 그 값으로 갱신하되, 반드시 환산 근거를 확인한 뒤 바꾼다. 기대치 갱신으로 "통과"를 만드는 것은 외형 검증이 아니다.
+- 맞춤 배율은 뷰포트 높이로 상한을 둔다(스테이지 높이는 콘텐츠에 따라 늘어나 자기참조 진동이 생김). `.preview_stage` 는 `scrollbar-gutter: stable`.
+
+## 저장 키 (localStorage)
+
+`viewportLabDevice`(기기·상태·회전·직접 입력값), `viewportLabDisplay`(배율·밴드 스위치·UI 모드·safe-area·플랫폼별 브라우저·브라우저별 주소창 위치), `viewportLabCompare`(모드·카드·동기화 옵션), `viewportLabUrl`.
+
+## 현재 실기기 외형 보정 상태 (2026-09 기준)
+
+- iPhone SE: 홈 버튼형 별도 프로필(`iphone-se`, family `iphone-classic`)로 보정 완료. 베젤 상하 110 / 좌우 28(derived), 홈 버튼 67px·링 3·하단 중심 55(photo-measured), 스피커·카메라·센서 위치 photo-measured, 화면 코너 0.
+- iPhone 12/13/14(390): 베젤 21(derived), 바디 코너 66(photo), 화면 47(reference), 노치 168×33(derived). 14 Pro Max/15 Plus(430): 베젤 19, 화면 55, 바디 74(derived). iPhone 18 Pro: `iphone-dynamic-pro` 402×874 / 1206×2622(official), 베젤 15·화면 62·상단 safe-area 62(16 Pro 준용, 18 Pro 치수 미확인).
+- Galaxy S25 프리셋(`mobile-360`, 360×780 official)과 "Android 20:9 범용"(`android-generic-360`, 360×800, neutral, 실기기 아님) 분리. S25 베젤 12/11(derived), 코너 36/24, 펀치홀 19@17(photo).
+- Pixel 9/10: 베젤 22, 코너 64/54, 펀치홀 30@18(photo, 10px/mm 벡터), 상태바 52(derived).
+- iPad 9.7(`tablet-768`/`tablet-1024`, `ipad-home`, family `ipad-classic`): 베젤 좌우 56 / 상하 112(derived), 홈 버튼 57(approximation), 화면 코너 0, 상태바 20, 홈 인디케이터 없음, 기본 브라우저 Safari(iPad). 홈 인디케이터형 iPad 는 추후 별도 프리셋.
+- Fold8 / Flip8: 베젤은 공식 mm 로 환산(derived). 코너·컷아웃(우상단 카메라, FlexWindow 듀얼 카메라)·하단 제스처 바 24 는 `approximation` — 공식 정면 렌더 확보 시 재측정 대상. Flip8 FlexWindow 의 폴더형(카메라를 감싸는) 마스크는 미구현.
+- iPhone Duo(2026-09-09 발표, 북 타입): **단일 7.6" 폴딩 내부 화면 + 세로 접힘선** 구조. 외부 1398×2034 · 내부 2670×1878 · 바디 mm · 표준 사각형 대각선 5.36"/7.58" 모두 Apple specs **official**(2026-09-18 확인).
+  - 2026-09-18 보정: Apple 뉴스룸 보도자료 원본 `Apple-iPhone-Duo-display-sizes-260909.jpg`(3840×2160, 9.48px/mm — 화면 종횡비가 공식값과 0.1% 내 일치) 로 **body / display / hinge / crease 를 분리 실측**. 스크래치패드 `renders/duo-zip/` 에 원본, `measure-page.js` 의 `cornerRadius/edges/screenEdges/crop` 로 측정.
+  - 접힘(`duo-outer`, 6.04px/mm): 패널 베젤 상하 17 / 좌우 15(derived) + 힌지 쪽 **스파인 12(hingeBody spine, 상하 7 안쪽, r 8, photo)**. 바디 코너 `{tl:5,tr:75,br:75,bl:5}`, 화면 코너 `{tl:8,tr:60,br:60,bl:8}`(photo — 힌지 쪽이 거의 각진 비대칭). 외부 카메라 **우상단** Ø36 @ top 30 / right 30(photo). ring 4(photo 0.5~1.0mm).
+  - 펼침(`duo-inner`, 5.65px/mm): 베젤 20(derived), 바디 코너 72 / 화면 코너 52 **4코너 동일**(photo — 힌지 쪽 각진 코너는 펼치면 중앙 접합부로 숨음). 힌지 커버는 정면에서 안 보이고 테두리 접합선(hingeBody seam 3) 만. 접힘선은 공식 이미지에서 검출되지 않아 2px 희미한 선(approximation, 위치 표시용).
+  - 남은 approximation: 측면 키 위치(사진상 Touch ID 는 접힘 우측 29~41% 높이, 볼륨은 상단 변으로 보임). 상태바/safe-area 는 iOS 27 코너 클러스터로 교체됨(위 "iPhone Duo iOS 27 UI" 항목).
+- `hingeBody`(힌지 커버) 는 바디·디스플레이·접힘선과 별개 레이어. `spine`(셸 바깥, `view.hingeExtent` 로 mount 폭·셸 위치 보정) / `seam`(접힘선 양끝 테두리 접합선). 스파인이 있는 변의 측면 키는 CSS 가 숨긴다.
+- **iPhone Duo iOS 27 UI(2026-09-18)**: 일반 iPhone 의 가로 상태바·Safari 밴드를 Duo 에 재사용하지 않는다. 근거는 Apple 뉴스룸 본문·보도 이미지 원본(`renders/duo-ui/`) 과 HIG "Designing for iPhone Duo"(`renders/duo-ui/hig-duo.json`, 도식 PNG는 `renders/duo-ui/hig/`; `developer.apple.com/tutorials/images/com.apple.HIG/...` 로 받음).
+  - official(텍스트): 상태바 = "circular, flexible system that nestles into the corner"; Dynamic Island = 외부·내부 화면 측면에 세로 배치, Live Activities 로 확장; 툴바·탭바·내비게이션은 카메라 쪽 세로 축(위→아래: 아일랜드 → 상태바 → 툴바 → 탭바); **내부 화면을 세로로 든 경우만 표준 가로 바**; Split View 는 각 앱이 바깥 가장자리; 공간 부족 시 탭바 단일 컨트롤·툴바 넘침 메뉴.
+  - photo-measured: 외부 정지(홈 화면 이미지·HIG 도식 1.0944px/pt 일치) 시간 중심 92 · 링 Ø40 중심 129 · 축 48(카메라 중심과 동일) / Live Activity(통화 이미지) 필 38×62 @26, 클러스터 +14.5 / 내부(multitasking·Netflix) 시간 38.5 · 링 Ø38 중심 73 · 축 45 / Safari 측면 컨트롤 원형 Ø44 · 캡슐 44 · 항목 47 · 원형↔캡슐 13 · 하단 여백 21 / 전체 화면 앱 툴바 시작 = 클러스터 하단 + 22(Netflix).
+  - approximation(명시·미창작): URL 필드(공식 자료에 없음 → 그리지 않음), 전체 화면 Safari 의 시작 높이(Netflix 간격 준용), Safari 웹 뷰포트 인셋(→ 화면 전체 + safe-area 가이드 우측 92/89), 회전 시 클러스터 위치(카메라 쪽 상단), 내부 화면 세로 상태의 클러스터 위치(우상단 유지), 내부 Live Activity 아일랜드(미표시), 링 호 = 배터리 잔량 여부, 홈 인디케이터(공식 이미지에 없음 → 없음), 클러스터 색(적응형 → 진한 색 + 흰 테두리).
+  - 기본 표시는 island `state:'live'`(세로 필). 정지 상태로 바꾸려면 `frameProfiles['duo-outer'].statusBar.island.state='rest'`.
+- `display.split` 은 Surface Duo 2 같은 실제 듀얼스크린 기기를 추가할 때만 사용한다.
+
+## 알려진 한계 (문구·설계에 반영됨)
+
+iframe 으로는 UA·실제 DPR·터치/hover/pointer 미디어·`env(safe-area-inset-*)`·`dvh/svh/lvh`·대상 페이지 `<meta viewport>` 처리·가상 키보드·브라우저 자동 숨김을 재현할 수 없다. Windows 브라우저는 iframe 안에 데스크톱 스크롤바(약 17px)가 생긴다. safe-area 는 빗금 가이드로만 보완한다.

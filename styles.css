@@ -556,71 +556,227 @@ svg {
 .preview_mount { position: relative; flex: 0 0 auto; margin: auto; transition: width .24s ease, height .24s ease; }
 
 /* ---------- 6. 기기 프레임 ----------
- * --viewport-width/height : 기기 전체 화면(CSS px). 프레임 = 화면 + 베젤 inset.
- * 축소는 transform 으로만 하므로 iframe 내부 CSS px 는 그대로 유지된다. */
+ * 레이어: .device_shell(바디 = 금속 링, --body-* 코너) → ::before(글래스 베젤, 링 안쪽 검은 유리) → .screen_wrap(디스플레이 마스크, --screen-* 코너)
+ * 값은 전부 frameProfiles 데이터에서 CSS 변수로 들어온다. 마감·측면 키·스피커 등 형상 언어는 data-family 로만 분기한다(기기명 분기 없음).
+ * --viewport-width/height : 기기 전체 화면(CSS px). 바디 = 화면 + 베젤 inset(--frame-*). 축소는 transform 이라 iframe 내부 CSS px 는 그대로. */
 .device_shell {
+  --ring: 4px;
+  --ring-finish: linear-gradient(145deg, #4a5160 0%, #1b2029 38%, #0b0e14 62%, #3a4150 100%);
+  --ring-edge: #05070b;
+  --ring-highlight: rgba(255, 255, 255, .22);
+  --glass: #06080b;
   position: absolute;
   left: 0;
   top: 0;
   width: calc(var(--viewport-width) + var(--frame-left, 14px) + var(--frame-right, 14px));
   height: calc(var(--viewport-height) + var(--frame-top, 14px) + var(--frame-bottom, 14px));
   padding: var(--frame-top, 14px) var(--frame-right, 14px) var(--frame-bottom, 14px) var(--frame-left, 14px);
-  background: linear-gradient(145deg, #303745 0%, #090d14 42%, #020409 100%);
-  border: 1px solid #020617;
-  border-radius: var(--frame-radius, 28px);
-  box-shadow: 0 18px 42px var(--shadow-color), inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 0 18px rgba(255, 255, 255, .04);
+  background: var(--ring-finish);
+  border: 1px solid var(--ring-edge);
+  border-radius: var(--body-tl, 28px) var(--body-tr, 28px) var(--body-br, 28px) var(--body-bl, 28px);
+  box-shadow: 0 18px 42px var(--shadow-color), inset 0 0 0 1px var(--ring-highlight);
   transform: scale(var(--preview-scale));
   transform-origin: left top;
   transition: width .24s ease, height .24s ease, padding .24s ease, border-radius .24s ease, transform .24s ease;
 }
-.device_shell[data-frame^="iphone"], .device_shell[data-frame^="duo"] {
-  background: linear-gradient(145deg, #6b7078 0%, #16191f 16%, #05070b 55%, #292d34 100%);
-  border-color: #777c84;
+/* 글래스 베젤: 링 안쪽을 검은 유리로 채워 금속 테와 디스플레이 사이 베젤이 실제 전면 유리처럼 보이게 */
+.device_shell::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: calc(var(--ring) - 1px);
+  background: var(--glass);
+  border-radius: max(0px, calc(var(--body-tl, 28px) - var(--ring))) max(0px, calc(var(--body-tr, 28px) - var(--ring))) max(0px, calc(var(--body-br, 28px) - var(--ring))) max(0px, calc(var(--body-bl, 28px) - var(--ring)));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05);
+  transition: border-radius .24s ease;
 }
-.device_shell[data-frame^="flip8"], .device_shell[data-frame^="fold8"] {
-  background: linear-gradient(145deg, #555b68 0%, #151922 18%, #05070b 58%, #343a46 100%);
-  border-color: #686f7c;
+/* 형상 언어별 마감 (data-family) */
+.device_shell[data-family="iphone-modern"], .device_shell[data-family="duo"] {
+  --ring-finish: linear-gradient(145deg, #a9adb4 0%, #5f646c 22%, #2a2e35 50%, #6f747c 78%, #b3b7be 100%);
+  --ring-edge: #3a3e45;
+  --ring-highlight: rgba(255, 255, 255, .5);
+  --glass: #050608;
+}
+.device_shell[data-family="iphone-classic"] {
+  --ring-finish: linear-gradient(145deg, #d7dadf 0%, #a1a6ad 30%, #6e737b 60%, #c9ccd1 100%);
+  --ring-edge: #5d626a;
+  --ring-highlight: rgba(255, 255, 255, .6);
+  --glass: #0b0d10;
+}
+.device_shell[data-family="galaxy-bar"] {
+  --ring-finish: linear-gradient(145deg, #3f444d 0%, #1a1d23 35%, #0d0f13 65%, #343941 100%);
+  --ring-edge: #1a1d22;
+  --ring-highlight: rgba(255, 255, 255, .18);
+  --glass: #030405;
+}
+.device_shell[data-family="pixel"] {
+  --ring-finish: linear-gradient(145deg, #7a808a 0%, #3a3f47 30%, #1d2127 65%, #6b717a 100%);
+  --ring-edge: #2a2e35;
+  --ring-highlight: rgba(255, 255, 255, .3);
+  --glass: #060708;
+}
+.device_shell[data-family="fold"], .device_shell[data-family="flip"] {
+  --ring-finish: linear-gradient(145deg, #c2c6cc 0%, #7b8189 26%, #3a3f47 56%, #9ea3aa 100%);
+  --ring-edge: #4a4f57;
+  --ring-highlight: rgba(255, 255, 255, .55);
+  --glass: #050608;
+}
+.device_shell[data-family="ipad-classic"] {
+  --ring-finish: linear-gradient(145deg, #cfd3d8 0%, #9ba0a7 30%, #6c7178 70%, #c4c8ce 100%);
+  --ring-edge: #5c6168;
+  --ring-highlight: rgba(255, 255, 255, .55);
+  --glass: #08090c;
+}
+/* 듀얼 패널(display.split): 분리 영역에 바디 마감(힌지) 을 그린다. 위치·폭은 JS 가 넣는 --split-gap 과 베젤 변수로만 계산 */
+.device_shell[data-split]::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  background: var(--ring-finish);
+  box-shadow: inset 1px 0 rgba(255, 255, 255, .28), inset -1px 0 rgba(0, 0, 0, .45);
+}
+.device_shell[data-split="vertical"]::after {
+  top: var(--frame-top, 0px);
+  bottom: var(--frame-bottom, 0px);
+  left: calc(var(--frame-left, 0px) + (var(--viewport-width) - var(--split-gap, 12px)) / 2);
+  width: var(--split-gap, 12px);
+}
+.device_shell[data-split="horizontal"]::after {
+  left: var(--frame-left, 0px);
+  right: var(--frame-right, 0px);
+  top: calc(var(--frame-top, 0px) + (var(--viewport-height) - var(--split-gap, 12px)) / 2);
+  height: var(--split-gap, 12px);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .28), inset 0 -1px rgba(0, 0, 0, .45);
 }
 .frame_detail { pointer-events: none; }
 .frame_detail span { position: absolute; z-index: 8; display: none; pointer-events: none; }
-.frame_speaker { background: #363d48; border-radius: 99px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .16); }
+/* 전면 디테일은 frameProfiles[*].controls → CSS 변수(--home-*, --speaker-*, --camera-*, --sensor-*) 로 그려진다. 세로 기준 값이며 가로는 반시계 회전(상단→왼쪽, 하단→오른쪽) */
+.frame_speaker { background: #2a2f38; border-radius: 99px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .12), 0 0 0 1px rgba(255, 255, 255, .04); }
 .frame_camera {
   background: radial-gradient(circle at 38% 35%, #1b4c70 0 12%, #07111a 30%, #010204 70%);
   border: 1px solid #313844;
   border-radius: 50%;
 }
+.frame_sensor { background: #14181f; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255, 255, 255, .05); }
 .home_button {
+  box-sizing: border-box;
   background: #07090d;
-  border: 2px solid #4b5360;
+  border: var(--home-ring, 3px) solid #4b5360;
   border-radius: 50%;
   box-shadow: inset 0 0 0 2px #111620, 0 0 0 1px rgba(255, 255, 255, .08);
 }
+.device_shell[data-family="iphone-classic"] .home_button, .device_shell[data-family="ipad-classic"] .home_button { border-color: #5b6270; }
+.device_shell[data-home-button="true"] .home_button { display: block; width: var(--home-size); height: var(--home-size); }
+.device_shell[data-home-button="true"][data-orientation="portrait"] .home_button { left: 50%; bottom: var(--home-bottom); transform: translateX(-50%); }
+.device_shell[data-home-button="true"][data-orientation="landscape"] .home_button { top: 50%; right: var(--home-bottom); transform: translateY(-50%); }
+.device_shell[data-speaker="true"] .frame_speaker { display: block; }
+.device_shell[data-speaker="true"][data-orientation="portrait"] .frame_speaker { left: 50%; top: var(--speaker-top); width: var(--speaker-w); height: var(--speaker-h); transform: translate(-50%, -50%); }
+.device_shell[data-speaker="true"][data-orientation="landscape"] .frame_speaker { top: 50%; left: var(--speaker-top); width: var(--speaker-h); height: var(--speaker-w); transform: translate(-50%, -50%); }
+.device_shell[data-camera="true"] .frame_camera { display: block; width: var(--camera-size); height: var(--camera-size); }
+.device_shell[data-camera="true"][data-orientation="portrait"] .frame_camera { left: calc(50% + var(--camera-x, 0px)); top: var(--camera-top); transform: translate(-50%, -50%); }
+.device_shell[data-camera="true"][data-orientation="landscape"] .frame_camera { top: calc(50% - var(--camera-x, 0px)); left: var(--camera-top); transform: translate(-50%, -50%); }
+.device_shell[data-sensor="true"] .frame_sensor { display: block; width: var(--sensor-size); height: var(--sensor-size); }
+.device_shell[data-sensor="true"][data-orientation="portrait"] .frame_sensor { left: 50%; top: var(--sensor-top); transform: translate(-50%, -50%); }
+.device_shell[data-sensor="true"][data-orientation="landscape"] .frame_sensor { top: 50%; left: var(--sensor-top); transform: translate(-50%, -50%); }
 .side_key {
   background: linear-gradient(#59606c, #1d222b);
   border: 1px solid #05070b;
   border-radius: 3px;
   box-shadow: inset 1px 0 rgba(255, 255, 255, .18);
 }
-.device_shell:not([data-frame="neutral"]):not([data-frame="tablet"]) .side_key { display: block; }
+.device_shell[data-family="iphone-modern"] .side_key, .device_shell[data-family="iphone-classic"] .side_key, .device_shell[data-family="duo"] .side_key { background: linear-gradient(#b4b8bf, #6a6f77); border-color: #3f444b; }
+.device_shell[data-family="fold"] .side_key, .device_shell[data-family="flip"] .side_key { background: linear-gradient(#c6cad0, #7f858c); border-color: #4a4f57; }
+.device_shell:not([data-family="neutral"]):not([data-family="ipad-classic"]) .side_key { display: block; }
 .device_shell[data-orientation="portrait"] .key_volume { left: -4px; top: 20%; width: 4px; height: 82px; }
 .device_shell[data-orientation="portrait"] .key_power { right: -4px; top: 26%; width: 4px; height: 68px; }
 .device_shell[data-orientation="landscape"] .key_volume { left: 20%; top: -4px; width: 82px; height: 4px; }
 .device_shell[data-orientation="landscape"] .key_power { right: 26%; bottom: -4px; width: 68px; height: 4px; }
-.device_shell[data-frame="neutral"] .frame_speaker, .device_shell[data-frame="tablet"] .frame_speaker {
-  left: 50%;
-  top: 5px;
-  width: 30px;
-  height: 3px;
+/* 힌지 커버(.hinge_body): frameProfiles[*].hingeBody. 바디(.device_shell)·디스플레이(.screen_wrap)·접힘선(.hinge_line) 과 별개 레이어.
+ * spine = 접힌 북타입에서 셸(패널) 바깥 힌지 쪽에 보이는 스파인. 폭·상하 안쪽 여백·코너는 JS 가 --hinge-body-* 로 넣고, 방향(side) 은 data-hinge-body-side.
+ *         셸 border(1px) 바깥에 딱 붙여 그리며 셸 테두리가 스파인과 패널 사이 홈이 된다. mount 폭·셸 위치는 app.js updateScale 이 보정.
+ * seam  = 펼침 상태에서 접힘선 양끝 금속 테에 보이는 접합선(::before/::after). 위치는 접힘선과 같은 --hinge-position. */
+/* 스파인이 있는 변에는 측면 키를 그리지 않는다(힌지 커버 위에 키가 있을 수 없음). 세로: 왼쪽 = 볼륨 · 가로: 아래 = 전원 */
+.device_shell[data-hinge-body-side="left"] .key_volume, .device_shell[data-hinge-body-side="top"] .key_volume,
+.device_shell[data-hinge-body-side="right"] .key_power, .device_shell[data-hinge-body-side="bottom"] .key_power { display: none; }
+.device_shell[data-hinge-body="spine"] .hinge_body {
   display: block;
+  z-index: 0;
+  background: linear-gradient(90deg, #8f939a, #babdc3 40%, #a3a7ae 70%, #8a8e95);   /* 마이크로 블라스트 무광 마감(폴리시 링과 대비) */
+  box-shadow: inset 0 1px rgba(255, 255, 255, .35), inset 0 -1px rgba(0, 0, 0, .35);
+}
+.device_shell[data-hinge-body="spine"][data-hinge-body-side="left"] .hinge_body {
+  left: calc(-1px - var(--hinge-body-w));
+  top: calc(var(--hinge-body-inset) - 1px);
+  bottom: calc(var(--hinge-body-inset) - 1px);
+  width: var(--hinge-body-w);
+  border-radius: var(--hinge-body-r) 0 0 var(--hinge-body-r);
+  box-shadow: inset 1px 0 rgba(255, 255, 255, .4), inset -1px 0 rgba(0, 0, 0, .45);
+}
+.device_shell[data-hinge-body="spine"][data-hinge-body-side="right"] .hinge_body {
+  right: calc(-1px - var(--hinge-body-w));
+  top: calc(var(--hinge-body-inset) - 1px);
+  bottom: calc(var(--hinge-body-inset) - 1px);
+  width: var(--hinge-body-w);
+  border-radius: 0 var(--hinge-body-r) var(--hinge-body-r) 0;
+  box-shadow: inset -1px 0 rgba(255, 255, 255, .4), inset 1px 0 rgba(0, 0, 0, .45);
+}
+.device_shell[data-hinge-body="spine"][data-hinge-body-side="bottom"] .hinge_body {
+  bottom: calc(-1px - var(--hinge-body-w));
+  left: calc(var(--hinge-body-inset) - 1px);
+  right: calc(var(--hinge-body-inset) - 1px);
+  height: var(--hinge-body-w);
+  background: linear-gradient(180deg, #8f939a, #babdc3 40%, #a3a7ae 70%, #8a8e95);
+  border-radius: 0 0 var(--hinge-body-r) var(--hinge-body-r);
+  box-shadow: inset 0 -1px rgba(255, 255, 255, .4), inset 0 1px rgba(0, 0, 0, .45);
+}
+.device_shell[data-hinge-body="spine"][data-hinge-body-side="top"] .hinge_body {
+  top: calc(-1px - var(--hinge-body-w));
+  left: calc(var(--hinge-body-inset) - 1px);
+  right: calc(var(--hinge-body-inset) - 1px);
+  height: var(--hinge-body-w);
+  background: linear-gradient(180deg, #8a8e95, #a3a7ae 30%, #babdc3 60%, #8f939a);
+  border-radius: var(--hinge-body-r) var(--hinge-body-r) 0 0;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .4), inset 0 -1px rgba(0, 0, 0, .45);
+}
+.device_shell[data-hinge-body="seam"] .hinge_body {
+  display: block;
+  left: var(--frame-left, 0px);              /* .screen_wrap 과 같은 x 기준 → --hinge-position(%) 이 접힘선과 일치 */
+  top: -1px;
+  width: var(--viewport-width);
+  height: calc(var(--viewport-height) + var(--frame-top, 0px) + var(--frame-bottom, 0px));
+  background: none;
+}
+.device_shell[data-hinge-body="seam"] .hinge_body::before, .device_shell[data-hinge-body="seam"] .hinge_body::after {
+  content: "";
+  position: absolute;
+  display: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, .55), rgba(255, 255, 255, .25), rgba(0, 0, 0, .55));
+}
+.device_shell[data-hinge-body="seam"][data-hinge="vertical"] .hinge_body::before, .device_shell[data-hinge-body="seam"][data-hinge="vertical"] .hinge_body::after {
+  display: block;
+  left: var(--hinge-position, 50%);
+  width: var(--hinge-seam, 3px);
+  height: var(--ring);
   transform: translateX(-50%);
 }
-.device_shell[data-frame="tablet"][data-orientation="landscape"] .frame_speaker { left: 5px; top: 50%; width: 3px; height: 30px; transform: translateY(-50%); }
-.device_shell[data-frame="iphone-se"][data-orientation="portrait"] .frame_speaker { left: 50%; top: 29px; width: 46px; height: 5px; display: block; transform: translateX(-50%); }
-.device_shell[data-frame="iphone-se"][data-orientation="portrait"] .frame_camera { left: calc(50% - 47px); top: 27px; width: 9px; height: 9px; display: block; }
-.device_shell[data-frame="iphone-se"][data-orientation="portrait"] .home_button { left: 50%; bottom: 13px; width: 38px; height: 38px; display: block; transform: translateX(-50%); }
-.device_shell[data-frame="iphone-se"][data-orientation="landscape"] .frame_speaker { left: 29px; top: 50%; width: 5px; height: 46px; display: block; transform: translateY(-50%); }
-.device_shell[data-frame="iphone-se"][data-orientation="landscape"] .frame_camera { left: 27px; top: calc(50% - 47px); width: 9px; height: 9px; display: block; }
-.device_shell[data-frame="iphone-se"][data-orientation="landscape"] .home_button { right: 13px; top: 50%; width: 38px; height: 38px; display: block; transform: translateY(-50%); }
+.device_shell[data-hinge-body="seam"][data-hinge="vertical"] .hinge_body::before { top: 0; }
+.device_shell[data-hinge-body="seam"][data-hinge="vertical"] .hinge_body::after { bottom: 0; }
+.device_shell[data-hinge-body="seam"][data-hinge="horizontal"] .hinge_body {
+  left: -1px;
+  top: var(--frame-top, 0px);
+  width: calc(var(--viewport-width) + var(--frame-left, 0px) + var(--frame-right, 0px));
+  height: var(--viewport-height);
+}
+.device_shell[data-hinge-body="seam"][data-hinge="horizontal"] .hinge_body::before, .device_shell[data-hinge-body="seam"][data-hinge="horizontal"] .hinge_body::after {
+  display: block;
+  top: var(--hinge-position, 50%);
+  width: var(--ring);
+  height: var(--hinge-seam, 3px);
+  transform: translateY(-50%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, .55), rgba(255, 255, 255, .25), rgba(0, 0, 0, .55));
+}
+.device_shell[data-hinge-body="seam"][data-hinge="horizontal"] .hinge_body::before { left: 0; }
+.device_shell[data-hinge-body="seam"][data-hinge="horizontal"] .hinge_body::after { right: 0; }
 
 /* ---------- 7. 화면·브라우저 UI 밴드 ----------
  * 6행: 상태바 / 상단 URL / 사이트 / 하단 URL / 툴바 / 홈 인디케이터
@@ -628,6 +784,7 @@ svg {
  * 행·열 높이는 app.js 가 CSS 변수로 지정한다. */
 .screen_wrap {
   position: relative;
+  z-index: 1;                               /* 글래스 베젤(::before) 위 */
   width: var(--viewport-width);
   height: var(--viewport-height);
   display: grid;
@@ -635,8 +792,8 @@ svg {
   grid-template-columns: var(--side-left, 0px) minmax(0, 1fr) var(--side-right, 0px);
   overflow: hidden;
   background: #fff;
-  border-radius: var(--screen-radius, 16px);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, .08);
+  border-radius: var(--screen-tl, 16px) var(--screen-tr, 16px) var(--screen-br, 16px) var(--screen-bl, 16px);   /* 디스플레이 마스크: 상태바·브라우저 UI·iframe 모두 이 안에서 clipping. 듀얼 패널은 JS 가 clip-path(path) 를 덧씌움 */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .06);
   transition: width .24s ease, height .24s ease, border-radius .24s ease;
 }
 .screen_wrap[data-platform="android"] { background: #000; }   /* Android 가로 letterbox */
@@ -769,6 +926,97 @@ svg {
 .screen_wrap[data-ui-mode="overlay"][data-url-position="bottom"] .band_url { bottom: calc(var(--home-row, 0px) + var(--toolbar-height, 0px)); height: var(--url-height, 0px); }
 .screen_wrap[data-ui-mode="overlay"] .band_toolbar { bottom: var(--home-row, 0px); height: var(--toolbar-height, 0px); }
 
+/* ---------- 7b. iPhone Duo(iOS 27) 코너 상태 클러스터 · 세로 Dynamic Island · 측면 컨트롤 ----------
+ * 레이어: 디스플레이(.screen_wrap) → OS 상태 UI(.status_cluster, .dynamic_island) → 브라우저 UI(.side_controls) → 사이트(iframe).
+ * 하드웨어 컷아웃(.screen_cutout, z 7) 은 별개 레이어라 카메라 렌즈가 아일랜드 필 위에 그대로 보인다.
+ * 값은 전부 app.js 가 CSS 변수(--cluster-*, --island-*, --side-*) 로 넣고, 붙는 가장자리는 data-cluster-edge / data-side-edge(카메라 쪽) 로 정한다.
+ * 색: 공식 이미지는 콘텐츠에 따라 흰/검이 바뀌므로(적응형) 여기서는 진한 글자 + 옅은 흰 테두리 그림자로 가독성만 확보한다(approximation). */
+.status_cluster {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  height: 100%;
+  width: var(--cluster-ring-size, 40px);
+  pointer-events: none;
+  color: #0f172a;
+  font-family: -apple-system, "SF Pro Text", Roboto, Arial, sans-serif;
+  font-weight: 600;
+}
+.status_cluster[hidden] { display: none; }
+.screen_wrap[data-cluster-edge="right"] .status_cluster { right: calc(var(--cluster-axis, 48px) - var(--cluster-ring-size, 40px) / 2); }
+.screen_wrap[data-cluster-edge="left"] .status_cluster { left: calc(var(--cluster-axis, 48px) - var(--cluster-ring-size, 40px) / 2); }
+.cluster_time {
+  position: absolute;
+  left: 50%;
+  top: var(--cluster-time-y, 92px);
+  transform: translate(-50%, -50%);
+  font-size: var(--cluster-time-size, 16px);
+  line-height: 1;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 2px rgba(255, 255, 255, .85);
+}
+.cluster_ring {
+  position: absolute;
+  left: 0;
+  top: calc(var(--cluster-ring-y, 129px) - var(--cluster-ring-size, 40px) / 2);
+  width: var(--cluster-ring-size, 40px);
+  height: var(--cluster-ring-size, 40px);
+  overflow: visible;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, .9));
+}
+.cluster_ring .ring_arc { fill: none; stroke: currentColor; stroke-linecap: round; }
+.cluster_ring .ring_wifi path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.cluster_ring .ring_dots circle { fill: currentColor; stroke: none; }
+.cluster_ring .is_hidden { display: none; }
+/* 세로 Dynamic Island(Live Activity 확장 상태). 정지 상태는 카메라 원(컷아웃) 만 보이므로 app.js 가 hidden 처리 */
+.dynamic_island {
+  position: absolute;
+  z-index: 6;
+  top: var(--island-top, 26px);
+  width: var(--island-w, 38px);
+  height: var(--island-h, 62px);
+  background: #020305;
+  border-radius: 99px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .05);
+  pointer-events: none;
+}
+.dynamic_island[hidden] { display: none; }
+.screen_wrap[data-cluster-edge="right"] .dynamic_island { right: calc(var(--cluster-axis, 48px) - var(--island-w, 38px) / 2); }
+.screen_wrap[data-cluster-edge="left"] .dynamic_island { left: calc(var(--cluster-axis, 48px) - var(--island-w, 38px) / 2); }
+.island_lens { display: none; }
+/* 측면 컨트롤 열(브라우저 UI): 위 그룹(원형 + 캡슐) 은 클러스터 아래(--side-top) 에서 시작, 아래 캡슐은 하단 여백(--side-bottom) 에 붙는다.
+ * 마감은 공식 이미지의 반투명 유리 캡슐을 따른 근사(approximation) */
+.side_controls {
+  position: absolute;
+  z-index: 5;
+  top: var(--side-top, 171px);
+  bottom: var(--side-bottom, 21px);
+  width: var(--side-capsule, 44px);
+  pointer-events: none;
+  color: #1c2430;
+}
+.side_controls[hidden] { display: none; }
+.screen_wrap[data-side-edge="right"] .side_controls { right: calc(var(--side-axis, 48px) - var(--side-capsule, 44px) / 2); }
+.screen_wrap[data-side-edge="left"] .side_controls { left: calc(var(--side-axis, 48px) - var(--side-capsule, 44px) / 2); }
+.side_group { display: flex; flex-direction: column; align-items: center; }
+.side_group[hidden] { display: none; }
+.side_group + .side_group:not(.is_bottom) { margin-top: var(--side-gap, 13px); }
+.side_group.is_bottom { position: absolute; left: 0; bottom: 0; }
+.side_circle, .side_capsule {
+  background: rgba(255, 255, 255, .74);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .2), inset 0 0 0 1px rgba(255, 255, 255, .7);
+  backdrop-filter: blur(12px) saturate(1.2);
+}
+.side_circle { width: var(--side-circle, 44px); height: var(--side-circle, 44px); border-radius: 50%; }
+.side_capsule { width: var(--side-capsule, 44px); border-radius: 99px; }
+.side_circle, .side_capsule > span { display: flex; align-items: center; justify-content: center; }
+.side_capsule > span { width: var(--side-capsule, 44px); height: var(--side-pitch, 47px); }
+.side_circle[hidden], .side_capsule > span[hidden] { display: none; }
+.side_controls svg { width: 22px; height: 22px; }
+.side_controls .icon_dot { fill: currentColor; stroke: none; }
+
 /* ---------- 8. 컷아웃·힌지·safe-area 가이드 ----------
  * 컷아웃 위치·크기는 frameProfiles.cutout 을 바탕으로 app.js 가 px 로 계산한다. */
 .screen_cutout {
@@ -876,6 +1124,14 @@ svg {
   display: block;
   transform: translateY(-50%);
   background: linear-gradient(180deg, rgba(15, 23, 42, .36), rgba(255, 255, 255, .13), rgba(15, 23, 42, .36));
+}
+/* iPhone Duo 접힘선: Apple 공식 이미지에서는 검출되지 않는 수준(나노 텍스처) → 위치만 알 수 있는 희미한 선. 힌지 커버는 .hinge_body(별개 레이어) */
+.device_shell[data-family="duo"] .hinge_line {
+  background: linear-gradient(90deg, rgba(15, 23, 42, .1), rgba(255, 255, 255, .06), rgba(15, 23, 42, .1));
+  box-shadow: none;
+}
+.device_shell[data-family="duo"][data-hinge="horizontal"] .hinge_line {
+  background: linear-gradient(180deg, rgba(15, 23, 42, .1), rgba(255, 255, 255, .06), rgba(15, 23, 42, .1));
 }
 /* 듀얼스크린(물리 간격이 있는 힌지)용. 현재 프리셋에는 없지만 state.hinge:'gap-vertical' 로 사용 가능 */
 .device_shell[data-hinge="gap-vertical"] .hinge_line {
