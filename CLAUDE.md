@@ -28,7 +28,8 @@
 ## 코드 구조 (확정)
 
 ### 데이터 (app.js 상단)
-- `frameProfiles` — 기기 프레임(하드웨어) 프로필. 키: `family`, 베젤 `top/right/bottom/left`, `ring`(금속 테 두께, 나머지 베젤은 검은 글래스), `radius`(바디 코너), `screenRadius`(디스플레이 코너), `cutout{type,width,height,top,align,offset}`, `safeArea` / `safeAreaLandscape`, `homeIndicator`, `homeIndicatorWidth`, `controls{homeButton,speaker,camera,sensor}`, `display.split`(듀얼스크린 전용, 현재 미사용), `hingeBody`(힌지 커버: `{type:'spine',side,width,inset,radius}` | `{type:'seam',size}`), `statusBar`(상태바 프로필 오버라이드), **`source`**(근거 메타데이터).
+- `frameProfiles` — 기기 프레임(하드웨어) 프로필. 키: `family`, 베젤 `top/right/bottom/left`, `ring`(금속 테 두께, 나머지 베젤은 검은 글래스), `radius`(바디 코너), `screenRadius`(디스플레이 코너), `cutout{type,width,height,top|bottom,align,offset}`(세로 위치는 `top` 또는 `bottom` = 아래 가장자리 거리; `dual-hole` 은 `lens/ring/lensGap/flash/flashGap` 으로 [플래시][렌즈][렌즈] 상자 크기가 정해짐), `display.mask:'holes'`(디스플레이 마스크에서 dual-hole 의 렌즈·플래시 원을 뺌), `safeArea` / `safeAreaLandscape`, `homeIndicator`, `homeIndicatorWidth`, `homeIndicatorCenter`(세로 기준 중심 x, 하단 컷아웃 옆에 놓일 때만), `controls{homeButton,speaker,camera,sensor}`, `display.split`(듀얼스크린 전용, 현재 미사용), `hingeBody`(힌지 커버: `{type:'spine',side,width,inset,radius}` | `{type:'seam',size}`), `statusBar`(상태바 프로필 오버라이드), **`source`**(근거 메타데이터).
+  - 컷아웃 기하는 `getCutoutGeometry(view,profile,landscape)` 한 곳에서 계산한다(상자 + dual-hole 원 목록, 가로는 (x,y)→(y,W−x) 반시계 회전). 디스플레이 마스크 홀(`updateShape`)·하드웨어 렌즈 위치(`updateCutout` → `--lens-*/--flash-*`)·상태바 패딩(`updateStatusBar`) 이 모두 이 결과를 쓴다.
   - radius 값은 `숫자(px)` | `{ratio}`(짧은 변 대비) | `{tl,tr,br,bl}`(코너별) 모두 가능. `resolveCorners()` 가 px 로 풀고, 가로 모드는 반시계 규칙으로 회전(새 tl = 이전 tr, tr = 이전 br, br = 이전 bl, bl = 이전 tl).
   - `family` 값: `iphone-modern | iphone-classic | galaxy-bar | pixel | fold | flip | duo | ipad-classic | neutral`. CSS 는 `data-family` 로만 마감(링 색·글래스 색·측면 키)을 분기한다.
 - `statusBarProfiles` — OS 상태바(`ios | android | generic | duo`): 시간 문자열, 아이콘 순서, `cellularStyle: bars|wedge|dots`, 배터리 잔량, 좌우 padding. 프레임 `platform` 으로 고르고 `frameProfiles[*].statusBar` 로 덮어씀(예: SE·iPad `compact`, Duo `platform:'duo'` + 클러스터 값). `duo` 는 `layout:'corner'`(코너 클러스터, 가로 밴드 0) 이며 `axis / timeCenter / ringCenter / ring{size,stroke,arcGap,wifiWidth,dotSize,dotAngles} / timeSize / island{state,width,height,top,shift}` 를 갖는다.
@@ -61,12 +62,12 @@ device body      .device_shell            바디 = 금속 링(--ring-finish), --
 → hinge body     .hinge_body (.frame_detail 안)   힌지 커버: spine(셸 바깥 힌지 쪽) / seam(접힘선 양끝 테두리). 바디·디스플레이·접힘선과 별개
 → Duo OS status UI .status_cluster / .dynamic_island   iPhone Duo(iOS 27) 코너 상태 클러스터 · 세로 Dynamic Island(Live Activity). 가로 상태바 밴드 대신 사용, 컷아웃과 별개
 → Duo browser UI .side_controls                  측면 컨트롤 열(뒤로 원형 + 캡슐 / 하단 캡슐). 가로 URL·툴바 밴드 대신 사용
-→ hardware cutout .screen_cutout / .hinge_line / .frame_detail   노치·아일랜드·펀치홀·접힘선·홈 버튼·스피커·카메라
+→ hardware cutout .screen_cutout (셸 직계 자식, 디스플레이 마스크 바깥) / .hinge_line / .frame_detail   노치·아일랜드·펀치홀·듀얼 렌즈+플래시·접힘선·홈 버튼·스피커·카메라
 → browser UI     .band_url / .band_toolbar / .band_home          browserProfiles
 → webpage viewport .site_view > iframe
 ```
 - 하나의 radius 나 하나의 wrapper 로 뭉뚱그리지 않는다. iframe 에 radius 를 주지 않는다(마스크는 `.screen_wrap`).
-- 컷아웃은 상태바·브라우저 UI 와 다른 레이어. 좌/우 정렬 컷아웃(Fold 펼침 우상단 카메라 등)은 상태바 아이콘이 `--status-pad-*` 로 비켜난다.
+- 컷아웃은 상태바·브라우저 UI 와 다른 레이어. `.screen_cutout` 은 `.screen_wrap`(마스크) 바깥의 `.device_shell` 직계 자식이며 CSS 가 `--frame-left/top` 을 더해 화면 좌표에 놓는다 → 마스크에 홀(`display.mask:'holes'`)이 있어도 렌즈는 그 위에 그려진다. 좌/우 정렬 컷아웃(Fold 펼침 우상단 카메라 등)은 상태바 아이콘이 `--status-pad-*` 로 비켜난다. 세로 하단 컷아웃(`cutout.bottom`, Flip8 커버)은 세로에서 상태바에 영향이 없고, 가로에서는 우상단으로 오므로 `--status-pad-right` 와 URL 밴드 `--band-pad-right` 가 카메라 열을 비켜난다.
 - 전면 디테일(홈 버튼·스피커·카메라·센서)은 `frameProfiles[*].controls` → CSS 변수(`--home-*, --speaker-*, --camera-*, --sensor-*`)로 그린다. 가로 모드는 상단→왼쪽, 하단→오른쪽(반시계).
 - 화면 크기 = `--viewport-width/height`(기기 전체 CSS 화면), 실제 웹 뷰포트는 `getSiteViewport()` 결과(밴드를 뺀 값). 축소는 `transform: scale` 이라 iframe 내부 CSS px 는 보존된다.
 
@@ -83,11 +84,12 @@ device body      .device_shell            바디 = 금속 링(--ring-finish), --
 - **기기 외형 수치를 임의로 만들지 않는다.** 공식 제조사 자료(해상도, 바디 mm, iOS safe-area)를 최우선으로 사용한다.
 - 값의 근거를 `frameProfiles[*].source` 에 항목별로 표기한다: `official`(제조사 공개 수치) · `verified`(외부 자료로 확인) · `derived`(공개 수치에서 환산) · `photo-measured`(공식/신뢰 렌더 실측, 파일명·비율 기록) · `approximation`(근거 없음).
 - `approximation` 값을 실제 공식 수치처럼 표현하지 않는다. "실제 pt 값 기준" 같은 표현은 근거가 확인된 값에만 쓴다.
+- **해상도 표기 규칙**(Flip8 커버·펼침 적용, 2026-09-21): 세 값을 같은 의미로 혼용하지 않는다. `nativePhysicalResolution` = 제조사 공식 표기값 그대로(official, 예: 1048×948 / 2520×1080) · `renderedPhysicalResolution` = 프로그램의 세로 방향 기준 width×height 로 정규화한 값(derived-orientation, state 의 `physicalWidth/Height`) · `cssViewport` = DPR 가정을 적용한 파생값(derived). 같은 제조사라도 지역 페이지마다 인쇄 순서가 다를 수 있으니 출처를 함께 적는다.
 - 환산 규칙: `px/mm = CSS 폭 ÷ 디스플레이 활성영역 폭(mm)`, 활성영역은 대각선·해상도 비율에서 계산, `베젤 = (바디 − 활성영역) ÷ 2`. 렌더가 없을 때 바디 코너는 `화면 코너 + 베젤`(동심 가정, derived)로 유도한다.
 - iOS 디스플레이 코너(47.33 / 55 / 62pt 등)는 커뮤니티 측정 `_displayCornerRadius` 값이며 Apple 공식이 아니다 → `derived/reference` 로 표기. Dynamic Island 126×37pt @11 도 커뮤니티 측정.
 - Android 상태바 높이는 "컷아웃을 감싸는 높이(컷아웃 하단 + 여백)" 논리로 유도한 derived 값이다.
 - **자동 테스트 통과와 실기기 외형 정확도 검증은 별개**다. 외형을 바꾸면 반드시 실기기/레퍼런스 렌더와 프리뷰를 비교한다(종횡비, 외곽·화면 곡률, 베젤, 컷아웃, 홈 버튼, 힌지, 상태바 위치).
-- 렌더 실측 파이프라인: 스크래치패드의 `measure-run.js` + `measure-page.js`(헤드리스 Edge canvas 픽셀·기하 분석). SVG 벡터 렌더는 rect/circle 좌표를 직접 읽는 편이 정확하다. 실측에 쓴 파일: Commons `IPhone SE (2nd generation) white vector.svg`, `IPhone 12 Blue.svg`, `Galaxy S25 Black (front).png`(7.0px/mm), `Google Pixel 9 (Obsidian) front.svg`(정확히 10px/mm).
+- 렌더 실측 파이프라인: 스크래치패드의 `measure-run.js` + `measure-page.js`(헤드리스 Edge canvas 픽셀·기하 분석). SVG 벡터 렌더는 rect/circle 좌표를 직접 읽는 편이 정확하다. 실측에 쓴 파일: Commons `IPhone SE (2nd generation) white vector.svg`, `IPhone 12 Blue.svg`, `Galaxy S25 Black (front).png`(7.0px/mm), `Google Pixel 9 (Obsidian) front.svg`(정확히 10px/mm), samsung.com `galaxy-z-flip8-features-colors-design.jpg`(5.93px/mm, Flip8 접힘 정면), Samsung Newsroom `...Launch_dl3F.jpg`(3.6px/mm, Flip8 펼침 상단부).
 
 ## 브라우저 UI 규칙
 
@@ -121,7 +123,15 @@ device body      .device_shell            바디 = 금속 링(--ring-finish), --
 - Galaxy S25 프리셋(`mobile-360`, 360×780 official)과 "Android 20:9 범용"(`android-generic-360`, 360×800, neutral, 실기기 아님) 분리. S25 베젤 12/11(derived), 코너 36/24, 펀치홀 19@17(photo).
 - Pixel 9/10: 베젤 22, 코너 64/54, 펀치홀 30@18(photo, 10px/mm 벡터), 상태바 52(derived).
 - iPad 9.7(`tablet-768`/`tablet-1024`, `ipad-home`, family `ipad-classic`): 베젤 좌우 56 / 상하 112(derived), 홈 버튼 57(approximation), 화면 코너 0, 상태바 20, 홈 인디케이터 없음, 기본 브라우저 Safari(iPad). 홈 인디케이터형 iPad 는 추후 별도 프리셋.
-- Fold8 / Flip8: 베젤은 공식 mm 로 환산(derived). 코너·컷아웃(우상단 카메라, FlexWindow 듀얼 카메라)·하단 제스처 바 24 는 `approximation` — 공식 정면 렌더 확보 시 재측정 대상. Flip8 FlexWindow 의 폴더형(카메라를 감싸는) 마스크는 미구현.
+- Fold8: 베젤은 공식 mm 로 환산(derived). 코너·컷아웃(우상단 카메라)·하단 제스처 바 24 는 `approximation` — 공식 정면 렌더 확보 시 재측정 대상.
+- **Galaxy Z Flip8 커버(2026-09-21 보정, `flip8-cover`)**: 공식 사양(Samsung Global Newsroom 2026-07-22 보도자료) 커버 4.1" 342ppi("full rectangular form" 기준, 실제 가시 영역은 코너·카메라 홀만큼 작음) · 접힘 **75.4×85.7×13.1mm** · 펼침 75.4×166.9×6.1mm · 메인 1080×2520 400ppi. **해상도 표기는 세 층위로 구분**(아래 "해상도 표기 규칙"): `nativePhysicalResolution` **1048×948 official**(한국 뉴스룸·samsung.com/sec 표기; 글로벌 영문 뉴스룸 사양표는 948 x 1048 순서로 인쇄) · 대각선 104.8mm official → `renderedPhysicalResolution` **948×1048 derived-orientation**(프로그램이 세로 기준 width×height 로 정규화한 값, official 원문값 아님; state 의 `physicalWidth/Height`) → `cssViewport` **316×349 derived**(÷DPR 3 가정, Samsung 은 CSS 폭·DPR 미공개). 활성영역은 ppi 기준 70.4×77.8mm(4.1" 기준 69.9×77.2 보다 정확) → 4.49px/mm.
+  - 렌더 실측(photo-measured): samsung.com `galaxy-z-flip8-features-colors-design.jpg`(2048×1232, 접힘 정면, 5.93px/mm; 화면 418×461px 비율 1.103 = 공식 1.1055 와 0.2% 내 일치). 스크래치패드 `renders/samsung/`, 분석은 `measure-page.js` 의 `flipCover / arcFit / cornerRadius(cls notdark·pink)`.
+  - **구조**: 힌지가 **위**(스파인 12, 양옆 6 안쪽, 끝 r 5 · `hingeBody spine top`), 카메라 2개 **가로 배치 우하단** + 플래시는 카메라 **왼쪽**, 디스플레이가 렌즈 주위를 감싼다(렌즈·플래시 = 화면 안의 홀). 코너: 힌지 쪽 위는 거의 각짐(바디 2 · 화면 2), 아래는 바디 31(7.0mm, 원 맞춤 rms 0.28) · 화면 21(4.7mm). 베젤 상 13 / 좌우 11 / 하 10, ring 6(프레임 1.35mm + 검은 유리 1.15mm).
+  - 카메라: 렌즈 외경 59(13.2mm) · 링 4 · 렌즈 간격 5 · 중심 간격 64 · 우측 렌즈 중심이 화면 우측·하단에서 각 40 · 플래시 18(테 포함 4.0mm), 좌측 렌즈 중심에서 50 왼쪽 → `cutout:{type:'dual-hole',align:'right',offset:10,bottom:10,lens:59,ring:4,lensGap:5,flash:18,flashGap:12}`. First Look 사진(dl8) 의 렌즈 간격/지름 비 0.08 과 일치.
+  - **디스플레이 마스크** = 코너별 둥근 사각형 − 렌즈 2 + 플래시 홀(`display.mask:'holes'`, clip-path nonzero 반시계 서브패스). "둥근 사각형 + 카메라 오버레이" 방식이 아니라 실제 가시 영역이며, 하드웨어(`.screen_cutout`) 는 마스크 밖 별개 레이어.
+  - **UI**: 뉴스룸 First Look `dl9.jpg`(Samsung Health 커버 앱 사진) 기준 — 상단 상태바 없음(verified → safeArea.top 0), 앱 콘텐츠는 카메라 위에서 끝나고 하단 밴드의 내비게이션 바가 카메라 **왼쪽**에 놓임 → `safeArea.bottom 72`(렌즈 상단까지 69.5 + 여백, derived; Android 상태바의 "컷아웃을 감싸는 높이" 논리와 동일) · 홈 인디케이터 중심 76 / 폭 72 는 approximation(사진은 3버튼 내비). 가로: 카메라 열이 우상단 → `safeAreaLandscape {top:24,right:72,bottom:16,left:0}`(24/16 은 다른 Android 프로필 준용 approximation), 상태바 아이콘·URL 밴드가 `--status-pad-right/--band-pad-right` 로 비켜남.
+  - 남은 approximation: 측면 키 위치(사진상 접힘 우측 변 상단부에 볼륨·전원, 왼쪽 변에는 키 없음 — 현재 CSS 는 family 공통 좌 볼륨/우 전원), 커버 브라우저 밴드 높이(Chrome 56 준용), 제스처 바 표시 여부.
+- Flip8 펼침(`flip8-open`, 2026-09-21): 해상도 세 층위 — `nativePhysicalResolution` **2520×1080 official**(한국 뉴스룸·samsung.com/sec; 글로벌 영문 뉴스룸은 1080 x 2520 순서) · 대각선 174.1mm official → `renderedPhysicalResolution` **1080×2520 derived-orientation** → `cssViewport` **360×840 derived**(DPR 3 가정). 활성영역을 대각선 174.1mm(=400ppi) 기준 68.6×160.0mm 로 → 베젤 18/18(derived), 바디 코너 40. 펀치홀은 뉴스룸 `Launch_dl3F.jpg`(1440×960, 3.6px/mm 저해상도) 실측 지름 19 · 중심 화면 상단 20(top 10, ±0.3mm) → 상태바 32(derived). 화면 코너 22 는 S25 준용 approximation 유지(전체 정면 고해상도 렌더 미확보). Flex 는 펼침 준용.
 - iPhone Duo(2026-09-09 발표, 북 타입): **단일 7.6" 폴딩 내부 화면 + 세로 접힘선** 구조. 외부 1398×2034 · 내부 2670×1878 · 바디 mm · 표준 사각형 대각선 5.36"/7.58" 모두 Apple specs **official**(2026-09-18 확인).
   - 2026-09-18 보정: Apple 뉴스룸 보도자료 원본 `Apple-iPhone-Duo-display-sizes-260909.jpg`(3840×2160, 9.48px/mm — 화면 종횡비가 공식값과 0.1% 내 일치) 로 **body / display / hinge / crease 를 분리 실측**. 스크래치패드 `renders/duo-zip/` 에 원본, `measure-page.js` 의 `cornerRadius/edges/screenEdges/crop` 로 측정.
   - 접힘(`duo-outer`, 6.04px/mm): 패널 베젤 상하 17 / 좌우 15(derived) + 힌지 쪽 **스파인 12(hingeBody spine, 상하 7 안쪽, r 8, photo)**. 바디 코너 `{tl:5,tr:75,br:75,bl:5}`, 화면 코너 `{tl:8,tr:60,br:60,bl:8}`(photo — 힌지 쪽이 거의 각진 비대칭). 외부 카메라 **우상단** Ø36 @ top 30 / right 30(photo). ring 4(photo 0.5~1.0mm).

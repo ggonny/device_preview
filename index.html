@@ -251,9 +251,6 @@
         <div class="ui_band band_home" aria-hidden="true">
           <span class="home_indicator"></span>
         </div>
-        <span class="screen_cutout" aria-hidden="true">
-          <i class="cutout_lens"></i><i class="cutout_lens"></i><i class="cutout_flash"></i>
-        </span>
         <span class="hinge_line" aria-hidden="true"></span>
         <!-- iPhone Duo(iOS 27) 코너 상태 클러스터(OS UI 레이어): 가로 상태바 밴드 대신 statusBarProfiles.duo(layout:'corner') 가 쓴다.
              시간 → 링(아래가 트인 호 + 안쪽 Wi-Fi) → 호 틈의 셀룰러 점. 링 SVG 기하는 app.js updateStatusCluster() 가 프로필 값으로 만든다 -->
@@ -293,6 +290,11 @@
           <span class="guide_left"></span>
         </div>
       </div>
+      <!-- 하드웨어 컷아웃(노치·아일랜드·펀치홀·듀얼 렌즈+플래시): 디스플레이 마스크(.screen_wrap) 바깥의 별개 레이어.
+           위치·크기는 app.js updateCutout() 이 화면 좌표(--cutout-*) 로 넣고 CSS 가 베젤(--frame-*) 만큼 옮긴다. 마스크에 홀(display.mask:'holes') 이 있어도 렌즈는 그 위에 그려진다 -->
+      <span class="screen_cutout" aria-hidden="true">
+        <i class="cutout_lens"></i><i class="cutout_lens"></i><i class="cutout_flash"></i>
+      </span>
     </div>
   </template>
 

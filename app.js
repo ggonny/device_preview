@@ -14,7 +14,10 @@
    *                            {type:'seam', size} = 펼침 상태에서 접힘선 양끝 테두리에 보이는 접합선. 가로 모드는 반시계 규칙으로 side 를 옮긴다(left→bottom)
    *   cutout / safeArea      : 하드웨어 컷아웃(별도 레이어) / OS safe-area. safeAreaLandscape 로 가로값을 덮어쓸 수 있음
    *   cutout.type  : none | notch | island | hole | dual-hole
-   *   cutout.align : center | left | right  (offset 은 정렬 가장자리에서의 거리)
+   *   cutout.align : center | left | right  (offset 은 정렬 가장자리에서의 거리). 세로 위치는 top(위 가장자리 거리) 또는 bottom(아래 가장자리 거리)
+   *   dual-hole    : [플래시][렌즈][렌즈] 가로 상자. lens(렌즈 지름)·ring(링 두께)·lensGap·flash(플래시 지름, 0 이면 없음)·flashGap 으로 상자 크기가 정해진다
+   *   display.mask : 'holes' 면 디스플레이 마스크(.screen_wrap clip-path) 가 코너별 둥근 사각형에서 dual-hole 의 렌즈·플래시 원을 뺀 실제 가시 영역이 된다
+   *   homeIndicatorCenter : 홈 인디케이터 중심 x(px, 세로 기준). 하단 컷아웃 옆에 놓일 때만 지정, 생략 시 중앙
    *   platform     : ios | android | any    (브라우저 선택 목록 필터에 사용)
    *
    * browserProfiles: 브라우저 UI 를 밴드(statusBar / urlBar / toolbar / homeIndicator) 높이로 정의.
@@ -78,22 +81,36 @@
       safeArea:{top:52,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:52},homeIndicator:true,homeIndicatorWidth:108,
       source:{body:'official: Pixel 9 152.8×72.0mm (Pixel 10 동일 치수)',bezel:'derived: (72.0−64.7)/2=3.45mm → 22px (렌더 실측 3.4mm 일치)',radius:'photo-measured: 바디 코너(스쿼클) ≈10mm → 64px',screenRadius:'photo-measured: 화면 코너 ≈8.5mm → 54px',cutout:'photo-measured: 홀 지름 4.75mm → 30px · 중심 화면 상단에서 5.2mm → 33px(top 18)',controls:'approximation: 측면 키',statusBar:'derived: 컷아웃 하단 48px+여백 → 52px · 하단 제스처 바 24px approximation'}},
 
-    /* Galaxy Z Flip8 접힘(FlexWindow 316×349): 접힌 바디 85.7×75.4mm(Samsung), 커버 활성영역 69.9×77.2mm(4.1" 1048×948) → 4.52px/mm */
-    'flip8-cover':{family:'flip',top:19,right:12,bottom:19,left:12,ring:6,radius:36,screenRadius:24,platform:'android',obstruction:'FlexWindow 듀얼 카메라',
-      cutout:{type:'dual-hole',width:116,height:44,top:18,align:'left',offset:18},
-      safeArea:{top:0,right:0,bottom:0,left:0},homeIndicator:false,
-      source:{body:'official: 접힘 85.7×75.4mm',bezel:'derived: 측면 2.75mm → 12px · 상하 4.25mm → 19px',radius:'approximation: 렌더 미확보',screenRadius:'approximation: 렌더 미확보 (실제 FlexWindow 는 카메라를 감싸는 폴더형)',cutout:'approximation: 듀얼 카메라 위치·크기 미측정',controls:'approximation',statusBar:'approximation: 커버 화면 상태바 미적용'}},
+    /* Galaxy Z Flip8 접힘(FlexWindow 316×349): 접힌 바디 75.4×85.7mm(Samsung, official), 커버 native 1048×948 · 대각선 104.8mm(4.1형) 342ppi(official, 한국 뉴스룸·samsung.com/sec) → 세로 기준 width×height 로 정규화하면 948×1048(derived-orientation) → 활성영역 70.4×77.8mm → 4.49px/mm.
+     * 렌더 실측: samsung.com "galaxy-z-flip8-features-colors-design.jpg"(2048×1232, 접힘 정면, 5.93px/mm — 화면 418×461px 비율 1.103 = 공식 1.1055 와 0.2% 내 일치).
+     * 구조(photo): 힌지가 위(스파인 2.5mm, 양옆 1.4mm 안쪽, 끝 r 1.1mm) · 카메라 2개 가로 배치 우하단 + 플래시는 카메라 왼쪽 · 디스플레이가 렌즈 주위를 감싼다(렌즈 = 화면 안의 홀).
+     * 코너: 힌지 쪽 위 코너는 거의 각짐(바디 r 0.3mm · 화면 r 0.5mm), 아래 코너 바디 r 7.0mm · 화면 r 4.7mm. 베젤 = 프레임 1.35mm + 검은 유리 1.15mm.
+     * UI(뉴스룸 First Look "dl9.jpg" Samsung Health 커버 앱 사진): 상태바 없음, 앱 콘텐츠는 카메라 위에서 끝나고 하단 밴드의 내비게이션 바가 카메라 왼쪽에 놓임 → safeArea.bottom = 카메라 영역(69.5) + 여백. */
+    'flip8-cover':{family:'flip',top:13,right:11,bottom:10,left:11,ring:6,radius:{tl:2,tr:2,br:31,bl:31},screenRadius:{tl:2,tr:2,br:21,bl:21},platform:'android',obstruction:'우하단 듀얼 카메라·플래시',
+      hingeBody:{type:'spine',side:'top',width:12,inset:6,radius:5},
+      /* dual-hole: [플래시][렌즈][렌즈] 가로 배치 상자. bottom/offset 은 상자의 아래·오른쪽 가장자리 거리(세로 기준). lens/ring/lensGap/flash/flashGap 으로 상자 크기와 홀 위치가 정해진다 */
+      cutout:{type:'dual-hole',align:'right',offset:10,bottom:10,lens:59,ring:4,lensGap:5,flash:18,flashGap:12},
+      display:{mask:'holes'},   /* 디스플레이 마스크 = 코너별 둥근 사각형 − 렌즈·플래시 홀 (실제 가시 영역). 하드웨어(.screen_cutout) 는 마스크 밖 별개 레이어 */
+      safeArea:{top:0,right:0,bottom:72,left:0},safeAreaLandscape:{top:24,right:72,bottom:16,left:0},homeIndicator:true,homeIndicatorWidth:72,homeIndicatorCenter:76,
+      source:{nativePhysicalResolution:'official: 1048×948 (Samsung 뉴스룸 한국·samsung.com/sec 스펙 표기 · 글로벌 영문 뉴스룸 사양표는 948 x 1048 순서로 인쇄) · 대각선 104.8mm official',renderedPhysicalResolution:'derived-orientation: 948×1048 — 프로그램이 세로(portrait) 기준 width×height 로 정규화한 값, official 원문값 아님',cssViewport:'derived: 948×1048 ÷ DPR 3 = 316×349.3 (DPR 3 가정 · Samsung 은 CSS 폭·DPR 을 공개하지 않음)',visibleArea:'photo-measured: 코너 r 0.5/4.7mm 와 렌즈 2개·플래시 홀을 뺀 영역 (Samsung: "actual viewable area is less due to the rounded corners and camera hole")',
+        body:'official: 접힘 75.4×85.7×13.1mm',bezel:'derived: 측면 (75.4−70.4)/2=2.5mm → 11px (렌더 실측 15px/5.93=2.53mm 일치) · 상단 패널 2.9mm → 13px · 하단 2.3mm → 10px (렌더 실측 비율을 공식 높이에 맞춤)',ring:'photo-measured: 프레임 8px/5.93=1.35mm → 6px',
+        radius:'photo-measured: 아래 코너 r 41.4px=7.0mm → 31px (우하단 원 맞춤 rms 0.28, 좌하단은 손가락에 가려 대칭 가정) · 위(힌지 쪽) 코너 r≈1.5px=0.25mm → 2px',screenRadius:'photo-measured: 아래 코너 r≈28px=4.7mm → 21px · 위 코너 r 2~3px=0.5mm → 2px',
+        hingeBody:'photo-measured: 힌지 스파인 15px=2.5mm → 12px · 양옆 안쪽 8px=1.35mm → 6px · 끝 r 6.5px=1.1mm → 5px',
+        cutout:'photo-measured: 렌즈 외경 78px=13.2mm → 59px · 링 4px · 렌즈 간격 6px=1.0mm → 5px · 중심 간격 84px=14.2mm → 64px · 우측 렌즈 중심이 화면 우측·하단 가장자리에서 각 52~53px=8.9mm → 40px · 플래시 외경(테 포함) 24px=4.0mm → 18px, 중심이 좌측 렌즈 중심에서 66px=11.1mm → 50px 왼쪽 (First Look 사진 dl8 의 비율 렌즈 간격/지름 0.08 일치)',
+        cameraDiameter:'photo-measured: 13.2mm (위 cutout 참조)',controls:'approximation: 측면 키(사진상 접힘 우측 변 상단부에 볼륨·전원)',
+        statusBar:'verified: 뉴스룸 First Look dl9.jpg(커버 앱) 에 상태바 없음 → 0 · 하단 밴드 72 = 렌즈 상단까지 69.5 + 여백 derived(내비게이션 바가 카메라 왼쪽에 놓이는 사진 구조) · 제스처 바 위치·폭(중심 76, 폭 72) approximation · 가로 상태바 24/하단 16 은 다른 Android 프로필 준용(approximation)'}},
 
-    /* Galaxy Z Flip8 펼침 (360×840): 바디 166.9×75.4mm(Samsung), 활성영역 69.1×161.1mm(6.9" 2520×1080) → 5.21px/mm */
-    'flip8-open':{family:'flip',top:15,right:17,bottom:15,left:17,ring:6,radius:39,screenRadius:22,platform:'android',obstruction:'상단 펀치홀·접힘선',
-      cutout:{type:'hole',width:18,height:18,top:17,align:'center'},
-      safeArea:{top:38,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:38},homeIndicator:true,homeIndicatorWidth:108,
-      source:{body:'official: 펼침 166.9×75.4mm',bezel:'derived: 측면 (75.4−69.1)/2=3.15mm → 17px · 상하 2.9mm → 15px',radius:'derived: 동심 가정 22+17=39',screenRadius:'approximation: Galaxy S25 실측(4.3mm) 준용 → 22px',cutout:'derived: Galaxy S25 실측 홀(3.4mm, 중심 4.9mm) 준용 → 18px/top 17',controls:'approximation',statusBar:'derived: 컷아웃 하단+여백 38px · 하단 24px approximation'}},
+    /* Galaxy Z Flip8 펼침 (360×840): 바디 75.4×166.9mm(Samsung official), 메인 native 2520×1080 · 대각선 174.1mm(6.9형) 400ppi(official) → 세로 기준 정규화 1080×2520(derived-orientation) → 활성영역 68.6×160.0mm → 5.25px/mm.
+     * 렌더: 뉴스룸 보도자료 "Launch_dl3F.jpg"(1440×960, 펼침 정면·후면, 3.6px/mm 저해상도 — 상단부만 보임) 로 펀치홀·상단 베젤만 확인. 코너·측면 키는 미측정 */
+    'flip8-open':{family:'flip',top:18,right:18,bottom:18,left:18,ring:6,radius:40,screenRadius:22,platform:'android',obstruction:'상단 펀치홀·접힘선',
+      cutout:{type:'hole',width:19,height:19,top:10,align:'center'},
+      safeArea:{top:32,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:32},homeIndicator:true,homeIndicatorWidth:108,
+      source:{nativePhysicalResolution:'official: 2520×1080 (Samsung 뉴스룸 한국·samsung.com/sec 스펙 표기 · 글로벌 영문 뉴스룸 사양표는 1080 x 2520 순서로 인쇄) · 대각선 174.1mm official',renderedPhysicalResolution:'derived-orientation: 1080×2520 — 프로그램이 세로(portrait) 기준 width×height 로 정규화한 값, official 원문값 아님',cssViewport:'derived: 1080×2520 ÷ DPR 3 = 360×840 (DPR 3 가정 · Samsung 은 CSS 폭·DPR 을 공개하지 않음)',body:'official: 펼침 75.4×166.9mm',bezel:'derived: 측면 (75.4−68.6)/2=3.4mm → 18px · 상하 (166.9−160.0)/2=3.45mm → 18px (400ppi 기준 활성영역; 렌더 상단 frame+glass ≈3.9mm 저해상도 참고)',radius:'derived: 동심 가정 22+18=40',screenRadius:'approximation: Galaxy S25 실측(4.3mm) 준용 → 22px (렌더 저해상도라 미측정)',cutout:'photo-measured(저해상도 3.6px/mm, ±0.3mm): 홀 지름 13~14px=3.7mm → 19px · 중심 화면 상단에서 13.5px=3.75mm → 20px(top 10)',controls:'approximation',statusBar:'derived: 컷아웃 하단 29px+여백 → 32px · 하단 24px approximation'}},
 
     /* Flex(반접힘): 펼침 프로필에서 유도. 아래 코너는 힌지라 각짐 */
-    'flip8-flex':{family:'flip',top:15,right:17,bottom:22,left:17,ring:6,radius:{tl:39,tr:39,br:8,bl:8},screenRadius:{tl:22,tr:22,br:0,bl:0},platform:'android',obstruction:'상단 펀치홀·하단 힌지',
-      cutout:{type:'hole',width:18,height:18,top:17,align:'center'},
-      safeArea:{top:38,right:0,bottom:0,left:0},safeAreaLandscape:{top:24,right:0,bottom:0,left:38},homeIndicator:false,
+    'flip8-flex':{family:'flip',top:18,right:18,bottom:22,left:18,ring:6,radius:{tl:40,tr:40,br:8,bl:8},screenRadius:{tl:22,tr:22,br:0,bl:0},platform:'android',obstruction:'상단 펀치홀·하단 힌지',
+      cutout:{type:'hole',width:19,height:19,top:10,align:'center'},
+      safeArea:{top:32,right:0,bottom:0,left:0},safeAreaLandscape:{top:24,right:0,bottom:0,left:32},homeIndicator:false,
       source:{body:'derived: flip8-open 준용',bezel:'derived: flip8-open 준용, 하단은 힌지 approximation',radius:'derived: 상단 flip8-open · 하단 approximation(힌지)',screenRadius:'derived: 상단 flip8-open · 하단 0(화면이 접힘선까지 이어짐)',cutout:'derived: flip8-open 준용',controls:'approximation',statusBar:'derived: flip8-open 준용'}},
 
     /* Galaxy Z Fold8 접힘(커버 416×657): 접힌 바디 81.9×123.9mm(Samsung), 커버 활성영역 74.7×118.0mm(5.5" 1972×1248) → 5.57px/mm */
@@ -225,10 +242,12 @@
       frame:'iphone-dynamic-pro',browser:'ios-safari',dpr:3,states:[{id:'default',label:'기본',width:402,height:874,diagonal:6.3,physicalWidth:1206,physicalHeight:2622}]},
     pixel:{name:'Google Pixel 10',group:'phone',subtitle:'중앙 펀치홀 카메라',note:'412 × 923 CSS 화면 · 중앙 펀치홀 가림 포함',source:'official: 6.3" 2424 × 1080, DPR 2.625 → 412 × 923 · 바디 152.8 × 72.0mm (Pixel 9/10)',
       frame:'android-hole',browser:'android-chrome',dpr:2.625,states:[{id:'default',label:'기본',width:412,height:923,diagonal:6.3,physicalWidth:1080,physicalHeight:2424}]},
-    'z-flip8':{name:'Galaxy Z Flip8',group:'fold',subtitle:'커버·펼침·Flex',note:'Galaxy Z Flip8 공개 디스플레이 사양 기준',source:'official: 커버 4.1" 1048 × 948 · 메인 6.9" 2520 × 1080, DPR 3 · 바디 펼침 166.9 × 75.4 / 접힘 85.7 × 75.4mm (Samsung, GSMArena)',
+    'z-flip8':{name:'Galaxy Z Flip8',group:'fold',subtitle:'커버·펼침·Flex',note:'Galaxy Z Flip8 공개 디스플레이 사양 기준',source:'official: 커버 4.1형(104.8mm) native 1048 × 948 342ppi · 메인 6.9형(174.1mm) native 2520 × 1080 400ppi · 바디 펼침 75.4 × 166.9 × 6.1 / 접힘 75.4 × 85.7 × 13.1mm (Samsung 뉴스룸 2026-07-22) · 프로그램 세로 기준 948 × 1048 / 1080 × 2520 은 derived-orientation, CSS 316 × 349 / 360 × 840 은 DPR 3 가정(derived)',
       browser:'android-chrome',dpr:3,states:[
-      {id:'cover',label:'커버 화면',width:316,height:349,diagonal:4.1,physicalWidth:948,physicalHeight:1048,frame:'flip8-cover',note:'FlexWindow 316 × 349 CSS 화면 · 듀얼 카메라 가림 포함'},
-      {id:'open',label:'펼침',width:360,height:840,diagonal:6.9,physicalWidth:1080,physicalHeight:2520,frame:'flip8-open',hinge:'horizontal',hingeSize:3,note:'메인 화면 360 × 840 CSS 화면 · 펀치홀과 접힘선 포함'},
+      /* physicalWidth/Height 는 세로 기준 정규화 값(derived-orientation). Samsung 공식 native 표기는 1048×948 → frameProfiles['flip8-cover'].source 참조 */
+      {id:'cover',label:'커버 화면',width:316,height:349,diagonal:4.1,physicalWidth:948,physicalHeight:1048,frame:'flip8-cover',note:'FlexWindow 316 × 349 CSS 화면(native 1048 × 948 → 세로 정규화 948 × 1048 ÷ DPR 3, derived) · 힌지 위 · 우하단 듀얼 카메라·플래시 홀 · 하단 내비게이션 밴드'},
+      /* physicalWidth/Height 는 세로 기준 정규화 값(derived-orientation). Samsung 공식 native 표기는 2520×1080 → frameProfiles['flip8-open'].source 참조 */
+      {id:'open',label:'펼침',width:360,height:840,diagonal:6.9,physicalWidth:1080,physicalHeight:2520,frame:'flip8-open',hinge:'horizontal',hingeSize:3,note:'메인 화면 360 × 840 CSS 화면(native 2520 × 1080 → 세로 정규화 1080 × 2520 ÷ DPR 3, derived) · 펀치홀과 접힘선 포함'},
       /* Flex: 펼친 화면의 상단 절반. 물리값은 width×dpr 로 자동 계산(1080 × 1260), 실기기 배율은 전체 화면 기준(scaleWidth/Height). */
       {id:'flex',label:'Flex 90°',width:360,height:420,diagonal:6.9,scaleWidth:360,scaleHeight:840,frame:'flip8-flex',hinge:'horizontal',hingeSize:8,hingePosition:99,note:'펼친 화면 상단 절반 점검용 360 × 420 · 실제 Flex Mode는 실기기 확인 필요'}
     ]},
@@ -540,6 +559,9 @@
     wrap.style.setProperty('--side-left',bands.left+'px');
     wrap.style.setProperty('--side-right',bands.right+'px');
     wrap.style.setProperty('--home-indicator-width',(view.frameProfile.homeIndicatorWidth||134)+'px');
+    /* 홈 인디케이터 중심: 하단 컷아웃 옆에 놓이는 기기(Flip8 커버) 는 세로에서 homeIndicatorCenter(px), 그 외·가로는 중앙 */
+    const indicatorCenter=view.frameProfile.homeIndicatorCenter;
+    wrap.style.setProperty('--home-indicator-center',indicatorCenter!=null&&getOrientation(view)==='portrait'?indicatorCenter+'px':'50%');
     view.dom.bandStatus.hidden=bands.status===0;
     view.dom.bandUrl.hidden=bands.url===0;
     view.dom.bandToolbar.hidden=bands.toolbar===0;
@@ -693,13 +715,21 @@
     const landscape=getOrientation(view)==='landscape';
     let padLeft=profile.padding?profile.padding.left:16;
     let padRight=profile.padding?profile.padding.right:14;
-    if(!landscape&&cutout&&cutout.type&&cutout.type!=='none'){
-      const extent=(cutout.offset||0)+(cutout.width||0)+8;
+    let bandPadRight=0;   /* URL 바·툴바 내용이 비켜날 오른쪽 여백(측면 컷아웃이 밴드 행과 겹칠 때만) */
+    const geometry=cutout&&cutout.type&&cutout.type!=='none'?getCutoutGeometry(view,view.frameProfile,landscape):null;
+    if(geometry&&!landscape&&cutout.bottom==null){
+      const extent=(cutout.offset||0)+geometry.box.width+8;
       if(cutout.align==='left')padLeft=Math.max(padLeft,extent);
       if(cutout.align==='right')padRight=Math.max(padRight,extent);
+    }else if(geometry&&landscape&&cutout.bottom!=null&&cutout.align==='right'){
+      /* 세로 우하단 컷아웃(Flip8 커버 카메라) 은 가로에서 우상단 → 상태바 오른쪽 아이콘과 상단 URL 바 내용이 카메라 열을 비켜난다 */
+      const extent=cutout.bottom+geometry.box.width+8;
+      padRight=Math.max(padRight,extent);
+      bandPadRight=extent;
     }
     wrap.style.setProperty('--status-pad-left',padLeft+'px');
     wrap.style.setProperty('--status-pad-right',padRight+'px');
+    wrap.style.setProperty('--band-pad-right',bandPadRight+'px');
     updateStatusCluster(view,profile);
   }
 
@@ -908,6 +938,45 @@
       'V'+(y+c.tl)+'A'+c.tl+' '+c.tl+' 0 0 1 '+(x+c.tl)+' '+y+'Z';
   }
 
+  /* 원 path. ccw=true 면 반시계(둥근 사각형 안의 홀용, nonzero 규칙) */
+  function circlePath(cx,cy,r,ccw){
+    const f=ccw?0:1;
+    return 'M'+(cx-r)+' '+cy+'A'+r+' '+r+' 0 1 '+f+' '+(cx+r)+' '+cy+'A'+r+' '+r+' 0 1 '+f+' '+(cx-r)+' '+cy+'Z';
+  }
+
+  /* 컷아웃 기하(현재 방향 px). 세로 기준으로 계산한 뒤 가로는 반시계 90° 회전: (x,y) → (y, W−x).
+   *   box     : 컷아웃 상자(left/top/width/height). 세로 위치는 cutout.top(위 가장자리 거리) 또는 cutout.bottom(아래 가장자리 거리)
+   *   circles : dual-hole 의 렌즈·플래시 원(디스플레이 홀·하드웨어 공통). 세로 [플래시][렌즈][렌즈] 왼→오, 가로에서는 위→아래 [렌즈][렌즈][플래시] */
+  function getCutoutGeometry(view,profile,landscape){
+    const cutout=profile.cutout&&profile.cutout.type&&profile.cutout.type!=='none'?profile.cutout:null;
+    if(!cutout)return null;
+    const pw=landscape?view.currentHeight:view.currentWidth;   /* 세로 기준 화면 크기 */
+    const ph=landscape?view.currentWidth:view.currentHeight;
+    const dual=cutout.type==='dual-hole';
+    const lens=dual?cutout.lens||44:0;
+    const lensGap=dual?(cutout.lensGap==null?4:cutout.lensGap):0;
+    const flash=dual?cutout.flash||0:0;
+    const flashGap=dual&&flash?(cutout.flashGap==null?6:cutout.flashGap):0;
+    const parts={lens,lensGap,flash,flashGap,ring:dual?(cutout.ring==null?4:cutout.ring):0};
+    const width=dual?flash+flashGap+lens*2+lensGap:cutout.width;
+    const height=dual?lens:cutout.height;
+    const offset=cutout.offset||0;
+    const left=cutout.align==='left'?offset:cutout.align==='right'?pw-offset-width:(pw-width)/2;
+    const top=cutout.bottom!=null?ph-cutout.bottom-height:(cutout.top||0);
+    const circles=[];
+    if(dual){
+      const cy=top+height/2;
+      if(flash)circles.push({cx:left+flash/2,cy,r:flash/2,kind:'flash'});
+      circles.push({cx:left+flash+flashGap+lens/2,cy,r:lens/2,kind:'lens'});
+      circles.push({cx:left+flash+flashGap+lens+lensGap+lens/2,cy,r:lens/2,kind:'lens'});
+    }
+    if(!landscape)return{box:{left,top,width,height},circles,parts};
+    const rot=(x,y)=>({x:y,y:pw-x});
+    const a=rot(left,top),b=rot(left+width,top+height);
+    return{box:{left:Math.min(a.x,b.x),top:Math.min(a.y,b.y),width:height,height:width},
+      circles:circles.map(c=>{const p=rot(c.cx,c.cy);return{cx:p.x,cy:p.y,r:c.r,kind:c.kind};}),parts};
+  }
+
   function updateShape(view,profile,landscape,insets){
     const shell=view.dom.shell;
     const wrap=view.dom.screenWrap;
@@ -920,9 +989,16 @@
       shell.style.setProperty('--body-'+corner,body[corner]+'px');
       shell.style.setProperty('--screen-'+corner,screen[corner]+'px');
     });
+    /* 디스플레이 마스크(display.mask:'holes'): 코너별 둥근 사각형에서 컷아웃 홀(렌즈·플래시) 을 뺀 실제 가시 영역. 홀은 반시계 서브패스라 nonzero 규칙으로 뚫린다.
+     * 하드웨어(.screen_cutout) 는 .screen_wrap 바깥 별개 레이어라 홀 위에 그대로 그려진다 */
+    const holes=profile.display&&profile.display.mask==='holes'?getCutoutGeometry(view,profile,landscape):null;
     /* 듀얼 디스플레이: 두 패널을 하나의 clip-path 로 마스킹 → 상태바·브라우저 UI·iframe 모두 같은 마스크 안에서 정렬, 분리 영역은 바디가 보인다 */
     const split=profile.display&&profile.display.split;
-    if(split){
+    if(holes&&holes.circles.length){
+      const path=roundedRectPath(0,0,width,height,screen)+holes.circles.map(c=>circlePath(c.cx,c.cy,c.r,true)).join('');
+      wrap.style.clipPath='path("'+path+'")';
+      delete shell.dataset.split;
+    }else if(split){
       const axis=landscape?(split.axis==='vertical'?'horizontal':'vertical'):split.axis;
       const gap=split.gap||12;
       const inner=split.panelRadius==null?8:split.panelRadius;
@@ -943,26 +1019,28 @@
     }
   }
 
-  /* 컷아웃 위치는 현재 화면 크기 기준 px 로 계산. 가로는 세로 기준값을 반시계 90° 회전:
-   * 상단 가장자리 → 왼쪽 가장자리, 우상단 모서리 → 좌상단 모서리, 좌상단 모서리 → 좌하단 모서리 */
+  /* 컷아웃 위치는 현재 화면 크기 기준 px 로 계산(getCutoutGeometry). 가로는 세로 기준값을 반시계 90° 회전:
+   * 상단 가장자리 → 왼쪽 가장자리, 우상단 모서리 → 좌상단 모서리, 좌상단 모서리 → 좌하단 모서리, 우하단 모서리(cutout.bottom) → 우상단 모서리.
+   * .screen_cutout 은 .screen_wrap(디스플레이 마스크) 바깥의 하드웨어 레이어라 CSS 가 --frame-left/top 을 더해 화면 좌표에 놓는다 */
   function updateCutout(view,profile,landscape){
     const shell=view.dom.shell;
     const cutout=profile.cutout&&profile.cutout.type&&profile.cutout.type!=='none'?profile.cutout:null;
     shell.dataset.cutout=cutout?cutout.type:'none';
     if(!cutout)return;
-    const offset=cutout.offset||0;
-    let width,height,left,top;
-    if(!landscape){
-      width=cutout.width;height=cutout.height;top=cutout.top||0;
-      left=cutout.align==='left'?offset:cutout.align==='right'?view.currentWidth-offset-width:(view.currentWidth-width)/2;
-    }else{
-      width=cutout.height;height=cutout.width;left=cutout.top||0;
-      top=cutout.align==='right'?offset:cutout.align==='left'?view.currentHeight-offset-height:(view.currentHeight-height)/2;
+    const geometry=getCutoutGeometry(view,profile,landscape);
+    const box=geometry.box;
+    shell.style.setProperty('--cutout-width',Math.round(box.width)+'px');
+    shell.style.setProperty('--cutout-height',Math.round(box.height)+'px');
+    shell.style.setProperty('--cutout-left',Math.round(box.left)+'px');
+    shell.style.setProperty('--cutout-top',Math.round(box.top)+'px');
+    if(cutout.type==='dual-hole'){
+      const parts=geometry.parts;
+      shell.style.setProperty('--lens-size',parts.lens+'px');
+      shell.style.setProperty('--lens-ring',parts.ring+'px');
+      shell.style.setProperty('--lens-gap',parts.lensGap+'px');
+      shell.style.setProperty('--flash-size',parts.flash+'px');
+      shell.style.setProperty('--flash-gap',parts.flashGap+'px');
     }
-    shell.style.setProperty('--cutout-width',Math.round(width)+'px');
-    shell.style.setProperty('--cutout-height',Math.round(height)+'px');
-    shell.style.setProperty('--cutout-left',Math.round(left)+'px');
-    shell.style.setProperty('--cutout-top',Math.round(top)+'px');
   }
 
   function updateSafeGuides(view){

@@ -853,7 +853,7 @@ svg {
 .device_shell[data-cutout="notch"] .band_status { align-items: flex-start; padding-top: 8px; }     /* 노치(33px) 세로 중심에 맞춤 */
 .device_shell[data-cutout="island"] .band_status { align-items: flex-start; padding-top: 20px; }  /* 아일랜드(11~48px) 세로 중심에 맞춤 */
 .device_shell[data-orientation="landscape"] .band_status { --status-icon-size: 10px; font-size: 12px; }
-.band_url { grid-row: 2; display: flex; align-items: center; padding: 6px 10px; border-bottom: 1px solid #d5dae2; }
+.band_url { grid-row: 2; display: flex; align-items: center; padding: 6px max(10px, var(--band-pad-right, 0px)) 6px 10px; border-bottom: 1px solid #d5dae2; }   /* --band-pad-right: 밴드 행과 겹치는 측면 컷아웃(Flip8 커버 가로) 회피 */
 .screen_wrap[data-url-position="bottom"] .band_url { grid-row: 4; border-bottom: 0; border-top: 1px solid #d5dae2; }
 .browser_address {
   min-width: 0;
@@ -907,10 +907,22 @@ svg {
 .screen_wrap[data-browser="ios-safari"] .band_toolbar { color: var(--point-color); border-top: 0; }
 .screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_home { display: none; }
 .screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_share { display: inline-flex; }
-.band_home { grid-row: 6; display: flex; align-items: center; justify-content: center; background: #fff; }
+.band_home { grid-row: 6; position: relative; background: #fff; }
 .screen_wrap[data-browser^="ios"] .band_home { background: var(--band-bg); }
 .screen_wrap[data-browser="android-chrome"] .band_home { background: #fff; }
-.home_indicator { width: var(--home-indicator-width, 134px); height: 5px; background: #1f2937; border-radius: 3px; }
+/* 홈 인디케이터: 중심 x 는 --home-indicator-center(기본 50%). 하단 컷아웃 옆에 놓이는 기기(Flip8 커버) 는 JS 가 px 로 넣는다 */
+.home_indicator {
+  position: absolute;
+  left: var(--home-indicator-center, 50%);
+  top: 0;
+  bottom: 0;
+  width: var(--home-indicator-width, 134px);
+  height: 5px;
+  margin: auto 0;
+  background: #1f2937;
+  border-radius: 3px;
+  transform: translateX(-50%);
+}
 .screen_wrap[data-platform="android"] .home_indicator { height: 4px; opacity: .7; }
 
 /* UI 겹침(overlay) 모드: URL 바·툴바가 행을 차지하지 않고 사이트 위에 얹힌다 → iframe 높이 = lvh */
@@ -1018,12 +1030,13 @@ svg {
 .side_controls .icon_dot { fill: currentColor; stroke: none; }
 
 /* ---------- 8. 컷아웃·힌지·safe-area 가이드 ----------
- * 컷아웃 위치·크기는 frameProfiles.cutout 을 바탕으로 app.js 가 px 로 계산한다. */
+ * 컷아웃 위치·크기는 frameProfiles.cutout 을 바탕으로 app.js 가 화면 좌표 px 로 계산한다.
+ * .screen_cutout 은 .screen_wrap(디스플레이 마스크) 바깥, .device_shell 의 자식이라 베젤(--frame-*) 만큼 더해 화면 위에 놓는다 → 마스크 홀 위에도 그려지는 하드웨어 레이어 */
 .screen_cutout {
   position: absolute;
   z-index: 7;
-  left: var(--cutout-left, 0px);
-  top: var(--cutout-top, 0px);
+  left: calc(var(--frame-left, 0px) + var(--cutout-left, 0px));
+  top: calc(var(--frame-top, 0px) + var(--cutout-top, 0px));
   width: var(--cutout-width, 0px);
   height: var(--cutout-height, 0px);
   display: none;
@@ -1079,27 +1092,31 @@ svg {
   border-radius: 50%;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, .07);
 }
-.device_shell[data-cutout="dual-hole"] .screen_cutout { display: flex; align-items: center; gap: 4px; }
-.device_shell[data-cutout="dual-hole"][data-orientation="landscape"] .screen_cutout { flex-direction: column-reverse; }
-.device_shell[data-cutout="dual-hole"] .screen_cutout i { display: block; flex: 0 0 auto; }
+/* 듀얼 렌즈 + 플래시(dual-hole): 상자 안 절대 배치. 지름·링·간격은 frameProfiles.cutout(lens/ring/lensGap/flash/flashGap) → --lens-size/--lens-ring/--lens-gap/--flash-size/--flash-gap 변수.
+ * 세로: [플래시][렌즈][렌즈] 왼→오 · 가로(반시계 회전): 위→아래 [렌즈][렌즈][플래시]. 렌즈는 디스플레이 홀과 같은 지름이라 링 바깥에 화면이 바로 이어진다 */
+.device_shell[data-cutout="dual-hole"] .screen_cutout i { position: absolute; display: block; box-sizing: border-box; }
 .device_shell[data-cutout="dual-hole"] .cutout_lens {
-  width: 44px;
-  height: 44px;
-  background: radial-gradient(circle at 40% 35%, #183e5c 0 10%, #07101a 28%, #010204 64%);
-  border: 4px solid #303640;
+  width: var(--lens-size, 44px);
+  height: var(--lens-size, 44px);
+  background: radial-gradient(circle at 40% 35%, #183e5c 0 9%, #07101a 24%, #010204 60%);
+  border: var(--lens-ring, 4px) solid #3a4049;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px #07090d, 0 3px 9px rgba(0, 0, 0, .45);
+  box-shadow: inset 0 0 0 1px #0b0e13, 0 0 0 1px rgba(0, 0, 0, .35);
 }
 .device_shell[data-cutout="dual-hole"] .cutout_flash {
-  width: 12px;
-  height: 12px;
-  margin-left: 6px;
-  background: #eee1b4;
-  border: 2px solid #4a4f58;
+  width: var(--flash-size, 12px);
+  height: var(--flash-size, 12px);
+  background: radial-gradient(circle at 45% 40%, #fff7d6 0 30%, #e9d9a4 70%, #c9b98a 100%);
+  border: 2px solid #3a3f48;
   border-radius: 50%;
-  box-shadow: 0 0 8px rgba(255, 239, 182, .35);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .3);
 }
-.device_shell[data-cutout="dual-hole"][data-orientation="landscape"] .cutout_flash { margin-left: 0; margin-bottom: 6px; }
+.device_shell[data-cutout="dual-hole"][data-orientation="portrait"] .cutout_flash { left: 0; top: calc((var(--lens-size, 44px) - var(--flash-size, 12px)) / 2); }
+.device_shell[data-cutout="dual-hole"][data-orientation="portrait"] .cutout_lens:nth-child(1) { top: 0; left: calc(var(--flash-size, 0px) + var(--flash-gap, 0px)); }
+.device_shell[data-cutout="dual-hole"][data-orientation="portrait"] .cutout_lens:nth-child(2) { top: 0; left: calc(var(--flash-size, 0px) + var(--flash-gap, 0px) + var(--lens-size, 44px) + var(--lens-gap, 4px)); }
+.device_shell[data-cutout="dual-hole"][data-orientation="landscape"] .cutout_lens:nth-child(2) { left: 0; top: 0; }
+.device_shell[data-cutout="dual-hole"][data-orientation="landscape"] .cutout_lens:nth-child(1) { left: 0; top: calc(var(--lens-size, 44px) + var(--lens-gap, 4px)); }
+.device_shell[data-cutout="dual-hole"][data-orientation="landscape"] .cutout_flash { left: calc((var(--lens-size, 44px) - var(--flash-size, 12px)) / 2); top: calc(var(--lens-size, 44px) * 2 + var(--lens-gap, 4px) + var(--flash-gap, 0px)); }
 .hinge_line {
   position: absolute;
   z-index: 6;
