@@ -555,6 +555,150 @@ svg {
 }
 .preview_mount { position: relative; flex: 0 0 auto; margin: auto; transition: width .24s ease, height .24s ease; }
 
+/* ---------- 5b. 시작 화면 (.intro_screen) ----------
+ * URL 이 연결되기 전 스테이지 위를 덮는 소개 영역. app.js updateIntro() 가 hidden / .preview_stage.is_intro 를 토글한다.
+ * 아래 기기 셸은 레이아웃을 유지한 채 visibility 만 숨겨 기존 배율·측정 로직에 영향을 주지 않는다. 실루엣(.intro_device) 은 CSS 장식이며 frameProfiles 와 무관 */
+.intro_screen {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 28px;
+  background: inherit;   /* 스테이지의 그리드 배경을 그대로 이어받아 경계 없이 덮는다 */
+  overflow: auto;
+}
+.intro_screen[hidden] { display: none; }
+.preview_stage.is_intro { overflow: hidden; }
+.preview_stage.is_intro > .preview_mount, .preview_stage.is_intro > .compare_grid, .preview_stage.is_intro > .compare_empty { visibility: hidden; }
+.intro_inner {
+  width: min(100%, 640px);
+  margin: auto;
+  padding: 30px 40px 22px;
+  text-align: center;
+  background: rgba(255, 255, 255, .86);
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 18px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, .12), inset 0 0 0 1px rgba(193, 202, 215, .5);
+  backdrop-filter: blur(6px);
+}
+.intro_kicker {
+  margin: 0 0 12px;
+  color: var(--point-color);
+  font: 600 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.intro_title {
+  margin: 0;
+  color: var(--text-color);
+  font-size: clamp(22px, 2.3vw, 30px);
+  font-weight: 800;
+  line-height: 1.28;
+  letter-spacing: -.035em;
+  word-break: keep-all;
+}
+.intro_desc {
+  margin: 10px 0 0;
+  color: var(--sub-color);
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+/* 디바이스 실루엣: 스마트폰 / 폴더블(접힘선) / 태블릿(가로). 단순 outline, 장식 전용 */
+.intro_devices {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 18px;
+  margin: 20px 0 0;
+  color: #7b8798;
+}
+.intro_device {
+  position: relative;
+  display: block;
+  border: 2px solid currentColor;
+  background: rgba(255, 255, 255, .6);
+}
+.intro_device i {
+  position: absolute;
+  display: block;
+  background: currentColor;
+  border-radius: 99px;
+  opacity: .55;
+}
+.intro_device.is_phone { width: 30px; height: 54px; border-radius: 7px; }
+.intro_device.is_phone i { left: 50%; top: 3px; width: 10px; height: 3px; transform: translateX(-50%); }          /* 상단 노치 */
+.intro_device.is_fold { width: 50px; height: 54px; border-radius: 6px; }
+.intro_device.is_fold i { left: 50%; top: 4px; bottom: 4px; width: 2px; border-radius: 1px; transform: translateX(-50%); }   /* 접힘선 */
+.intro_device.is_fold::after { content: ""; position: absolute; right: 5px; top: 5px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .55; }
+.intro_device.is_tablet { width: 74px; height: 54px; border-radius: 7px; }
+.intro_device.is_tablet i { left: 50%; top: 3px; width: 4px; height: 4px; transform: translateX(-50%); }         /* 긴 변 카메라 */
+.intro_actions { margin-top: 18px; }
+.intro_cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 22px;
+  font-size: 15px;
+  box-shadow: 0 8px 20px rgba(19, 110, 241, .28);
+}
+.intro_cta svg { width: 18px; height: 18px; }
+.intro_cta:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 3px; }
+.intro_hint { margin: 10px 0 0; color: var(--muted-color); font-size: 13px; }
+.intro_hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  color: #344054;
+  background: #f1f4f8;
+  border: 1px solid #cfd6e0;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  font: 600 11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+/* 기능 칩: 보조 정보 수준으로 낮은 대비의 작은 pill */
+.intro_features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 18px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--line-color);
+  list-style: none;
+}
+.intro_features li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  color: var(--muted-color);
+  background: #f4f6f9;
+  border: 1px solid #dfe5ed;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.intro_features li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--point-color); opacity: .7; }
+/* 각주: Scroll Sync* — 외부 출처는 Same-Origin Policy 로 제한됨을 보조 정보 수준으로 표시 */
+.intro_note { margin: 10px 0 0; color: var(--muted-color); font-size: 11px; line-height: 1.5; }
+.intro_skip {
+  margin-top: 8px;
+  padding: 4px 2px;
+  color: var(--muted-color);
+  background: none;
+  border: 0;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.intro_skip:hover { color: var(--point-color); }
+.intro_skip:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; border-radius: 4px; }
+
 /* ---------- 6. 기기 프레임 ----------
  * 레이어: .device_shell(바디 = 금속 링, --body-* 코너) → ::before(글래스 베젤, 링 안쪽 검은 유리) → .screen_wrap(디스플레이 마스크, --screen-* 코너)
  * 값은 전부 frameProfiles 데이터에서 CSS 변수로 들어온다. 마감·측면 키·스피커 등 형상 언어는 data-family 로만 분기한다(기기명 분기 없음).
@@ -627,6 +771,13 @@ svg {
   --ring-highlight: rgba(255, 255, 255, .55);
   --glass: #08090c;
 }
+/* Galaxy Tab S 계열(Armor Aluminum, 그레이): 어두운 무광 링, 검은 유리 베젤 */
+.device_shell[data-family="galaxy-tab"] {
+  --ring-finish: linear-gradient(145deg, #6b7078 0%, #3d424a 30%, #23272e 65%, #5c6169 100%);
+  --ring-edge: #2c3037;
+  --ring-highlight: rgba(255, 255, 255, .3);
+  --glass: #050608;
+}
 /* 평평한 알루미늄 측면(iPad Air/Pro 계열): 무광 링, 검은 유리 베젤 */
 .device_shell[data-family="ipad-modern"] {
   --ring-finish: linear-gradient(145deg, #b8bcc3 0%, #8a8f97 28%, #5e636b 60%, #a9adb4 100%);
@@ -683,15 +834,15 @@ svg {
 .device_shell[data-camera="true"][data-orientation="portrait"] .frame_camera { left: calc(50% + var(--camera-x, 0px)); top: var(--camera-top); transform: translate(-50%, -50%); }
 .device_shell[data-camera="true"][data-orientation="landscape"] .frame_camera { top: calc(50% - var(--camera-x, 0px)); left: var(--camera-top); transform: translate(-50%, -50%); }
 /* 긴 변 베젤 카메라·센서(controls.camera/sensor.edge = right|left): 베젤 중앙선 위, 화면 중심에서 offset 만큼 아래(+)/위(−). 가로(반시계) 에서는 right → 상단 변(중심에서 offset 만큼 오른쪽(+)/왼쪽(−)), left → 하단 변 */
-.device_shell[data-camera="true"][data-camera-edge="right"][data-orientation="portrait"] .frame_camera { left: calc(100% - var(--frame-right, 0px) / 2); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
-.device_shell[data-camera="true"][data-camera-edge="right"][data-orientation="landscape"] .frame_camera { top: calc(var(--frame-top, 0px) / 2); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 + var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
-.device_shell[data-camera="true"][data-camera-edge="left"][data-orientation="portrait"] .frame_camera { left: calc(var(--frame-left, 0px) / 2); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
-.device_shell[data-camera="true"][data-camera-edge="left"][data-orientation="landscape"] .frame_camera { top: calc(100% - var(--frame-bottom, 0px) / 2); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 - var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-camera="true"][data-camera-edge="right"][data-orientation="portrait"] .frame_camera { left: calc(100% - var(--camera-inset, 0px)); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-camera="true"][data-camera-edge="right"][data-orientation="landscape"] .frame_camera { top: var(--camera-inset, 0px); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 + var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-camera="true"][data-camera-edge="left"][data-orientation="portrait"] .frame_camera { left: var(--camera-inset, 0px); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-camera="true"][data-camera-edge="left"][data-orientation="landscape"] .frame_camera { top: calc(100% - var(--camera-inset, 0px)); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 - var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
 .device_shell[data-sensor="true"] .frame_sensor { display: block; width: var(--sensor-size); height: var(--sensor-size); }
-.device_shell[data-sensor="true"][data-sensor-edge="right"][data-orientation="portrait"] .frame_sensor { left: calc(100% - var(--frame-right, 0px) / 2); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
-.device_shell[data-sensor="true"][data-sensor-edge="right"][data-orientation="landscape"] .frame_sensor { top: calc(var(--frame-top, 0px) / 2); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 + var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
-.device_shell[data-sensor="true"][data-sensor-edge="left"][data-orientation="portrait"] .frame_sensor { left: calc(var(--frame-left, 0px) / 2); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
-.device_shell[data-sensor="true"][data-sensor-edge="left"][data-orientation="landscape"] .frame_sensor { top: calc(100% - var(--frame-bottom, 0px) / 2); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 - var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-sensor="true"][data-sensor-edge="right"][data-orientation="portrait"] .frame_sensor { left: calc(100% - var(--sensor-inset, 0px)); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-sensor="true"][data-sensor-edge="right"][data-orientation="landscape"] .frame_sensor { top: var(--sensor-inset, 0px); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 + var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-sensor="true"][data-sensor-edge="left"][data-orientation="portrait"] .frame_sensor { left: var(--sensor-inset, 0px); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-sensor="true"][data-sensor-edge="left"][data-orientation="landscape"] .frame_sensor { top: calc(100% - var(--sensor-inset, 0px)); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 - var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
 .device_shell[data-sensor="true"][data-orientation="portrait"] .frame_sensor { left: 50%; top: var(--sensor-top); transform: translate(-50%, -50%); }
 .device_shell[data-sensor="true"][data-orientation="landscape"] .frame_sensor { top: 50%; left: var(--sensor-top); transform: translate(-50%, -50%); }
 .side_key {
@@ -703,6 +854,7 @@ svg {
 .device_shell[data-family="iphone-modern"] .side_key, .device_shell[data-family="iphone-classic"] .side_key, .device_shell[data-family="duo"] .side_key { background: linear-gradient(#b4b8bf, #6a6f77); border-color: #3f444b; }
 .device_shell[data-family="fold"] .side_key, .device_shell[data-family="flip"] .side_key { background: linear-gradient(#c6cad0, #7f858c); border-color: #4a4f57; }
 .device_shell[data-family="ipad-modern"] .side_key { background: linear-gradient(#c9ccd1, #7d828a); border-color: #4d525a; }
+.device_shell[data-family="galaxy-tab"] .side_key { background: linear-gradient(#8a8f97, #4a4f57); border-color: #2c3037; }
 .device_shell:not([data-family="neutral"]):not([data-family="ipad-classic"]) .side_key:not(.side_key_extra) { display: block; }
 /* 데이터 기반 키(controls.keys → data-keys="custom"): 목록에 있는 키만, JS 가 넣은 변(data-edge)·시작(--key-start)·길이(--key-length) 로 그린다. 가로 변환은 JS(반시계 규칙) */
 .device_shell[data-keys="custom"] .side_key:not([data-edge]) { display: none; }
@@ -885,7 +1037,8 @@ svg {
 .device_shell[data-orientation="landscape"] .band_status { --status-icon-size: 10px; font-size: 12px; }
 /* 고정 크기 상태바(statusBar.fixedSize, iPad): 가로에서도 프로필 글꼴·아이콘 크기 유지. 배터리 % 텍스트는 배터리 아이콘 바로 앞 */
 .screen_wrap[data-status-fixed="true"] .band_status { --status-icon-size: var(--status-icon, 12px); font-size: var(--status-font, 16px); }
-.status_percent { flex: 0 0 auto; font-size: .93em; }
+.status_percent { flex: 0 0 auto; font-size: .78em; }   /* iPadOS 26/27: 100% 숫자 ≈13pt vs 시간 17pt (렌더 실측) */
+.screen_wrap[data-status-fixed="true"] .icon_wifi { height: calc(var(--status-icon, 12px) * .78); }   /* Wi-Fi 12.6×8pt 실측: 배터리(11pt) 보다 낮음 */
 .status_percent[hidden] { display: none; }
 .band_url { grid-row: 2; display: flex; align-items: center; padding: 6px max(10px, var(--band-pad-right, 0px)) 6px 10px; border-bottom: 1px solid #d5dae2; }   /* --band-pad-right: 밴드 행과 겹치는 측면 컷아웃(Flip8 커버 가로) 회피 */
 .screen_wrap[data-url-position="bottom"] .band_url { grid-row: 4; border-bottom: 0; border-top: 1px solid #d5dae2; }
@@ -910,8 +1063,8 @@ svg {
   border-color: transparent;
   box-shadow: none;
 }
-.screen_wrap[data-browser="tablet-chrome"] .band_url { align-items: flex-end; padding-bottom: 8px; }
-.screen_wrap[data-browser="tablet-chrome"] .band_url::before {
+.screen_wrap[data-browser="tablet-chrome"] .band_url, .screen_wrap[data-browser="android-tablet-chrome"] .band_url, .screen_wrap[data-browser="android-tablet-samsung"] .band_url { align-items: flex-end; padding-bottom: 8px; }
+.screen_wrap[data-browser="tablet-chrome"] .band_url::before, .screen_wrap[data-browser="android-tablet-chrome"] .band_url::before, .screen_wrap[data-browser="android-tablet-samsung"] .band_url::before {
   content: "";
   position: absolute;
   left: 12px;
@@ -1107,6 +1260,13 @@ svg {
 .device_shell[data-cutout="notch"][data-orientation="landscape"] .screen_cutout { border-radius: 0 19px 19px 0; }
 .device_shell[data-cutout="notch"][data-orientation="landscape"] .screen_cutout::before { left: 8px; top: 50%; width: 4px; height: 48px; transform: translateY(-50%); }
 .device_shell[data-cutout="notch"][data-orientation="landscape"] .screen_cutout::after { left: 8px; right: auto; top: 26px; }
+/* 완만한 노치(cutout.shape:'wave', Galaxy Tab Ultra): 현재 변(data-cutout-edge) 쪽이 붙고 반대쪽이 반타원. 스피커·카메라 장식은 없고 카메라는 베젤(controls.camera) 에 있다 */
+.device_shell[data-cutout="notch"][data-cutout-shape="wave"] .screen_cutout::before, .device_shell[data-cutout="notch"][data-cutout-shape="wave"] .screen_cutout::after { display: none; }
+.device_shell[data-cutout="notch"][data-cutout-shape="wave"][data-cutout-edge="top"] .screen_cutout { border-radius: 0 0 50% 50% / 0 0 100% 100%; }
+.device_shell[data-cutout="notch"][data-cutout-shape="wave"][data-cutout-edge="right"] .screen_cutout { border-radius: 100% 0 0 100% / 50% 0 0 50%; }
+.device_shell[data-cutout="notch"][data-cutout-shape="wave"][data-cutout-edge="left"] .screen_cutout { border-radius: 0 100% 100% 0 / 0 50% 50% 0; }
+.device_shell[data-cutout="notch"][data-cutout-shape="wave"][data-cutout-edge="bottom"] .screen_cutout { border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.device_shell[data-cutout="notch"][data-cutout-shape="wave"] .band_status { align-items: center; padding-top: 0; }   /* iPhone 노치용 상단 정렬(33px) 은 적용하지 않는다 */
 .device_shell[data-cutout="island"] .screen_cutout { background: #020305; border-radius: 99px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .04); }
 .device_shell[data-cutout="island"] .screen_cutout::before {
   content: "";
@@ -1384,6 +1544,10 @@ svg {
   .browser_select { max-width: 100%; }
   .tool_actions { justify-self: stretch; padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--line-color); }
   .preview_stage { min-height: 460px; padding: 24px; }
+  .intro_screen { padding: 20px 12px; }
+  .intro_inner { padding: 26px 20px 22px; border-radius: 14px; }
+  .intro_devices { gap: 14px; margin-top: 20px; transform: scale(.85); transform-origin: center bottom; }
+  .intro_cta { width: 100%; justify-content: center; }
   .compare_grid { grid-template-columns: 1fr; gap: 14px; }
   .compare_bar { flex-wrap: wrap; }
   .compare_note { margin-left: 0; white-space: normal; }

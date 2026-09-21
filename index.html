@@ -148,6 +148,35 @@
             <span class="compare_note" id="compareNote"></span>
           </div>
           <div class="preview_stage" id="previewStage">
+            <!-- 시작 화면: URL 이 연결되기 전에만 스테이지 위에 표시(app.js updateIntro). 실루엣은 CSS 장식이며 기기 프레임 로직과 무관 -->
+            <div class="intro_screen" id="introScreen">
+              <div class="intro_inner">
+                <p class="intro_kicker">Responsive Device Preview</p>
+                <h2 class="intro_title">하나의 URL로<br>다양한 디바이스 환경을 테스트하세요.</h2>
+                <p class="intro_desc">기기별 뷰포트, 화면 회전, 브라우저 UI까지<br>한 화면에서 확인할 수 있습니다.</p>
+                <div class="intro_devices" aria-hidden="true">
+                  <span class="intro_device is_phone"><i></i></span>
+                  <span class="intro_device is_fold"><i></i></span>
+                  <span class="intro_device is_tablet"><i></i></span>
+                </div>
+                <div class="intro_actions">
+                  <button type="button" class="btn_primary intro_cta" id="introUrlBtn">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-link"/></svg>
+                    <span>URL 입력하기</span>
+                  </button>
+                  <p class="intro_hint">상단 주소창에 사이트 주소를 입력하고 <kbd>Enter</kbd> 를 누르면 미리보기가 시작됩니다.</p>
+                </div>
+                <ul class="intro_features" aria-label="지원 기능">
+                  <li>Device Viewport</li>
+                  <li>Rotation</li>
+                  <li>Browser UI</li>
+                  <li>Multi Device</li>
+                  <li>Scroll Sync*</li>
+                </ul>
+                <p class="intro_note">* 외부 사이트는 브라우저 보안 정책에 따라 일부 기능이 제한될 수 있습니다.</p>
+                <button type="button" class="intro_skip" id="introSkipBtn">URL 없이 기기 프레임 먼저 보기</button>
+              </div>
+            </div>
             <!-- 단일 보기: 기기 셸은 #deviceShellTemplate 에서 생성되어 이 컨테이너에 들어갑니다 (id 는 JS 가 부여). -->
             <div class="preview_mount" id="previewMount"></div>
             <!-- 다중 비교: 선택한 기기마다 #compareItemTemplate 을 복제해 CSS Grid 로 배치 -->
@@ -192,6 +221,7 @@
     <symbol id="icon-external" viewBox="0 0 24 24"><path d="M14.5 3.5h6v6"/><path d="M10.5 13.5l10-10"/><path d="M20.5 13.5v5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h5"/></symbol>
     <!-- 제거: X -->
     <symbol id="icon-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="icon-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
   </svg>
 
   <!--

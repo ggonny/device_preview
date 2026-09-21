@@ -6,7 +6,7 @@
    *
    * frameProfiles  : 기기 프레임. 레이어별 값을 세로 기준으로 적고, 가로는 JS 가 반시계 90° 회전 규칙으로 계산한다.
    *   family                 : 형상 언어(바디 마감·측면 키·스피커 등 CSS 분기 키). iphone-modern | iphone-classic | galaxy-bar | pixel | fold | flip | duo | ipad-classic | ipad-modern | neutral
-   *   controls               : 전면 디테일. homeButton{size,ring,bottom} · speaker{width,height,top} · camera/sensor{size, top,offsetX}(상단 베젤) 또는 {size, edge:'right'|'left', offset}(긴 변 베젤, offset 은 화면 중심에서 변을 따라 아래(+)/위(−))
+   *   controls               : 전면 디테일. homeButton{size,ring,bottom} · speaker{width,height,top} · camera/sensor{size, top,offsetX}(상단 베젤) 또는 {size, edge:'right'|'left', offset, inset}(긴 변 베젤, offset 은 화면 중심에서 변을 따라 아래(+)/위(−), inset 은 바디 가장자리에서 중심까지 — 생략 시 베젤 중앙)
    *                            keys[{type:'volume'|'power', edge:'top'|'right'|'bottom'|'left', start, length}](세로 기준 변·시작·길이 px, 지정하면 family 기본 키 대신 사용) · port{edge,width,height}(USB-C 등 커넥터 슬롯).
    *                            가로 모드는 반시계 규칙: top→left, right→top, bottom→right, left→bottom (JS 가 start 를 변환)
    *   top/right/bottom/left  : 베젤(바디 외곽 ~ 디스플레이) 두께. 상하좌우가 달라도 된다
@@ -18,6 +18,8 @@
    *   cutout / safeArea      : 하드웨어 컷아웃(별도 레이어) / OS safe-area. safeAreaLandscape 로 가로값을 덮어쓸 수 있음
    *   cutout.type  : none | notch | island | hole | dual-hole
    *   cutout.align : center | left | right  (offset 은 정렬 가장자리에서의 거리). 세로 위치는 top(위 가장자리 거리) 또는 bottom(아래 가장자리 거리)
+   *   cutout.edge  : 'right' | 'left' 이면 긴 변(세로 기준 좌우 베젤) 에 붙는 컷아웃: depth(화면 안으로 들어오는 깊이)·length(변 방향 길이)·offset(중심에서 아래 +). 가로에서는 right → 상단 중앙.
+   *                  shape:'wave' 는 Galaxy Tab Ultra 처럼 완만한 반타원 노치(스피커 슬릿·카메라 점 장식 없음, 카메라는 controls.camera 로 그림)
    *   dual-hole    : [플래시][렌즈][렌즈] 가로 상자. lens(렌즈 지름)·ring(링 두께)·lensGap·flash(플래시 지름, 0 이면 없음)·flashGap 으로 상자 크기가 정해진다
    *   display.mask : 'holes' 면 디스플레이 마스크(.screen_wrap clip-path) 가 코너별 둥근 사각형에서 dual-hole 의 렌즈·플래시 원을 뺀 실제 가시 영역이 된다
    *   homeIndicatorCenter : 홈 인디케이터 중심 x(px, 세로 기준). 하단 컷아웃 옆에 놓일 때만 지정, 생략 시 중앙
@@ -159,17 +161,55 @@
      *   교차 확인: Apple 뉴스룸 13" 렌더 "Apple-iPad-Air-M4-multitasking-260302"(5.55px/mm) 화면 코너 r 18px=3.2mm 일치, 상태바 텍스트 중심 2.9mm(≈15pt) → 상태바 28pt.
      * 카메라가 가로 긴 변(Apple: "Landscape 12MP Center Stage camera") → 세로 기준 오른쪽 베젤, 가로(반시계) 에서는 상단 중앙 왼쪽. */
     'ipad-air-11':{family:'ipad-modern',top:55,right:55,bottom:55,left:55,ring:5,radius:70,screenRadius:18,platform:'ios',obstruction:'긴 변 베젤 카메라·홈 인디케이터',
-      cutout:{type:'none'},safeArea:{top:28,right:0,bottom:20,left:0},safeAreaLandscape:{top:28,right:0,bottom:20,left:0},homeIndicator:true,homeIndicatorWidth:300,
+      cutout:{type:'none'},safeArea:{top:30,right:0,bottom:20,left:0},safeAreaLandscape:{top:30,right:0,bottom:20,left:0},homeIndicator:true,homeIndicatorWidth:300,
       controls:{camera:{size:15,edge:'right',offset:-49},sensor:{size:7,edge:'right',offset:51},
         keys:[{type:'volume',edge:'right',start:99,length:48},{type:'volume',edge:'right',start:159,length:48},{type:'power',edge:'top',start:774,length:93}],
         port:{edge:'bottom',width:47,height:3}},
       source:{nativePhysicalResolution:'official: 2360×1640 (Apple tech specs 126471 "2360-by-1640-pixel resolution at 264 ppi") · 대각선 10.86"/27.59cm official',
         renderedPhysicalResolution:'derived-orientation: 1640×2360 — 세로(portrait) 프리뷰 기준 width×height 로 정규화, official 원문값 아님',
-        cssViewport:'verified: 820×1180 pt @2x (Use Your Loaf "iPad 2024 Screen Sizes" 2024-05-13, iPad Air 11" M2 · 2360÷2=1180 정합) → 동일 패널(2360×1640 264ppi) 의 M4 모델에 준용(derived). Apple 공식 pt 표기는 확인하지 못함(HIG Layout 표 현재 미게시)',
+        cssViewport:'derived: 820×1180 @DPR 2 — iPad Air 11 (M4) 실기기에서 직접 검증한 값이 아님. 동일 해상도·패널(2360×1640 264ppi) 의 이전 모델 iPad Air 11" (M2) 레퍼런스(Use Your Loaf "iPad 2024 Screen Sizes" 2024-05-13: 820×1180 pt @2x, 2360÷2=1180 정합) 를 준용(inferred). Apple 공식 pt 표기는 확인하지 못함(HIG Layout 표 현재 미게시) → 실제 M4 에서 innerWidth / innerHeight / devicePixelRatio 확인 시 verified 로 승격',
         body:'official: 247.6×178.5×6.1mm',bezel:'derived: 공식 대각선 기준 활성영역 226.6×157.4mm → 4변 10.5mm → 55px (렌더 실측 33~35px/3.37=9.8~10.4mm 일치)',ring:'photo-measured: 전면 금속 테 2~4px/3.37 ≈ 0.6~1.2mm → 5px',
         radius:'photo-measured: 바디 코너 r 45px/3.37=13.4mm → 70px (동심 검산 18+55=73 과 오차 내)',screenRadius:'photo-measured: 화면 코너 r 10px=3.0±0.3mm → 16px ≈ 커뮤니티 참고값 18pt 와 오차 내 → 18px (13" 렌더 실측 3.2mm 일치)',cutout:'n/a',
         controls:'photo-measured: 카메라 중심 화면 중심 위 9.5mm → −49px (13" 렌더 −9.5mm 일치), Ø 11" 렌더 2.4mm / 13" 렌더 링 포함 3.1mm → 15px · 센서 아래 9.8mm → +51px, Ø≈1.5mm → 7px · 볼륨 2개 우측 변 19.0mm 부터 20.8mm(각 9.3 + 틈 2.2 는 approximation 분할) → start 99/159, 길이 48 · 상단 버튼 상단 변 우측 끝 12.5~30mm → start 774 길이 93 · USB-C 하단 변 중앙(official: tech specs Buttons and Connectors), 폭 9mm→47px approximation',
-        statusBar:'photo-measured(13" 뉴스룸 multitasking 렌더, 11" 과 동일 밀도 264ppi): 상태바 텍스트 중심 화면 상단에서 2.9mm ≈ 15pt → 높이 28pt derived(중심 대칭 가정) · 시간+날짜 좌측, Wi-Fi·배터리 %·배터리 우측 · 여백 좌 15/우 17pt → 16 · 홈 인디케이터 20pt 는 홈 인디케이터형 iPad 표준(verified), 폭 300 approximation(렌더에 미표시)'}}
+        statusBar:'photo-measured(13" 뉴스룸 multitasking 렌더 1.06px/pt · apple.com iPadOS 27 hero 11" 0.74px/pt 교차, 두 모델 264ppi 동일): 시간 텍스트 중심 상단에서 15.1pt(hero 14.9) · 숫자 높이 12.3pt → 글꼴 ≈17pt · 100% 숫자 9.4pt → ≈13pt · 배터리 24.5×11pt · Wi-Fi 12.6×8pt · 여백 좌 14 / 우 16pt → 상태바 높이 30 은 중심 대칭 가정 approximation(iPadOS 26/27 공식 수치 없음) · 홈 인디케이터 20pt 는 M4 실기기 직접 검증값이 아니라 홈 인디케이터형 iPad 계열 공통 UIKit safe-area 기준을 준용(derived; 실기기 env(safe-area-inset-bottom) 확인 시 verified), 폭 300 approximation(렌더에 미표시)'}},
+
+    /* Galaxy Tab S11 (11.0형) 세로 800×1280: 바디 253.8×165.3×5.5mm · native 2560×1600 · 대각선 278.1mm(전체 직사각형)/276.2mm(둥근 모서리) — Samsung 뉴스룸 2025-09-04 사양표 + samsung.com/sec (official).
+     * 활성영역(derived): 278.1mm ÷ 3018.6px = 0.09213mm/px → 235.9×147.4mm → 5.43px/mm(CSS). 베젤 = (165.3−147.4)/2 = 8.95 · (253.8−235.9)/2 = 8.95mm → 49px (Samsung "7.8mm bezel" 은 프레임 제외 검은 유리 폭으로 해석).
+     * 렌더 실측(photo-measured): samsung.com US 갤러리 "us-galaxy-tab-s11-sm-x730-sm-x730nzaaxar-550443947"(2052×1641 투명 PNG, 가로 정면, 5.80px/mm) — 바디 코너 r 56~57px=9.75mm · 화면 코너 r 19px=3.3mm · 베젤 50~55px=8.6~9.5mm ·
+     *   카메라 긴 변 베젤 중앙(수평), 바디 가장자리에서 28.6px=4.9mm, Ø≈11px=1.9mm · 노치 없음 · 상단 변(가로 기준) 키 2개: 46.5mm 부터 20.2mm(볼륨 추정) / 76.7mm 부터 13.3mm(전원 추정) · USB-C 는 측면 렌더 550443968 에서 짧은 변 중앙.
+     * 카메라가 긴 변(가로 상단) → 세로 기준 오른쪽 베젤, 가로(반시계) 에서 상단 중앙. 가로 상단 변의 키는 세로에서 오른쪽 변(위에서 같은 거리). */
+    'galaxy-tab-s11':{family:'galaxy-tab',top:49,right:49,bottom:49,left:49,ring:4,radius:53,screenRadius:18,platform:'android',obstruction:'긴 변 베젤 카메라',
+      cutout:{type:'none'},safeArea:{top:24,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:24,left:0},homeIndicator:true,homeIndicatorWidth:200,
+      controls:{camera:{size:10,edge:'right',offset:0,inset:27},
+        keys:[{type:'volume',edge:'right',start:252,length:110},{type:'power',edge:'right',start:416,length:72}],
+        port:{edge:'bottom',width:49,height:3}},
+      source:{nativePhysicalResolution:'official: 2560×1600 (Samsung Global Newsroom 2025-09-04 사양표 "11.0-inch, 2560 x 1600" · samsung.com/sec) · 대각선 278.1mm 전체 직사각형 / 276.2mm 둥근 모서리 official',
+        renderedPhysicalResolution:'derived-orientation: 1600×2560 — 세로(portrait) 프리뷰 기준 width×height 로 정규화, official 원문값 아님',
+        cssViewport:'derived: 800×1280 @DPR 2 — S11 실기기에서 직접 검증한 값이 아님. 동일 해상도·밀도 패널(2560×1600 274ppi) 의 전작 Galaxy Tab S9 가 800×1280 CSS @2 로 보고된 외부 레퍼런스(1440px.com "Android Tablets Screen Sizes") 를 준용(inferred). Samsung 공식 CSS 폭·DPR 표기 없음 → 실기기 innerWidth/devicePixelRatio 확인 시 verified 로 승격',
+        body:'official: 253.8×165.3×5.5mm',bezel:'derived: 공식 대각선 기준 활성영역 235.9×147.4mm → 4변 8.95mm → 49px (렌더 실측 8.6~9.5mm 일치 · Samsung 각주 "7.8mm" 는 유리 베젤 폭)',ring:'photo-measured: 전면 금속 테 ≈4px/5.80=0.7mm → 4px',
+        radius:'photo-measured: 바디 코너 r 56~57px/5.80=9.75mm → 53px (rms 0.4~1.0)',screenRadius:'photo-measured: 화면 코너 r 19px=3.3mm → 18px (우하단 rms 0.28)',cutout:'n/a: 노치 없음 (베젤 안 카메라)',
+        controls:'photo-measured: 카메라 긴 변 베젤 수평 중앙, 바디 가장자리에서 4.9mm → inset 27, Ø1.9mm → 10px · 키(가로 상단 변 → 세로 오른쪽 변): 46.5mm 부터 20.2mm → start 252 길이 110(볼륨, 길이로 추정) / 76.7mm 부터 13.3mm → start 416 길이 72(전원, 추정) · USB-C 짧은 변 중앙(측면 렌더 550443968), 폭 9mm→49px approximation',
+        statusBar:'approximation: One UI 8 태블릿 상태바 24dp(Android 표준) · 하단 제스처 바 24 (One UI 기본 3버튼 내비 48dp 일 수 있음) — 높이 값은 android-tablet-* browserProfiles 에서 관리'}},
+
+    /* Galaxy Tab S11 Ultra (14.6형) 세로 924×1480: 바디 326.3×208.5×5.1mm · native 2960×1848 · 대각선 369.9mm(전체 직사각형)/367.2mm(둥근 모서리) — Samsung 뉴스룸 2025-09-04 + samsung.com/uk 스펙 (official). "narrow 5.2mm bezels" official.
+     * 활성영역(derived): 369.9mm ÷ 3489.6px = 0.10600mm/px → 313.8×195.9mm → 4.72px/mm(CSS). 베젤 = (208.5−195.9)/2 = 6.3 · (326.3−313.8)/2 = 6.25mm → 30px (5.2mm 유리 + ≈1.1mm 프레임).
+     * 렌더 실측(photo-measured): samsung.com US 갤러리 "us-galaxy-tab-s11-ultra-sm-x930-sm-x930nzaaxar-548666708"(2052×1641, 가로 정면, 4.48px/mm) — 바디 코너 r 44~45px=9.9mm · 화면 코너 r 20px=4.5mm · 베젤 28~29px=6.3~6.5mm ·
+     *   상단 중앙 완만한 노치: 화면 안 깊이 12.5px=2.8mm, 폭 59px=13.2mm · 카메라 노치 위 베젤 안, 바디 가장자리에서 24px=5.4mm, Ø≈10px=2.2mm · 키: 46.9mm 부터 20mm / 77mm 부터 12.7mm (S11 과 같은 위치) · USB-C 짧은 변 중앙(측면 렌더 548666728).
+     * S11 과의 차이: 베젤 8.95 → 6.3mm, 카메라가 베젤에 다 들어가지 않아 화면에 wave 노치, 화면 코너 3.3 → 4.5mm, 후면 듀얼 카메라. */
+    'galaxy-tab-s11-ultra':{family:'galaxy-tab',top:30,right:30,bottom:30,left:30,ring:3,radius:47,screenRadius:21,platform:'android',obstruction:'긴 변 상단 wave 노치·카메라',
+      cutout:{type:'notch',shape:'wave',edge:'right',depth:13,length:62,offset:0},
+      safeArea:{top:24,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:24,left:0},homeIndicator:true,homeIndicatorWidth:220,
+      controls:{camera:{size:10,edge:'right',offset:0,inset:25},
+        keys:[{type:'volume',edge:'right',start:221,length:94},{type:'power',edge:'right',start:363,length:60}],
+        port:{edge:'bottom',width:42,height:3}},
+      source:{nativePhysicalResolution:'official: 2960×1848 (Samsung Global Newsroom 2025-09-04 사양표 "14.6-inch, 2960 x 1848" · samsung.com/uk "2960 x 1848 (WQXGA+)") · 대각선 369.9mm 전체 직사각형 / 367.2mm 둥근 모서리 official',
+        renderedPhysicalResolution:'derived-orientation: 1848×2960 — 세로(portrait) 프리뷰 기준 width×height 로 정규화, official 원문값 아님',
+        cssViewport:'derived: 924×1480 @DPR 2 — S11 Ultra 실기기에서 직접 검증한 값이 아님. 동일 해상도·밀도 패널(2960×1848 239ppi) 의 전작 Galaxy Tab S9 Ultra·S10 Ultra 가 924×1480 CSS @2 로 보고된 외부 레퍼런스(1440px.com "Android Tablets Screen Sizes") 를 준용(inferred). Samsung 공식 CSS 폭·DPR 표기 없음 → 실기기 확인 시 verified 로 승격',
+        body:'official: 326.3×208.5×5.1mm',bezel:'derived: 공식 대각선 기준 활성영역 313.8×195.9mm → 4변 6.25~6.3mm → 30px (렌더 실측 6.3~6.5mm · Samsung official "5.2mm bezels" 는 유리 베젤 폭)',ring:'photo-measured: 전면 금속 테 ≈3px/4.48=0.7mm → 3px',
+        radius:'photo-measured: 바디 코너 r 44~45px/4.48=9.9mm → 47px (rms 0.5~0.75)',screenRadius:'photo-measured: 화면 코너 r 20px=4.5mm → 21px (우하단 rms 0.38)',
+        cutout:'photo-measured: 상단 중앙 완만한 노치 깊이 12.5px=2.8mm → 13px · 폭 59px=13.2mm → 62px (반타원 근사, shape wave) · Samsung 각주 "actual viewable area is less due to the rounded corners and the camera hole"',
+        controls:'photo-measured: 카메라 노치 위 베젤 안, 바디 가장자리에서 5.4mm → inset 25, Ø2.2mm → 10px · 키(가로 상단 변 → 세로 오른쪽 변): 46.9mm 부터 20mm → start 221 길이 94(볼륨 추정) / 77mm 부터 12.7mm → start 363 길이 60(전원 추정) · USB-C 짧은 변 중앙(측면 렌더 548666728), 폭 9mm→42px approximation',
+        statusBar:'approximation: One UI 8 태블릿 상태바 24dp(Android 표준, 노치 깊이 13 을 덮음) · 하단 제스처 바 24 (3버튼 내비 48dp 일 수 있음) — 높이 값은 android-tablet-* browserProfiles 에서 관리'}}
   };
   Object.keys(frameProfiles).forEach(key=>{frameProfiles[key].id=key;});
 
@@ -192,9 +232,12 @@
     ring:{size:40,stroke:3,arcGap:116,wifiWidth:27,dotSize:4,dotAngles:[-31,-10.5,10.5,31]},timeSize:16,axis:48,timeCenter:92,ringCenter:129};
   frameProfiles['iphone-se'].statusBar={compact:true};
   frameProfiles['ipad-home'].statusBar={platform:'ios',compact:true};
+  /* One UI 8 태블릿 상태바(approximation: 공식 UI 스크린샷 미확보): Android 프로필 그대로, 태블릿은 가로에서도 글꼴·아이콘을 줄이지 않는다 */
+  frameProfiles['galaxy-tab-s11'].statusBar={platform:'android',fixedSize:true,fontSize:13,iconSize:11,source:'approximation: One UI 8 태블릿 상태바 — 시간 좌측·아이콘 우측(Android 프로필), 글꼴 13/아이콘 11 은 Android 프로필 기본값 준용'};
+  frameProfiles['galaxy-tab-s11-ultra'].statusBar={platform:'android',fixedSize:true,fontSize:13,iconSize:11,source:'approximation: galaxy-tab-s11 과 동일'};
   /* iPadOS 26/27 상태바(photo-measured, Apple 뉴스룸 13" 렌더): 좌 "9:41 AM  Wed Apr 1" · 우 Wi-Fi · 배터리 % · 배터리. 가로에서도 같은 크기(fixedSize) */
-  frameProfiles['ipad-air-11'].statusBar={platform:'ios',time:'9:41 AM\u2002Wed Apr 1',icons:['wifi','battery'],batteryText:true,batteryLevel:1,padding:{left:16,right:16},fixedSize:true,fontSize:15,iconSize:12,
-    source:'photo-measured: "Apple-iPad-Air-M4-multitasking-260302_big.jpg.large_2x" 시간 텍스트 높이 13px/5.55=2.3mm(≈12pt 숫자 높이 → 글꼴 ≈15pt) · 좌측 여백 16px=2.9mm≈15pt · 우측 배터리 끝 18px=3.2mm≈17pt · 아이콘 높이 10px≈9pt(12px 근사)'};
+  frameProfiles['ipad-air-11'].statusBar={platform:'ios',time:'9:41 AM\u2002Wed Apr 1',icons:['wifi','battery'],batteryText:true,batteryLevel:1,padding:{left:14,right:16},fixedSize:true,fontSize:17,iconSize:11,
+    source:'photo-measured: "Apple-iPad-Air-M4-multitasking-260302_big.jpg.large_2x"(1.06px/pt) 시간 숫자 높이 13px=12.3pt → 글꼴 17(SF 숫자 높이 ≈0.705em) · 100% 숫자 10px=9.4pt → 글꼴 ≈13(.78em) · 배터리 26×11.7px=24.5×11pt → 아이콘 11 · Wi-Fi 13×8.3px=12.6×8pt(.78배) · 좌 여백 15px=14pt · 우 17px=16pt · apple.com iPadOS 27 hero(11") 숫자 높이 9px/0.738=12.2pt, 중심 14.9pt 일치'};
   /* 외부 화면(466×678, 6.04px/mm): 뉴스룸 홈 화면 이미지(정지 상태) 실측 — 축 48(카메라 중심과 동일) · 시간 중심 92 · 링 Ø40 중심 129 · HIG 도식(1.0944px/pt) 과 일치(92.3 / 127.5).
    * island: Dynamic Island. 정지 상태(홈 화면 이미지·HIG 도식) 는 카메라 원(Ø36, 컷아웃과 동일) 만 보이고, Live Activity(통화 이미지) 에서 세로 필 38×62 @ top 26 으로 확장되며
    * 클러스터가 14.5px 내려온다(시간 106.5 · 링 143.5). 기본 표시는 live(세로 필) — state:'rest' 로 바꾸면 정지 상태. */
@@ -222,6 +265,15 @@
     'tablet-chrome':{label:'Chrome (태블릿)',platform:'any',urlBarPosition:'top',
       portrait:{statusBar:null,urlBar:88,toolbar:0,homeIndicator:null},
       landscape:{statusBar:null,urlBar:88,toolbar:0,homeIndicator:null}},
+    /* Android(One UI) 태블릿 브라우저: OS 상태바·내비게이션 바 높이를 프레임이 아니라 여기서 관리한다(approximation: Android 표준 상태바 24dp · 제스처 내비 24; One UI 기본 3버튼 내비는 48dp).
+     * Chrome 태블릿 = 탭 스트립 40 + 툴바 56 = 96 (approximation) · Samsung Internet 태블릿 = 상단 탭 바+주소창 100, 하단 툴바 52 (approximation, 공식 스크린샷 미확보).
+     * formFactor:'tablet' — 기본 브라우저가 태블릿 프로필인 기기(Galaxy Tab) 에서만 목록에 노출(스마트폰 목록 오염 방지) */
+    'android-tablet-chrome':{label:'Chrome (Android 태블릿)',platform:'android',formFactor:'tablet',urlBarPosition:'top',
+      portrait:{statusBar:24,urlBar:96,toolbar:0,homeIndicator:24},
+      landscape:{statusBar:24,urlBar:96,toolbar:0,homeIndicator:24}},
+    'android-tablet-samsung':{label:'Samsung Internet (태블릿)',platform:'android',formFactor:'tablet',urlBarPosition:'top',
+      portrait:{statusBar:24,urlBar:100,toolbar:52,homeIndicator:24},
+      landscape:{statusBar:24,urlBar:100,toolbar:52,homeIndicator:24}},
     'ipad-safari':{label:'Safari (iPad)',platform:'ios',urlBarPosition:'top',
       portrait:{statusBar:null,urlBar:50,toolbar:0,homeIndicator:null},
       landscape:{statusBar:null,urlBar:50,toolbar:0,homeIndicator:null}},
@@ -253,7 +305,7 @@
     {id:'tablet',label:'태블릿 경계'}
   ];
   /* localStorage 에 남은 예전 기기 id → 현재 id */
-  const deviceAliases={'z-flip':'z-flip8'};
+  const deviceAliases={'z-flip':'z-flip8','tablet-1024':'tablet-768'};   /* 'iPad 9.7형 가로' 프리셋은 회전 기능으로 대체(2026-09-21 제거) */
 
   const devices={
     'mobile-320':{name:'최소 모바일',group:'base',subtitle:'작은 화면·최소폭 점검',note:'320px 최소폭·작은 화면 점검',source:'iPhone SE 1세대·소형 Android 공통 최소폭',
@@ -291,13 +343,16 @@
       {id:'outer',label:'접힘 · 외부',width:466,height:678,diagonal:5.36,physicalWidth:1398,physicalHeight:2034,frame:'duo-outer',browser:'duo-safari',uiLayout:{natural:'side',rotated:'side'},note:'외부 화면 466 × 678 CSS 화면 · 우상단 카메라 · 코너 상태 클러스터·측면 컨트롤(iOS 27)'},
       {id:'inner',label:'펼침 · 내부',width:890,height:626,diagonal:7.58,physicalWidth:2670,physicalHeight:1878,orientation:'portrait',browser:'duo-safari',uiLayout:{natural:'side',rotated:'bars'},frame:'duo-inner',hinge:'vertical',hingeSize:2,note:'내부 화면 890 × 626 CSS 화면 · 단일 폴딩 화면 · 코너 상태 클러스터·측면 컨트롤, 세로로 돌리면 표준 가로 바(iOS 27)'}
     ]},
-    'tablet-768':{name:'iPad 9.7형',group:'tablet',subtitle:'홈 버튼형 · 태블릿 전환점',note:'iPad 9.7형(홈 버튼) 768 × 1024 · 모바일→태블릿 전환 경계',source:'official: iPad 6세대 9.7" 2048 × 1536, DPR 2 → 768 × 1024 · 바디 240.0 × 169.5mm (Apple)',
+    /* physicalWidth/Height 는 세로 기준 정규화 값(derived-orientation). Apple 공식 native 표기는 2360×1640 → frameProfiles['ipad-air-11'].source 참조. dpr 2 는 M2 동일 패널 레퍼런스 준용(derived, M4 실기기 미검증) */
+    'ipad-air-11':{name:'iPad Air 11',group:'tablet',subtitle:'M4 (2026) · 홈 인디케이터형',note:'iPad Air 11 (M4) 820 × 1180 CSS 화면 · 긴 변 카메라 · 상태바 28 · 홈 인디케이터 20',source:'official: 2360 × 1640 px 264ppi · 대각선 10.86"(27.59cm) · 바디 247.6 × 178.5 × 6.1mm (Apple tech specs 126471) · CSS 820 × 1180 @2 는 동일 패널 이전 모델(M2) 레퍼런스 준용(derived, M4 실기기 미검증)',
+      frame:'ipad-air-11',browser:'ipados-safari',dpr:2,states:[{id:'default',label:'기본',width:820,height:1180,diagonal:10.86,physicalWidth:1640,physicalHeight:2360}]},
+    /* physicalWidth/Height 는 세로 기준 정규화 값(derived-orientation). Samsung 공식 native 표기는 2560×1600 / 2960×1848 → frameProfiles source 참조. dpr 2 는 동일 패널 전작(Tab S9 / S9·S10 Ultra) 레퍼런스 준용(derived, 실기기 미검증) */
+    'galaxy-tab-s11':{name:'Galaxy Tab S11',group:'tablet',subtitle:'11.0형 · One UI 8',note:'Galaxy Tab S11 800 × 1280 CSS 화면 · 긴 변 카메라(노치 없음) · Android 상태바 24 · 제스처 바 24',source:'official: 2560 × 1600 · 278.1mm(11.0형, 둥근 모서리 276.2mm) · 바디 253.8 × 165.3 × 5.5mm (Samsung 뉴스룸 2025-09-04, samsung.com/sec) · CSS 800 × 1280 @2 는 동일 패널 전작 Tab S9 레퍼런스 준용(derived, 실기기 미검증)',
+      frame:'galaxy-tab-s11',browser:'android-tablet-chrome',dpr:2,states:[{id:'default',label:'기본',width:800,height:1280,diagonal:10.95,physicalWidth:1600,physicalHeight:2560}]},
+    'galaxy-tab-s11-ultra':{name:'Galaxy Tab S11 Ultra',group:'tablet',subtitle:'14.6형 · wave 노치',note:'Galaxy Tab S11 Ultra 924 × 1480 CSS 화면 · 긴 변 상단 wave 노치·카메라 · Android 상태바 24 · 제스처 바 24',source:'official: 2960 × 1848 · 369.9mm(14.6형, 둥근 모서리 367.2mm) · 바디 326.3 × 208.5 × 5.1mm · 베젤 5.2mm (Samsung 뉴스룸 2025-09-04, samsung.com/uk) · CSS 924 × 1480 @2 는 동일 패널 전작 Tab S9/S10 Ultra 레퍼런스 준용(derived, 실기기 미검증)',
+      frame:'galaxy-tab-s11-ultra',browser:'android-tablet-chrome',dpr:2,states:[{id:'default',label:'기본',width:924,height:1480,diagonal:14.56,physicalWidth:1848,physicalHeight:2960}]},
+    'tablet-768':{name:'iPad 9.7형 [레거시]',group:'tablet',subtitle:'홈 버튼형 · 태블릿 전환점',note:'iPad 9.7형(홈 버튼) 768 × 1024 · 모바일→태블릿 전환 경계 · 회전하면 1024 × 768(PC 전환 직전 점검)',source:'official: iPad 6세대 9.7" 2048 × 1536, DPR 2 → 768 × 1024 · 바디 240.0 × 169.5mm (Apple)',
       frame:'ipad-home',browser:'ipad-safari',dpr:2,states:[{id:'default',label:'기본',width:768,height:1024,diagonal:9.7,physicalWidth:1536,physicalHeight:2048}]},
-    'tablet-1024':{name:'iPad 9.7형 가로',group:'tablet',subtitle:'홈 버튼형 · PC 전환 직전',note:'1024px 전후 PC 전환 직전 점검 · iPad 9.7형 가로 자세',source:'official: iPad 6세대 9.7" 2048 × 1536, DPR 2 (가로)',
-      frame:'ipad-home',browser:'ipad-safari',dpr:2,states:[{id:'default',label:'기본',width:1024,height:768,diagonal:9.7,physicalWidth:2048,physicalHeight:1536}]},
-    /* physicalWidth/Height 는 세로 기준 정규화 값(derived-orientation). Apple 공식 native 표기는 2360×1640 → frameProfiles['ipad-air-11'].source 참조. dpr 2 는 2360÷1180(verified) */
-    'ipad-air-11':{name:'iPad Air 11',group:'tablet',subtitle:'M4 (2026) · 홈 인디케이터형',note:'iPad Air 11 (M4) 820 × 1180 CSS 화면 · 긴 변 카메라 · 상태바 28 · 홈 인디케이터 20',source:'official: 2360 × 1640 px 264ppi · 대각선 10.86"(27.59cm) · 바디 247.6 × 178.5 × 6.1mm (Apple tech specs 126471) · CSS 820 × 1180 @2x 는 verified(개발자 레퍼런스, M2 동일 패널 준용)',
-      frame:'ipad-air-11',browser:'ipados-safari',dpr:2,states:[{id:'default',label:'기본',width:820,height:1180,diagonal:10.86,physicalWidth:1640,physicalHeight:2360}]}
   };
 
   /* ==================================================================
@@ -319,6 +374,7 @@
     openLink:document.getElementById('openLink'),previewArea:document.getElementById('previewArea'),previewStage:document.getElementById('previewStage'),previewMount:document.getElementById('previewMount'),
     compareBar:document.getElementById('compareBar'),compareCount:document.getElementById('compareCount'),compareNote:document.getElementById('compareNote'),
     compareGrid:document.getElementById('compareGrid'),compareEmpty:document.getElementById('compareEmpty'),
+    introScreen:document.getElementById('introScreen'),introUrlBtn:document.getElementById('introUrlBtn'),introSkipBtn:document.getElementById('introSkipBtn'),
     syncScroll:document.getElementById('syncScroll'),syncRotate:document.getElementById('syncRotate'),syncRefresh:document.getElementById('syncRefresh'),
     deviceShellTemplate:document.getElementById('deviceShellTemplate'),compareItemTemplate:document.getElementById('compareItemTemplate'),
     frameStatus:document.getElementById('frameStatus'),loadStatus:document.querySelector('.load_status'),presetNote:document.getElementById('presetNote'),viewportStatus:document.getElementById('viewportStatus')
@@ -346,6 +402,7 @@
   let browserByPlatform={};   /* 플랫폼별 사용자 브라우저 선택 { ios:'ios-chrome', ... } */
   let urlBarPositionByBrowser={}; /* 브라우저별 세로 모드 주소창 위치 선택 { 'ios-safari':'top', ... } · 없으면 프로필 기본값 */
   let currentUrl='';
+  let introDismissed=false;   /* 시작 화면을 "기기 프레임 먼저 보기" 로 닫았는지 (저장하지 않음, 세션 한정) */
 
   function setError(element,message){element.textContent=message;element.hidden=!message;}
   function announce(message){elements.viewportStatus.textContent=message;}
@@ -470,6 +527,9 @@
     if(!profile)return false;
     if(profileId===getDefaultBrowserId(view))return true;
     if(profile.exclusive)return false;   /* 특정 기기 전용(예: duo-safari) 은 그 기기의 기본일 때만 */
+    /* 폼팩터 전용(formFactor:'tablet' — Android 태블릿 브라우저) 은 기기의 기본 브라우저가 같은 폼팩터일 때만 목록에 */
+    const defaultProfile=browserProfiles[getDefaultBrowserId(view)];
+    if(profile.formFactor&&profile.formFactor!==(defaultProfile&&defaultProfile.formFactor))return false;
     if(platform==='any')return true;
     return (profile.platform||'any')===platform;
   }
@@ -953,11 +1013,16 @@
     const camera=controls.camera;
     shell.dataset.camera=camera?'true':'false';
     shell.dataset.cameraEdge=camera&&camera.edge?camera.edge:'top';   /* top(상단 베젤, 기존) | right/left(긴 변 베젤 중앙선) */
-    if(camera){set('--camera-size',camera.size);set('--camera-top',camera.top||0);set('--camera-x',camera.offsetX||0);set('--camera-offset',camera.offset||0);}
+    /* 긴 변 카메라의 바디 가장자리 → 중심 거리(inset). 생략 시 그 변 베젤의 절반(세로 기준 right/left 인셋) */
+    const edgeInset=edge=>edge==='left'?insets.left:insets.right;   /* 세로 기준 인셋: 가로에서는 insets 가 이미 회전돼 있으므로 아래에서 되돌린다 */
+    const portraitInset=edge=>landscape?(edge==='left'?insets.bottom:insets.top):edgeInset(edge);
+    if(camera){set('--camera-size',camera.size);set('--camera-top',camera.top||0);set('--camera-x',camera.offsetX||0);set('--camera-offset',camera.offset||0);
+      set('--camera-inset',camera.inset!=null?camera.inset:portraitInset(camera.edge||'right')/2);}
     const sensor=controls.sensor;
     shell.dataset.sensor=sensor?'true':'false';
     shell.dataset.sensorEdge=sensor&&sensor.edge?sensor.edge:'top';
-    if(sensor){set('--sensor-size',sensor.size);set('--sensor-top',sensor.top||0);set('--sensor-offset',sensor.offset||0);}
+    if(sensor){set('--sensor-size',sensor.size);set('--sensor-top',sensor.top||0);set('--sensor-offset',sensor.offset||0);
+      set('--sensor-inset',sensor.inset!=null?sensor.inset:portraitInset(sensor.edge||'right')/2);}
     /* 데이터 기반 측면 키(controls.keys): 있으면 family 기본 위치 대신 변·시작·길이로 놓는다. type 별 요소: volume → .key_volume, 두 번째 volume → .key_volume_b, power → .key_power */
     const keys=Array.isArray(controls.keys)?controls.keys:null;
     shell.dataset.keys=keys?'custom':'family';
@@ -1034,11 +1099,12 @@
     const flash=dual?cutout.flash||0:0;
     const flashGap=dual&&flash?(cutout.flashGap==null?6:cutout.flashGap):0;
     const parts={lens,lensGap,flash,flashGap,ring:dual?(cutout.ring==null?4:cutout.ring):0};
-    const width=dual?flash+flashGap+lens*2+lensGap:cutout.width;
-    const height=dual?lens:cutout.height;
+    const sideEdge=cutout.edge==='right'||cutout.edge==='left';   /* 긴 변(세로 기준 좌우 베젤) 컷아웃: depth × length, 변 중앙 + offset */
+    const width=sideEdge?cutout.depth||0:dual?flash+flashGap+lens*2+lensGap:cutout.width;
+    const height=sideEdge?cutout.length||0:dual?lens:cutout.height;
     const offset=cutout.offset||0;
-    const left=cutout.align==='left'?offset:cutout.align==='right'?pw-offset-width:(pw-width)/2;
-    const top=cutout.bottom!=null?ph-cutout.bottom-height:(cutout.top||0);
+    const left=sideEdge?(cutout.edge==='right'?pw-width:0):cutout.align==='left'?offset:cutout.align==='right'?pw-offset-width:(pw-width)/2;
+    const top=sideEdge?(ph-height)/2+offset:cutout.bottom!=null?ph-cutout.bottom-height:(cutout.top||0);
     const circles=[];
     if(dual){
       const cy=top+height/2;
@@ -1105,6 +1171,11 @@
     if(!cutout)return;
     const geometry=getCutoutGeometry(view,profile,landscape);
     const box=geometry.box;
+    /* 컷아웃이 붙은 변(현재 방향): 세로 기준 top(기본) | right | left → 가로는 반시계 규칙(top→left, right→top, left→bottom). CSS 가 노치 곡률 방향에 쓴다 */
+    const rotateEdge={top:'left',right:'top',bottom:'right',left:'bottom'};
+    const edge=cutout.edge||'top';
+    shell.dataset.cutoutEdge=landscape?rotateEdge[edge]:edge;
+    shell.dataset.cutoutShape=cutout.shape||'default';
     shell.style.setProperty('--cutout-width',Math.round(box.width)+'px');
     shell.style.setProperty('--cutout-height',Math.round(box.height)+'px');
     shell.style.setProperty('--cutout-left',Math.round(box.left)+'px');
@@ -1155,7 +1226,7 @@
     return url.href;
   }
 
-  const initialPreviewContent='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;padding:clamp(20px,6vw,56px);min-height:100vh;display:grid;place-items:center;color:#233044;background:#f8fafc;font-family:system-ui,sans-serif}.wrap{width:min(100%,560px)}.tag{display:inline-block;padding:5px 9px;color:#0b5bc6;background:#e8f2ff;border-radius:999px;font-size:12px;font-weight:700}h1{margin:14px 0 8px;font-size:clamp(24px,8vw,42px);line-height:1.15;letter-spacing:-.04em}p{margin:0;color:#667085;font-size:15px;line-height:1.7}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:28px}.grid span{height:72px;background:linear-gradient(135deg,#d8e8ff,#edf5ff);border:1px solid #b8d3f6;border-radius:12px}@media(max-width:380px){.grid{grid-template-columns:1fr}.grid span{height:48px}}</style></head><body><main class="wrap"><span class="tag">READY</span><h1>테스트할 사이트를 연결해 주세요.</h1><p>위 주소창에 URL을 입력한 뒤 왼쪽 기기와 회전 버튼을 눌러 반응형 변화를 확인할 수 있습니다.</p><div class="grid" aria-hidden="true"><span></span><span></span><span></span></div></main></body></html>';
+  const initialPreviewContent='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}html,body{height:100%}body{margin:0;display:grid;place-items:center;padding:6vmin;color:#5b6473;background:#f6f8fb;font-family:-apple-system,"Apple SD Gothic Neo",Roboto,"Noto Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased}.ph{display:grid;justify-items:center;gap:clamp(8px,2.6vmin,16px);text-align:center;word-break:keep-all}.ph svg{display:block;width:clamp(28px,11vmin,56px);height:clamp(28px,11vmin,56px);color:#a4adba;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.ph p{margin:0}.ph .m{color:#3b4453;font-size:clamp(13px,4.2vmin,20px);font-weight:600;line-height:1.45;letter-spacing:-.02em}.ph .s{color:#8a94a3;font-size:clamp(11px,3vmin,13px);line-height:1.5}@media(max-height:200px){.ph .s{display:none}}</style></head><body><main class="ph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.8 5.4 3.8 8.5S14.5 17.9 12 20.5M12 3.5C9.5 6.1 8.2 8.9 8.2 12s1.3 5.9 3.8 8.5"/></svg><p class="m">URL을 입력하면<br>이 화면에 사이트가 표시됩니다.</p><p class="s">상단 주소창에 URL을 입력해 주세요.</p></main></body></html>';
 
   /* view 에 현재 URL(없으면 안내 화면) 을 로드. iframe 은 재생성하지 않고 src 만 바꾼다 */
   function loadInto(view){
@@ -1671,7 +1742,16 @@
     elements.openLink.removeAttribute('aria-disabled');
     elements.openLink.removeAttribute('tabindex');
     try{localStorage.setItem('viewportLabUrl',url);}catch(error){}
+    updateIntro();
     return url;
+  }
+
+  /* 시작 화면: URL 이 없고 닫지 않았을 때만 스테이지 위에 표시. 기기 셸은 레이아웃을 유지한 채 visibility 로만 숨긴다(배율·측정 로직 무관) */
+  function updateIntro(){
+    if(!elements.introScreen)return;
+    const show=!currentUrl&&!introDismissed;
+    elements.introScreen.hidden=!show;
+    elements.previewStage.classList.toggle('is_intro',show);
   }
 
   /* 공통 새로고침: 보이는 view 전부 */
@@ -1994,6 +2074,13 @@
    * 이벤트
    * ------------------------------------------------------------------ */
   elements.siteForm.addEventListener('submit',event=>{event.preventDefault();try{loadUrl(elements.siteUrl.value);}catch(error){}});
+  /* 시작 화면: 입력창을 복제하지 않고 상단 주소창으로 포커스만 옮긴다 */
+  if(elements.introUrlBtn)elements.introUrlBtn.addEventListener('click',()=>{
+    elements.siteForm.scrollIntoView({block:'nearest'});
+    elements.siteUrl.focus();
+    elements.siteUrl.select();
+  });
+  if(elements.introSkipBtn)elements.introSkipBtn.addEventListener('click',()=>{introDismissed=true;updateIntro();});
   elements.deviceNav.addEventListener('click',event=>{
     if(viewMode!=='single')return;
     const button=event.target.closest('.device_btn');
@@ -2054,5 +2141,6 @@
   updatePreview({announce:false});
   restorePreference();
   restoreComparePreference();
+  updateIntro();
   registerWebMcpTools();
 })();
