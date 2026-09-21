@@ -23,7 +23,7 @@
   · iOS 27 UI: 일반 iPhone 의 가로 상태바·주소창 대신 카메라 쪽 세로 축에 코너 상태 클러스터(시간 → 링 안 Wi-Fi → 셀룰러 점) 와
     세로 Dynamic Island(외부 화면), 그 아래 Safari 측면 컨트롤(뒤로 원형 + 캡슐 / 하단 캡슐) 이 콘텐츠 위에 떠 있습니다. 내부 화면을 세로로 돌리면 표준 가로 바.
 - 가로·세로 회전, 직접 화면 너비·높이 입력 (회전·직접 입력값은 다시 열 때 복원)
-- 실기기 배율 / 화면 맞춤 / 100% 보기
+- 표시 배율: [−] [% 직접 입력] [+] [화면 맞춤] [실기기] — 25~200%, 5% 단위
 - 브라우저 종류 선택: Safari, Chrome (iOS), Chrome, Samsung Internet, Chrome (태블릿), Chrome (Android 태블릿) / Samsung Internet (태블릿) — Galaxy Tab 에서만, 상태바 24·내비 바 24 를 브라우저 프로필에서 관리, Safari (iPad — 홈 버튼형), Safari (iPadOS — 홈 인디케이터형: 상태바 30, 탭 바 50, 홈 인디케이터 영역은 콘텐츠 위에 겹침), Safari (iPhone Duo — Duo 에서만)
   · 기기 플랫폼에 맞는 브라우저만 목록에 나오고, 선택은 플랫폼별로 기억됩니다.
 - 상태바 / 주소창 / 툴바 / 홈 인디케이터 밴드를 브라우저별 위치·높이로 표시
@@ -59,9 +59,11 @@
 
 상태바·컷아웃·브라우저 UI 레이어
 - 노치 / 다이내믹 아일랜드 / 펀치홀 = 기기 하드웨어(frameProfiles.cutout, .screen_cutout 레이어)
-- 시간 / 셀룰러 / Wi-Fi / 배터리 = OS 상태바(statusBarProfiles: ios / android / generic, .band_status 레이어)
-  · 프레임의 platform 으로 프로필을 고르고 frameProfiles[*].statusBar 로 항목을 덮어씁니다(예: iPhone SE 의 compact).
+- 시간 / 셀룰러 / Wi-Fi / 배터리 = OS 상태바(statusBarProfiles: ios / android(Pixel) / oneui(Galaxy) / generic, .band_status 레이어)
+  · 프레임의 platform 으로 프로필을 고르고 frameProfiles[*].statusBar 로 항목을 덮어씁니다(예: iPhone SE 의 레거시 배치, Galaxy 의 oneui).
   · 아이콘은 자체 SVG(외부 라이브러리·제조사 이미지 없음) 이며 좌/우 정렬 컷아웃(Fold 펼침 카메라 등) 만큼 자동으로 비켜납니다.
+  · 2026-09-21 전 기기 재실측: iPhone 은 Apple 공식 이미지(뉴스룸·HIG·지원 문서), Galaxy 는 Samsung 공식 렌더·실사진, Pixel 은 AOSP 값 기준으로 시간 크기·아이콘 크기·간격·좌우 여백·세로 위치를 맞췄습니다.
+    iPhone 노치 기기는 시간이 노치 아래쪽(26pt), 아일랜드 기기는 아일랜드 세로 중앙에 놓이고, Galaxy(One UI 7 이후) 는 숫자가 든 알약형 배터리와 가는 4막대 신호 아이콘을 씁니다.
 - Safari / Chrome 주소창·툴바 = 브라우저 UI(browserProfiles, .band_url / .band_toolbar 레이어)
 - iPhone Duo(iOS 27) 는 위 가로 밴드 대신 다음 레이어를 씁니다 (Apple 뉴스룸·HIG "Designing for iPhone Duo" 기준):
   · 코너 상태 클러스터(statusBarProfiles.duo, layout:'corner', .status_cluster): 시간 → 아래가 트인 링(안쪽 Wi-Fi) → 링 틈의 셀룰러 점 4개.
@@ -78,11 +80,13 @@
 - 기기별 둥근 모서리, 홈 버튼, 노치, 다이내믹 아일랜드, 펀치홀, 커버 카메라, 접힘선, 홈 인디케이터 표시
 - 프리셋별 전체 CSS 화면, 실제 사이트 표시 영역, 물리 해상도와 DPR 표시
 
-배율 구분
-- 실기기: 공개된 화면 크기와 CSS 화면을 기준으로 계산한 물리 크기 근사값입니다.
-- 맞춤: 미리보기 영역 안에 기기 전체가 들어오도록 자동 축소합니다.
-- 100%: CSS 1px을 PC 브라우저의 CSS 1px로 표시합니다.
-- 실기기 배율은 모니터 크기와 Windows 화면 배율에 따라 실제 기기 크기와 차이가 날 수 있습니다.
+표시 배율
+- 배율은 기기 프레임 전체의 "보이는 크기" 만 바꿉니다. iframe 의 CSS 뷰포트, 미디어 쿼리 결과, DPR, 기기 프로필은 배율과 무관하게 그대로입니다.
+- 100% = 기기 CSS 1px 을 PC 브라우저 CSS 1px 로 1:1 표시하는 배율입니다. 실제 기기의 물리 크기가 아닙니다.
+- [−] / [+]: 현재 배율에서 5% 씩 줄이거나 키웁니다 (25%~200%). 숫자 칸에 % 를 직접 입력하고 Enter 하면 5% 단위로 반올림해 적용됩니다(↑/↓ 키도 5% 단위).
+- 수동으로 정한 배율은 창 크기를 바꾸거나 기기를 바꾸거나 회전해도 그대로 유지됩니다.
+- 화면 맞춤: 미리보기 영역에 기기 전체가 들어오도록 자동 축소하며, 창 크기·기기·회전이 바뀌면 다시 계산합니다.
+- 실기기: 공개된 화면 크기(inch)와 CSS 화면으로 계산한 물리 크기 근사값입니다. 모니터 크기와 Windows 화면 배율에 따라 실제 기기 크기와 차이가 날 수 있습니다.
 
 사이트 영역 계산
 - 프리셋의 너비·높이는 기기 전체 CSS 화면입니다.

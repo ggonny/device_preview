@@ -490,8 +490,58 @@ svg {
 .scale_controls input:focus-visible + span, .position_controls input:focus-visible + span, .mode_controls input:focus-visible + span { outline: 3px solid var(--focus-color); outline-offset: 1px; }
 .scale_controls input:disabled + span, .position_controls input:disabled + span, .mode_controls input:disabled + span { color: #aeb7c4; cursor: not-allowed; }
 .scale_controls input:disabled:checked + span, .position_controls input:disabled:checked + span { color: #8a95a8; background: #f4f6f9; box-shadow: none; }
-.scale_controls output { flex: 0 0 44px; width: 44px; padding: 0 4px; color: #55637a; font-size: 12px; font-variant-numeric: tabular-nums; text-align: center; }   /* 고정 폭: 배율 숫자 길이와 무관하게 열 폭 유지 */
-.tool_actions .scale_controls label span { height: 28px; }
+/* 표시 배율 컨트롤: [−] [% 입력] [+] [화면 맞춤] [실기기]. 입력 폭 고정(열 폭 흔들림 방지) */
+.scale_controls { gap: 2px; }
+.scale_btn, .scale_mode {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  color: #55637a;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.scale_btn { width: 26px; padding: 0; font-size: 15px; font-weight: 600; line-height: 1; }
+.scale_btn:hover, .scale_mode:hover { color: #1357ae; }
+.scale_btn:disabled, .scale_mode:disabled { color: #aeb7c4; cursor: not-allowed; }
+.scale_mode[aria-pressed="true"] { color: #1357ae; background: #fff; box-shadow: 0 1px 4px rgba(15, 23, 42, .14); }
+.scale_btn:focus-visible, .scale_mode:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 1px; }
+.scale_field {
+  position: relative;
+  flex: 0 0 58px;
+  width: 58px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cdd5df;
+  border-radius: 6px;
+}
+.scale_field:focus-within { border-color: var(--point-color); box-shadow: 0 0 0 2px rgba(19, 110, 241, .14); }
+.scale_field input {
+  position: static;   /* .scale_controls input(세그먼트 라디오 숨김 규칙) 의 absolute·clip 을 되돌린다 */
+  clip: auto;
+  margin: 0;
+  overflow: visible;
+  width: 100%;
+  height: 100%;
+  padding: 0 16px 0 6px;
+  color: #1f2937;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.scale_controls .scale_field .scale_unit { position: absolute; right: 6px; top: 50%; height: auto; display: block; padding: 0; color: #8a95a8; font-size: 11px; font-weight: 500; transform: translateY(-50%); pointer-events: none; }   /* 세그먼트 라벨 span 규칙(padding·height) 을 되돌린다 */
 .position_controls { grid-area: position; justify-self: end; height: 28px; padding: 2px; }
 .position_controls label span { height: 22px; padding: 0 8px; font-size: 11px; }
 .size_error {
@@ -730,7 +780,8 @@ svg {
   z-index: 0;
   inset: calc(var(--ring) - 1px);
   background: var(--glass);
-  border-radius: max(0px, calc(var(--body-tl, 28px) - var(--ring))) max(0px, calc(var(--body-tr, 28px) - var(--ring))) max(0px, calc(var(--body-br, 28px) - var(--ring))) max(0px, calc(var(--body-bl, 28px) - var(--ring)));
+  /* 글래스 베젤 코너: 프로필 glassRadius(--glass-*) 가 있으면 실측값, 없으면 바디 − 링(동심 가정) */
+  border-radius: var(--glass-tl, max(0px, calc(var(--body-tl, 28px) - var(--ring)))) var(--glass-tr, max(0px, calc(var(--body-tr, 28px) - var(--ring)))) var(--glass-br, max(0px, calc(var(--body-br, 28px) - var(--ring)))) var(--glass-bl, max(0px, calc(var(--body-bl, 28px) - var(--ring))));
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05);
   transition: border-radius .24s ease;
 }
@@ -1005,40 +1056,69 @@ svg {
 /* OS 상태바: 시간(좌) · 아이콘(우). 컷아웃은 별도 레이어(.screen_cutout) 이며 좌/우 정렬 컷아웃은 --status-pad-* 로 회피.
  * 아이콘 높이는 --status-icon-size 하나로 통일하고 폭은 viewBox 비율을 따른다. */
 .band_status {
-  --status-icon-size: 12px;
+  --status-icon-size: var(--status-icon, 12px);
   grid-row: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--status-pad-right, 14px) 0 var(--status-pad-left, 16px);
-  color: #0f172a;
-  font-size: 16px;
-  font-weight: 600;
+  padding: var(--status-pad-top, 0px) var(--status-pad-right, 14px) var(--status-pad-bottom, 0px) var(--status-pad-left, 16px);   /* 상하 padding = 프로필 centerY(세로 중심) 를 밴드 중앙에서 옮기는 값 */
+  --status-ink: #0f172a;   /* 상태바 잉크색(알약 배터리 채움에도 사용) */
+  color: var(--status-ink);
+  font-size: var(--status-font, 16px);
+  font-weight: var(--status-weight, 600);
   line-height: 1;
-  letter-spacing: -.01em;
+  letter-spacing: var(--status-tracking, -.17px);
   font-variant-numeric: tabular-nums;
 }
 .status_time { flex: 0 0 auto; }
-.status_icons { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+.status_icons { display: flex; align-items: center; gap: var(--status-gap, 5px); flex: 0 0 auto; }
 .sb_icon { display: block; width: auto; height: var(--status-icon-size); flex: 0 0 auto; }   /* 푸터의 .status_icon(로딩 점) 과 다른 클래스 */
 .sb_icon[hidden] { display: none; }
 .icon_cellular rect, .icon_cellular .wedge_fill { fill: currentColor; stroke: none; }
 .icon_cellular .wedge_bg { fill: currentColor; stroke: none; opacity: .28; }
 .icon_wifi path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+/* iPhone 상태바 Wi-Fi 호 두께 ≈ 높이의 18% (HIG·SE 공식 이미지 실측) — iPhone 프레임(비 compact·비 fixed ios, 레거시 SE) 에만 */
+.screen_wrap[data-status-platform="ios"]:not([data-status-compact="true"]):not([data-status-fixed="true"]) .icon_wifi path, .screen_wrap[data-status-legacy="true"] .icon_wifi path { stroke-width: 2.2; }
 .battery_body { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .38; }
 .battery_fill { fill: currentColor; stroke: none; }
 .battery_tip { fill: currentColor; stroke: none; opacity: .38; }
-.screen_wrap[data-cellular-style="bars"] .cellular_wedge, .screen_wrap[data-cellular-style="wedge"] .cellular_bars { display: none; }
-.screen_wrap[data-status-platform="android"] .band_status, .screen_wrap[data-status-platform="generic"] .band_status { --status-icon-size: 11px; font-size: 13px; font-weight: 500; letter-spacing: 0; }
-.screen_wrap[data-status-platform="android"] .status_icons, .screen_wrap[data-status-platform="generic"] .status_icons { gap: 4px; }
-.screen_wrap[data-status-compact="true"] .band_status { --status-icon-size: 9px; font-size: 12px; }
-.device_shell[data-cutout="notch"] .band_status { align-items: flex-start; padding-top: 8px; }     /* 노치(33px) 세로 중심에 맞춤 */
-.device_shell[data-cutout="island"] .band_status { align-items: flex-start; padding-top: 20px; }  /* 아일랜드(11~48px) 세로 중심에 맞춤 */
-.device_shell[data-orientation="landscape"] .band_status { --status-icon-size: 10px; font-size: 12px; }
+/* 셀룰러 변형: bars(iOS 4막대) · wedge(Pixel 부채꼴) · bars-thin(One UI 가는 4막대) — 하나만 표시 */
+.cellular_bars, .cellular_wedge, .cellular_bars_thin { display: none; }
+.screen_wrap[data-cellular-style="bars"] .cellular_bars, .screen_wrap[data-cellular-style="wedge"] .cellular_wedge, .screen_wrap[data-cellular-style="bars-thin"] .cellular_bars_thin { display: initial; }
+.icon_cellular .cellular_bars_thin rect { fill: currentColor; stroke: none; }
+/* 아이콘별 높이 비율(프로필 batteryScale · cellularScale · wifiScale): 실기기 실측에서 배터리 외곽선이 다른 아이콘보다 조금 크고 Wi-Fi 는 낮다 */
+.icon_battery { height: calc(var(--status-icon-size) * var(--status-battery, 1)); }
+.icon_cellular { height: calc(var(--status-icon-size) * var(--status-cellular, 1)); }
+.icon_wifi { height: calc(var(--status-icon-size) * var(--status-wifi, 1)); }
+/* One UI 7+ 알약 배터리: 숫자가 든 캡슐. 채움(currentColor) 은 잔량 비율만큼 왼쪽부터, 나머지는 28% 투명 — 100% 면 전부 채움(S25 렌더·Fold8 Ultra 사진) */
+.status_pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--pill-width, 23px);
+  height: var(--pill-height, 14px);
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--status-ink) var(--battery-level, 100%), color-mix(in srgb, var(--status-ink) 28%, transparent) 0);
+  color: #fff;   /* 채움 위 숫자 = 밴드 배경색(밝은 상태바) */
+  font-size: var(--pill-font, 9.5px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
+.status_pill[hidden] { display: none; }
+.screen_wrap[data-battery-style="pill"] .icon_battery { display: none; }
+.screen_wrap[data-status-compact="true"] .band_status { --status-icon-size: 9px; font-size: 12px; }   /* compact(홈 버튼형) 기본값 — 프레임이 fixedSize 를 주면 아래 data-status-fixed 규칙이 우선 */
+/* 레거시 배치(statusBar.layout:'legacy', 홈 버튼형 iPhone): 셀룰러·Wi-Fi 는 왼쪽, 시간은 화면 중앙(absolute), 배터리 %·배터리는 오른쪽. .status_icons 는 display:contents 로 풀어 밴드의 flex 항목으로 만든다 */
+.screen_wrap[data-status-legacy="true"] .band_status { position: relative; justify-content: flex-start; }
+.screen_wrap[data-status-legacy="true"] .status_icons { display: contents; }
+.screen_wrap[data-status-legacy="true"] .status_time { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.screen_wrap[data-status-legacy="true"] .icon_cellular { margin-right: 5px; }
+.screen_wrap[data-status-legacy="true"] .status_percent { margin-left: auto; margin-right: 4px; font-size: 1em; }   /* SE 공식 이미지: 100% 숫자 높이 = 시간과 동일 */
+.screen_wrap[data-status-legacy="true"] .status_percent[hidden] + .icon_battery { margin-left: auto; }
 /* 고정 크기 상태바(statusBar.fixedSize, iPad): 가로에서도 프로필 글꼴·아이콘 크기 유지. 배터리 % 텍스트는 배터리 아이콘 바로 앞 */
 .screen_wrap[data-status-fixed="true"] .band_status { --status-icon-size: var(--status-icon, 12px); font-size: var(--status-font, 16px); }
-.status_percent { flex: 0 0 auto; font-size: .78em; }   /* iPadOS 26/27: 100% 숫자 ≈13pt vs 시간 17pt (렌더 실측) */
-.screen_wrap[data-status-fixed="true"] .icon_wifi { height: calc(var(--status-icon, 12px) * .78); }   /* Wi-Fi 12.6×8pt 실측: 배터리(11pt) 보다 낮음 */
+.status_percent { flex: 0 0 auto; font-size: calc(1em * var(--status-percent, .78)); }   /* 프로필 percentScale (iPad Air 재실측: 100% 숫자 = 시간과 동일 크기 → 1) */
 .status_percent[hidden] { display: none; }
 .band_url { grid-row: 2; display: flex; align-items: center; padding: 6px max(10px, var(--band-pad-right, 0px)) 6px 10px; border-bottom: 1px solid #d5dae2; }   /* --band-pad-right: 밴드 행과 겹치는 측면 컷아웃(Flip8 커버 가로) 회피 */
 .screen_wrap[data-url-position="bottom"] .band_url { grid-row: 4; border-bottom: 0; border-top: 1px solid #d5dae2; }

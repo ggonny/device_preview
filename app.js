@@ -96,14 +96,14 @@
       /* dual-hole: [플래시][렌즈][렌즈] 가로 배치 상자. bottom/offset 은 상자의 아래·오른쪽 가장자리 거리(세로 기준). lens/ring/lensGap/flash/flashGap 으로 상자 크기와 홀 위치가 정해진다 */
       cutout:{type:'dual-hole',align:'right',offset:10,bottom:10,lens:59,ring:4,lensGap:5,flash:18,flashGap:12},
       display:{mask:'holes'},   /* 디스플레이 마스크 = 코너별 둥근 사각형 − 렌즈·플래시 홀 (실제 가시 영역). 하드웨어(.screen_cutout) 는 마스크 밖 별개 레이어 */
-      safeArea:{top:0,right:0,bottom:72,left:0},safeAreaLandscape:{top:24,right:72,bottom:16,left:0},homeIndicator:true,homeIndicatorWidth:72,homeIndicatorCenter:76,
+      safeArea:{top:0,right:0,bottom:72,left:0},safeAreaLandscape:{top:0,right:72,bottom:16,left:0},homeIndicator:true,homeIndicatorWidth:72,homeIndicatorCenter:76,   /* 가로 상태바 24 → 0 (2026-09-21): 세로 커버 화면에 상태바가 없음이 verified 이고 가로 상태바가 있다는 근거가 없어 제거(derived) */
       source:{nativePhysicalResolution:'official: 1048×948 (Samsung 뉴스룸 한국·samsung.com/sec 스펙 표기 · 글로벌 영문 뉴스룸 사양표는 948 x 1048 순서로 인쇄) · 대각선 104.8mm official',renderedPhysicalResolution:'derived-orientation: 948×1048 — 프로그램이 세로(portrait) 기준 width×height 로 정규화한 값, official 원문값 아님',cssViewport:'derived: 948×1048 ÷ DPR 3 = 316×349.3 (DPR 3 가정 · Samsung 은 CSS 폭·DPR 을 공개하지 않음)',visibleArea:'photo-measured: 코너 r 0.5/4.7mm 와 렌즈 2개·플래시 홀을 뺀 영역 (Samsung: "actual viewable area is less due to the rounded corners and camera hole")',
         body:'official: 접힘 75.4×85.7×13.1mm',bezel:'derived: 측면 (75.4−70.4)/2=2.5mm → 11px (렌더 실측 15px/5.93=2.53mm 일치) · 상단 패널 2.9mm → 13px · 하단 2.3mm → 10px (렌더 실측 비율을 공식 높이에 맞춤)',ring:'photo-measured: 프레임 8px/5.93=1.35mm → 6px',
         radius:'photo-measured: 아래 코너 r 41.4px=7.0mm → 31px (우하단 원 맞춤 rms 0.28, 좌하단은 손가락에 가려 대칭 가정) · 위(힌지 쪽) 코너 r≈1.5px=0.25mm → 2px',screenRadius:'photo-measured: 아래 코너 r≈28px=4.7mm → 21px · 위 코너 r 2~3px=0.5mm → 2px',
         hingeBody:'photo-measured: 힌지 스파인 15px=2.5mm → 12px · 양옆 안쪽 8px=1.35mm → 6px · 끝 r 6.5px=1.1mm → 5px',
         cutout:'photo-measured: 렌즈 외경 78px=13.2mm → 59px · 링 4px · 렌즈 간격 6px=1.0mm → 5px · 중심 간격 84px=14.2mm → 64px · 우측 렌즈 중심이 화면 우측·하단 가장자리에서 각 52~53px=8.9mm → 40px · 플래시 외경(테 포함) 24px=4.0mm → 18px, 중심이 좌측 렌즈 중심에서 66px=11.1mm → 50px 왼쪽 (First Look 사진 dl8 의 비율 렌즈 간격/지름 0.08 일치)',
         cameraDiameter:'photo-measured: 13.2mm (위 cutout 참조)',controls:'approximation: 측면 키(사진상 접힘 우측 변 상단부에 볼륨·전원)',
-        statusBar:'verified: 뉴스룸 First Look dl9.jpg(커버 앱) 에 상태바 없음 → 0 · 하단 밴드 72 = 렌즈 상단까지 69.5 + 여백 derived(내비게이션 바가 카메라 왼쪽에 놓이는 사진 구조) · 제스처 바 위치·폭(중심 76, 폭 72) approximation · 가로 상태바 24/하단 16 은 다른 Android 프로필 준용(approximation)'}},
+        statusBar:'verified: 뉴스룸 First Look dl9.jpg(커버 앱) 에 상태바 없음 → 0 · 하단 밴드 72 = 렌즈 상단까지 69.5 + 여백 derived(내비게이션 바가 카메라 왼쪽에 놓이는 사진 구조) · 제스처 바 위치·폭(중심 76, 폭 72) approximation · 가로 상태바는 세로와 같이 없음(0, derived: 세로 verified 사실에서 유도 — 가로 커버 화면 공식 이미지 미확보) · 가로 하단 16 은 다른 Android 프로필 준용(approximation)'}},
 
     /* Galaxy Z Flip8 펼침 (360×840): 바디 75.4×166.9mm(Samsung official), 메인 native 2520×1080 · 대각선 174.1mm(6.9형) 400ppi(official) → 세로 기준 정규화 1080×2520(derived-orientation) → 활성영역 68.6×160.0mm → 5.25px/mm.
      * 렌더: 뉴스룸 보도자료 "Launch_dl3F.jpg"(1440×960, 펼침 정면·후면, 3.6px/mm 저해상도 — 상단부만 보임) 로 펀치홀·상단 베젤만 확인. 코너·측면 키는 미측정 */
@@ -119,16 +119,26 @@
       source:{body:'derived: flip8-open 준용',bezel:'derived: flip8-open 준용, 하단은 힌지 approximation',radius:'derived: 상단 flip8-open · 하단 approximation(힌지)',screenRadius:'derived: 상단 flip8-open · 하단 0(화면이 접힘선까지 이어짐)',cutout:'derived: flip8-open 준용',controls:'approximation',statusBar:'derived: flip8-open 준용'}},
 
     /* Galaxy Z Fold8 접힘(커버 416×657): 접힌 바디 81.9×123.9mm(Samsung), 커버 활성영역 74.7×118.0mm(5.5" 1972×1248) → 5.57px/mm */
-    'fold8-cover':{family:'fold',top:16,right:20,bottom:16,left:20,ring:6,radius:44,screenRadius:24,platform:'android',obstruction:'상단 펀치홀 카메라',
-      cutout:{type:'hole',width:19,height:19,top:17,align:'center'},
-      safeArea:{top:38,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:38},homeIndicator:true,homeIndicatorWidth:108,
-      source:{body:'official: 접힘 81.9×123.9mm',bezel:'derived: 측면 (81.9−74.7)/2=3.6mm → 20px · 상하 2.95mm → 16px',radius:'derived: 동심 가정 24+20=44',screenRadius:'approximation: Galaxy S25 실측 준용 → 24px',cutout:'derived: Galaxy S25 실측 홀 준용',controls:'approximation',statusBar:'derived: 컷아웃 하단+여백 38px'}},
+    /* Fold8 커버(접힘 정면, 2026-09-21 photo-measured): samsung.com US 갤러리 Scene7 투명 PNG "us-galaxy-z-fold8-f971-600257-sm-f971ulvaxaa-553840953"(2052×1641, 화면 753px = 416 CSS px → 1.81px/px, 바디 836px = 81.9mm → 10.2px/mm).
+     * 코너는 바디(프레임 실루엣)·글래스 베젤·디스플레이를 각각 실측 — 동심 관계가 아니다: 바디 힌지 반대쪽 33px → 18 / 힌지 쪽 앞판 7~11px → 5(스파인 12px 은 별도, 미구현) · 글래스 4코너 17px → 9 · 화면 4코너 13px → 7.
+     * 홀 Ø37px → 20, 중심 상단에서 20.2 → top 10. 베젤 실측 상하 35.5px=19.6 · 우 35px=19.3 · 좌(힌지) 48px=26.5 는 이번에 미수정(기존 derived 16/20 유지).
+     * 상단 세 값 분리: safeArea.top 30 = 홀 하단(= env(safe-area-inset-top) 의미, 가이드 높이) · statusBarHeight 33 = 홀 하단 + 3(One UI 상태바 창, 콘텐츠 시작) · 상태바 텍스트 중심 = 밴드 중앙 16.5(홀 중심 20.2 − 2.8 관계와 일치) */
+    /* 베젤·스파인(2026-09-21 같은 렌더 photo-measured, 1.81px/CSSpx): 프레임(링) 13~14px → 7 · 검은 글래스 상하 22px → 12.2 / 우 21px → 11.6 / 좌 22.5px → 12.4 → 베젤(링+글래스) 상하 19.6 · 우 19.3 · 좌(앞판) 18.5.
+     * 힌지 스파인은 앞판 바깥 별개 레이어(Duo 외부와 같은 북타입 구조 — 앞판과 스파인 사이 1px 홈, 상하 안쪽으로 들어간 끝, 바깥 코너만 둥긂): 폭 14.5px → 8 · 상하 안쪽 13px → 7 · 바깥 코너 6~8px → 4. 좌측 총 폭 19 + 8 = 27(실측 26.5) */
+    'fold8-cover':{family:'fold',top:20,right:19,bottom:20,left:19,ring:7,radius:{tl:5,tr:18,br:18,bl:5},glassRadius:9,screenRadius:7,platform:'android',obstruction:'상단 펀치홀 카메라',
+      hingeBody:{type:'spine',side:'left',width:8,inset:7,radius:4},
+      cutout:{type:'hole',width:20,height:20,top:10,align:'center'},
+      safeArea:{top:30,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:30},statusBarHeight:33,homeIndicator:true,homeIndicatorWidth:108,
+      source:{body:'official: 접힘 81.9×123.9mm',bezel:'photo-measured: Scene7 정면 렌더 — 상하 35.5px → 20(링 7 + 글래스 13) · 우 35px → 19(링 7 + 글래스 12) · 좌 앞판 33.5px → 19 + 스파인 8 = 27(실측 48px = 26.5) · 공식 mm 환산(측면 3.6mm → 20 · 상하 2.95mm → 16) 과 상하가 다른 것은 렌더의 프레임 챔퍼가 정면에서 보이기 때문',hingeBody:'photo-measured: 스파인 폭 14.5px → 8 · 상하 안쪽 13px → 7 · 바깥 코너 6~8px → 4 · 앞판과의 홈 1px(렌더 x=616 어두운 선)',radius:'photo-measured: Scene7 정면 렌더 바디 코너 힌지 반대쪽 33px(원 맞춤 rms 0.41) → 18 · 힌지 쪽 앞판 7~11px → 5 (스파인 제외)',glassRadius:'photo-measured: 검은 글래스 베젤 코너 17px(rms 0.45~0.5, 4코너 동일) → 9 — 바디−링 동심 가정(12/0) 과 다름',screenRadius:'photo-measured: 화면 코너 13px(rms 0.2~0.4, 4코너 동일) → 7',cutout:'photo-measured: 홀 Ø37px → 20 · 중심 화면 상단에서 36.5px = 20.2 → top 10 · 가로 중앙',controls:'approximation',statusBar:'derived: safeArea.top 30 = 홀 하단(컷아웃 인셋) · statusBarHeight 33 = 홀 하단 + 3(S25 +1.5 · Flip8 +2.5 · Pixel +4 의 중간값) · 가로 left 30 = 회전 시 홀 하단 · 가로 상단 24/하단 16 approximation'}},
 
     /* Galaxy Z Fold8 펼침 (816×616): 바디 161.4×123.9mm(Samsung), 활성영역 154.1×116.3mm(7.6" 2448×1848) → 5.30px/mm */
-    'fold8-open':{family:'fold',top:20,right:19,bottom:20,left:19,ring:6,radius:35,screenRadius:16,platform:'android',obstruction:'우측 상단 카메라·접힘선',
-      cutout:{type:'hole',width:18,height:18,top:15,align:'right',offset:15},
-      safeArea:{top:38,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:0},homeIndicator:true,homeIndicatorWidth:140,
-      source:{body:'official: 펼침 161.4×123.9mm',bezel:'derived: 측면 (161.4−154.1)/2=3.65mm → 19px · 상하 3.8mm → 20px',radius:'derived: 동심 가정 16+19=35',screenRadius:'approximation: 렌더 미확보 (좁은 코너)',cutout:'approximation: 우상단 카메라 위치·크기 미측정',controls:'approximation',statusBar:'derived: 컷아웃 기준 38px'}},
+    /* Fold8 펼침 카메라 홀(2026-09-21 photo-measured): 뉴스룸 보도자료 Launch_dl5_F.jpg(1440×960, 펼침 정면 카메라 앱 렌더, 화면 874px = 816 CSS px → 1.071px/px, 종횡비 1.324 = 1848×2448 일치) —
+     * 홀 Ø20px → 18.7 CSS px(18 유지) · 중심 화면 좌측에서 620 / 우측에서 196 · 상단에서 21 → top 12 · offset(우측 가장자리→홀 오른쪽) 187. 코너가 아니라 폭의 76% 지점.
+     * 회전(반시계) 시 홀은 왼쪽 변 위에서 187~205 → 가로 상태바 행(24) 과 겹치지 않음. safeAreaLandscape.left 38 = 홀 오른쪽 30 + 여백 8(세로 상태바 38 과 같은 '컷아웃을 감싸는' 규칙, derived) */
+    'fold8-open':{family:'fold',top:20,right:19,bottom:20,left:19,ring:6,radius:35,screenRadius:16,platform:'android',obstruction:'상단 우측(폭 76%) 카메라·접힘선',
+      cutout:{type:'hole',width:18,height:18,top:12,align:'right',offset:187},
+      safeArea:{top:38,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:38},homeIndicator:true,homeIndicatorWidth:140,
+      source:{body:'official: 펼침 161.4×123.9mm',bezel:'derived: 측면 (161.4−154.1)/2=3.65mm → 19px · 상하 3.8mm → 20px',radius:'derived: 동심 가정 16+19=35',screenRadius:'approximation: 렌더 미확보 (좁은 코너)',cutout:'photo-measured: 뉴스룸 Launch_dl5_F.jpg(1.071px/CSSpx, 저해상도 ±1.5px) 홀 Ø18.7 · 중심 우측에서 196 / 상단에서 21 → top 12 · offset 187',controls:'approximation',statusBar:'derived: 세로 38 = 홀 하단 30 + 8 · 가로 left 38 = 회전 시 왼쪽 변 홀(187~205) 의 오른쪽 30 + 8 (Android 측면 컷아웃 letterbox 규칙) · 가로 상단 24 는 다른 Android 프로필 준용 approximation'}},
 
     /* iPhone Duo 접힘(외부 466×678): 접힌 바디 84.1×117.8mm(Apple specs), 외부 화면 5.36" 표준 사각형(Apple) 2034×1398 → 77.1×112.2mm → 6.04px/mm.
      * 렌더 실측: Apple 뉴스룸 "Apple-iPhone-Duo-display-sizes-260909.jpg"(3840×2160 원본, 9.48px/mm; 화면 종횡비 1.455 = 공식 2034/1398 일치).
@@ -219,9 +229,19 @@
    *   icons        : 오른쪽 아이콘 순서.  cellularStyle : bars(iOS) | wedge(Android)
    *   padding      : 좌·우 기본 여백(px). 좌/우 정렬 컷아웃이 있으면 JS 가 그만큼 더 띄운다. */
   const statusBarProfiles={
-    ios:{platform:'ios',time:'9:41',icons:['cellular','wifi','battery'],cellularStyle:'bars',batteryLevel:.82,padding:{left:30,right:26}},
-    android:{platform:'android',time:'12:30',icons:['wifi','cellular','battery'],cellularStyle:'wedge',batteryLevel:.82,padding:{left:16,right:14}},
-    generic:{platform:'generic',time:'12:30',icons:['wifi','battery'],cellularStyle:'wedge',batteryLevel:.82,padding:{left:16,right:14}}
+    /* iOS 상태바(2026-09-21 전수 재실측, Apple 공식 이미지): 시간 SF Semibold 17pt(숫자 높이 12.0pt) · 셀룰러 19×11.8 · Wi-Fi 16.3×11.8 · 배터리 27×12.3~12.6pt · 아이콘 간격 8~9pt.
+     *   iPhone 14(노치, 뉴스룸 Find-My 이미지 1.783px/pt) 와 iPhone 16 Pro(아일랜드, 뉴스룸 iOS 26 Phone 이미지 1.7435px/pt) 두 장에서 같은 값 → iconSize 12(배터리 1.05배) · iconGap 8.
+     *   letterSpacing −.4 는 Windows 대체 글꼴(Arial 600) 의 "9:41" 폭 33.4 를 실측 31.5~32pt 에 맞추는 값. 좌우 여백·세로 중심(centerY) 은 컷아웃별로 다르므로 frameProfiles[*].statusBar 가 덮어쓴다.
+     *   holdFontSize/iconSize 는 홈 버튼형(compact) 프레임이 별도 오버라이드. */
+    ios:{platform:'ios',time:'9:41',icons:['cellular','wifi','battery'],cellularStyle:'bars',batteryLevel:.82,padding:{left:30,right:26},fontSize:17,iconSize:12,iconGap:8,batteryScale:1.05,wifiScale:.97,letterSpacing:-.4},
+    /* 표준 Android(Pixel): AOSP SystemUI dimens.xml(official) — status_bar_clock_size 14sp · status_bar_system_icon_size 15dp(드로어블 여백 포함, 가시 높이 ≈12) · status_bar_horizontal_padding 2.5sp → 간격 5 · 배터리 unified 20.6×12sp.
+     * 좌우 여백 16/14 와 배터리 외곽선 형상은 Pixel 실기기/공식 캡처 미확보 → approximation. 시간 글꼴 굵기 500 */
+    android:{platform:'android',time:'12:30',icons:['wifi','cellular','battery'],cellularStyle:'wedge',batteryLevel:.82,padding:{left:16,right:14},fontSize:14,iconSize:12,iconGap:5},
+    /* One UI 7/8(Galaxy): Samsung 공식 이미지 실측 — 뉴스룸 "One UI 7 Official Rollout" dl1.jpg(Galaxy S25 정면 렌더, 1.128px/CSSpx) 시간 "12:45" 숫자 높이 10 → 14px(굵기 500) · 좌 여백 14.6 · 우 여백 14.6 ·
+     * 배터리 = 숫자가 든 알약(pill) 23×14, 100% 에서 전부 채움 · 신호 = 가는 4막대 10.6×12 · 항목 간격 7~8 / 뉴스룸 First Look dl3.jpg(Galaxy Z Fold8 Ultra 잠금 화면 실사진, 14.35px/mm) 로 One UI 8 아이콘 형상·비율 교차 확인
+     * (Wi-Fi 부채꼴 1.88×1.32mm ≈ 폭 10.4·높이 7.3 → wifiScale .62, 막대 1.88×2.0mm, pill 4.0×2.4mm, 간격 1.1mm ≈ 6). 세로 위치는 밴드 중앙(Android 상태바 창 안 중앙 정렬). */
+    oneui:{platform:'android',style:'oneui',time:'12:45',icons:['wifi','cellular','battery'],cellularStyle:'bars-thin',batteryStyle:'pill',batteryLevel:1,padding:{left:15,right:15},fontSize:14,iconSize:12,iconGap:7,wifiScale:.62,pill:{width:23,height:14,fontSize:9.5}},
+    generic:{platform:'generic',time:'12:30',icons:['wifi','battery'],cellularStyle:'wedge',batteryLevel:.82,padding:{left:16,right:14},fontSize:14,iconSize:12,iconGap:5}
   };
   /* iPhone Duo(iOS 27) 코너 상태 클러스터. Apple 뉴스룸(official): "The status bar includes a circular, flexible system that nestles into the corner of the screen,
    * showing relevant information like Wi-Fi, cellular strength, battery, and more." · HIG "Designing for iPhone Duo"(official): 카메라 쪽 세로 축에 위→아래로
@@ -230,14 +250,41 @@
    * 링 호가 배터리 잔량을 나타내는지는 미확인(approximation: 호 길이 고정 = 이미지 실측 244°). 값(px) 은 frameProfiles[*].statusBar 가 화면별로 덮어쓴다. */
   statusBarProfiles.duo={platform:'duo',layout:'corner',time:'9:41',icons:['wifi','cellular','battery'],cellularStyle:'dots',batteryLevel:.82,
     ring:{size:40,stroke:3,arcGap:116,wifiWidth:27,dotSize:4,dotAngles:[-31,-10.5,10.5,31]},timeSize:16,axis:48,timeCenter:92,ringCenter:129};
-  frameProfiles['iphone-se'].statusBar={compact:true};
-  frameProfiles['ipad-home'].statusBar={platform:'ios',compact:true};
+  /* iPhone SE(레거시 20pt 바): 시간 12pt semibold 유지 · 아이콘 배터리 24×11.5 / Wi-Fi 15×11 → 11 · 좌우 여백 6 (reference: iOS 레거시 상태바; 렌더 실측 아님 → approximation). fixedSize 로 compact 기본(9) 대신 프레임 값 사용 */
+  /* iPhone SE(홈 버튼형, 20pt 레거시 바) — photo-measured: Apple 뉴스룸 "Apple-iPhoneSE-iOS-Focus-220308_carousel.jpg.large_2x"(iOS 15, 화면 641px = 375pt → 1.709px/pt).
+   * 배치가 노치형과 다르다: 좌측 셀룰러·Wi-Fi, 중앙 "9:41 AM", 우측 "100%" + 배터리(layout:'legacy'). 숫자 높이 15px=8.8pt → 글꼴 12.5 · 셀룰러 27×18px=15.8×10.5pt · Wi-Fi 24×17px=14×10pt · 배터리 40×17px=23.4×10pt → 아이콘 11 ·
+   * 좌 여백 12px=7pt · 우 ≈12px=7pt · 시간 중심 = 화면 중심. fixedSize 로 compact 기본(12/9) 대신 프레임 값 사용 */
+  frameProfiles['iphone-se'].statusBar={compact:true,fixedSize:true,layout:'legacy',time:'9:41 AM',batteryText:true,batteryLevel:1,fontSize:12.5,iconSize:11,wifiScale:1,batteryScale:1,padding:{left:7,right:6},iconGap:5,letterSpacing:-.1,
+    source:'photo-measured(2026-09-21 재실측): Apple 뉴스룸 "Apple-iPhoneSE-iOS-Focus-220308" + Maps 이미지 — LCD 활성영역(검은 테 5px 제외) 642px = 375pt(1.712px/pt) 기준 숫자 높이 8.8pt(글꼴 12.5) · 셀룰러 16.9×10.5 · Wi-Fi 14.6×10.5 · 배터리 23.4×10.5pt · 100% 폭 31pt · 여백 좌 6.7 / 우 6.1pt · 셀룰러↔Wi-Fi 4.7 · %↔배터리 4pt · 시간 중심 = 화면 중심, 세로 중심 10pt(20pt 바 중앙)'};
+  /* 노치·아일랜드 iPhone: 상태 항목이 노치/아일랜드 양옆 "귀" 의 중앙에 놓인다 → 시간 좌측 여백 = 귀 중심 − 시간 폭/2, 우측 여백 = 귀 중심 − 아이콘 묶음 폭/2 (derived: 컷아웃 폭 기준).
+   * HIG "status-bar-visible@2x"(아일랜드 iPhone, 536px = 393pt, 1.364px/pt) 실측: 시간 x 53.5~89pt(중심 71.5) · 배터리 우측 끝 358pt(여백 35) · 숫자 높이 11.7pt(글꼴 ≈17) · 배터리 27.9×12.5 · 셀룰러 18.3×11 · Wi-Fi 18.3×9.5pt → derived 값(52.5/31.5) 과 3pt 내 일치 */
+  /* 노치 iPhone(390): 뉴스룸 "Apple-iPhone-14-iPhone-14-Plus-Find-My-location-share-220907"(1.783px/pt) 실측 — 시간 x 37.7~69.7(중심 53.4 ≈ 귀 중심 55.5) · 세로 중심 26.3pt(노치 33pt 의 아래쪽, 47pt 바의 중앙이 아님!) ·
+   * 셀룰러 19×11.8 · Wi-Fi 16.3×11.8 · 배터리 27×12.3 · 간격 8.4 · 배터리 우측 끝 → 화면 우측 26.5pt. centerY 는 화면 상단 기준 px */
+  frameProfiles['iphone-notch'].statusBar={padding:{left:38,right:27},centerY:26,iconGap:8,source:'photo-measured: iPhone 14 뉴스룸 Find-My 이미지(1.783px/pt) — 시간 좌 37.7 · 세로 중심 26.3 · 우 여백 26.5 · 간격 8.4 · 아이콘 19/16.3/27 × 11.8~12.3pt'};
+  /* 아일랜드 iPhone(402 · 430): 뉴스룸 "Apple-WWDC25-iOS-26-Apple-Intelligence-Phone-unified-layout-250609"(iPhone 16 Pro 402pt, 1.7435px/pt) 실측 — 시간 좌 57.0(중심 72.8 = 귀 중심 69 + 3.8) · 세로 중심 31.9pt = 아일랜드 세로 중심(13.8~50pt) ·
+   * 배터리 우측 끝 → 화면 우측 36.4pt(아이콘 묶음 중심은 귀 중심보다 6pt 왼쪽) · 셀룰러 18.4×11.5 · Wi-Fi 15.5×11.5 · 배터리 27×12.6 · 간격 8.6~9.2.
+   * 프리뷰의 아일랜드 기하는 11~48(커뮤니티 측정) 이므로 세로 중심은 그 중앙 29.5 로 맞춘다(실측 31.9 와 2.4pt 차이는 아일랜드 위치 차이 — 지오메트리 미수정, 별도 보고). 430 은 귀 폭 152 로 환산(derived) */
+  frameProfiles['iphone-dynamic'].statusBar={padding:{left:63,right:43},centerY:29.5,iconGap:9,source:'derived: 402 실측(시간 중심 = 귀 중심 + 3.8 · 아이콘 묶음 중심 = 귀 중심 − 6) 을 귀 폭 152(중심 76) 로 환산 → 좌 63 · 우 43 · 세로 중심 = 아일랜드 중앙 29.5'};
+  frameProfiles['iphone-dynamic-pro'].statusBar={padding:{left:56,right:36},centerY:29.5,iconGap:9,source:'photo-measured: iPhone 16 Pro iOS 26 뉴스룸 이미지(1.7435px/pt, 18 Pro 동일 402pt) — 시간 좌 57.0(Arial 폭 보정 56) · 우 여백 36.4 · 간격 9 · 세로 중심 = 아일랜드 중앙(실측 31.9 · 프리뷰 기하 29.5) · 18 Pro 뉴스룸 Photos 이미지(1.2px/pt) 로 배치 동일 확인'};
+  /* iPad 9.7(홈 버튼형, iPadOS ≤17): Apple 지원 문서 "ios-26-ipad-floating-keyboard.png"(홈 버튼형 iPad, iPadOS 26) 로 배치 확인 — 좌 "9:41 AM  Tue Apr 1", 우 셀룰러·Wi-Fi·배터리, 시간 중앙 배치 아님.
+   * 해당 모델(6세대) 캡처가 아니고 이미지 px/pt 가 불확실해 크기는 레거시 20pt 바 표준(글꼴 12 · 아이콘 11, SE 와 동일 계열) → approximation. Wi-Fi 모델 기준 셀룰러 없음, 배터리 % 는 iPadOS 기본 표시 */
+  frameProfiles['ipad-home'].statusBar={platform:'ios',compact:true,fixedSize:true,time:'9:41 AM\u2002Tue Mar 27',icons:['wifi','battery'],batteryText:true,batteryLevel:1,fontSize:12,iconSize:11,wifiScale:1,batteryScale:1,percentScale:1,padding:{left:7,right:6},iconGap:5,letterSpacing:0,
+    source:'derived(배치): Apple 지원 문서 iPadOS 26 홈 버튼형 iPad 캡처 — 시간+날짜 좌 · 아이콘 우 · 좌 여백 ≈ 6.8 / 우 6.3pt(10.2형 가정) · approximation(크기): 글꼴 12 · 아이콘 11 은 20pt 레거시 바 표준값, 6세대 실기기 캡처 미확보'};
   /* One UI 8 태블릿 상태바(approximation: 공식 UI 스크린샷 미확보): Android 프로필 그대로, 태블릿은 가로에서도 글꼴·아이콘을 줄이지 않는다 */
-  frameProfiles['galaxy-tab-s11'].statusBar={platform:'android',fixedSize:true,fontSize:13,iconSize:11,source:'approximation: One UI 8 태블릿 상태바 — 시간 좌측·아이콘 우측(Android 프로필), 글꼴 13/아이콘 11 은 Android 프로필 기본값 준용'};
-  frameProfiles['galaxy-tab-s11-ultra'].statusBar={platform:'android',fixedSize:true,fontSize:13,iconSize:11,source:'approximation: galaxy-tab-s11 과 동일'};
+  frameProfiles['galaxy-tab-s11'].statusBar={profile:'oneui',fixedSize:true,padding:{left:16,right:14},source:'derived: One UI 8 상태바 형상·크기(시간 14 · 아이콘 12 · 알약 배터리 · 가는 막대) 는 Galaxy S25 공식 렌더 실측 준용 · 태블릿 좌우 여백 16/14 는 approximation(태블릿 공식 UI 캡처 미확보)'};
+  frameProfiles['galaxy-tab-s11-ultra'].statusBar={profile:'oneui',fixedSize:true,padding:{left:16,right:14},source:'derived: galaxy-tab-s11 과 동일 · 여백 approximation'};
+  /* One UI 스마트폰(Galaxy S25 · Z Flip8 펼침/Flex · Z Fold8): 공통 oneui 프로필. 밴드 높이(safeArea.top) 는 컷아웃 기하에서 유도한 기존 값 유지 */
+  frameProfiles['galaxy-bar'].statusBar={profile:'oneui',centerY:23,source:'photo-measured: Samsung 뉴스룸 One UI 7 Official Rollout dl1.jpg(Galaxy S25 정면 렌더, 1.128px/CSSpx) — 시간 12:45 숫자 높이 10(글꼴 14) 좌 14.6 · 5G/막대/알약 100 우 14.6 · 막대 10.6×12 · 알약 23×14 · 간격 7~8 · 세로 중심 23(derived: 렌더에서 시간 중심 = 홀 중심 − 2.8px 관계를 실기기 홀 중심 26.5 에 적용, 밴드 38 안)'};
+  frameProfiles['flip8-open'].statusBar={profile:'oneui',source:'derived: One UI 8 = Galaxy S25 렌더 실측 + Z Fold8 Ultra 잠금 화면 사진(First Look dl3.jpg) 아이콘 형상 준용, Flip8 자체 캡처 미확보'};
+  frameProfiles['flip8-flex'].statusBar={profile:'oneui',source:'derived: flip8-open 준용'};
+  frameProfiles['flip8-cover'].statusBar={profile:'oneui',source:'verified(세로): 뉴스룸 First Look dl9.jpg 커버 앱 화면에 상태바 없음 → safeArea.top 0 유지 · 가로도 상태바 없음(safeAreaLandscape.top 0, derived) — 커버 앱이 가로에서 회전할 때의 공식 이미지는 미확보'};
+  frameProfiles['fold8-cover'].statusBar={profile:'oneui',source:'derived: One UI 8 = Galaxy S25 렌더 실측 준용 · 세로 중심은 밴드(33) 중앙 16.5 = 실측 홀 중심 20.2 − 2.8(S25 렌더 관계) 과 일치 · Fold8 커버 UI 캡처 미확보'};
+  frameProfiles['fold8-open'].statusBar={profile:'oneui',source:'derived: 뉴스룸 First Look dl3.jpg(Z Fold8 Ultra 펼침 잠금 화면 실사진 14.35px/mm) — Wi-Fi 1.88×1.32 · 막대 1.88×2.0 · 알약 4.0×2.4mm · 간격 1.1mm · 우 여백 4.1mm · 세로 중심 3.3mm — Ultra 모델 값이라 Fold8 에는 형상·비율만 준용, 여백은 S25 값'};
   /* iPadOS 26/27 상태바(photo-measured, Apple 뉴스룸 13" 렌더): 좌 "9:41 AM  Wed Apr 1" · 우 Wi-Fi · 배터리 % · 배터리. 가로에서도 같은 크기(fixedSize) */
-  frameProfiles['ipad-air-11'].statusBar={platform:'ios',time:'9:41 AM\u2002Wed Apr 1',icons:['wifi','battery'],batteryText:true,batteryLevel:1,padding:{left:14,right:16},fixedSize:true,fontSize:17,iconSize:11,
-    source:'photo-measured: "Apple-iPad-Air-M4-multitasking-260302_big.jpg.large_2x"(1.06px/pt) 시간 숫자 높이 13px=12.3pt → 글꼴 17(SF 숫자 높이 ≈0.705em) · 100% 숫자 10px=9.4pt → 글꼴 ≈13(.78em) · 배터리 26×11.7px=24.5×11pt → 아이콘 11 · Wi-Fi 13×8.3px=12.6×8pt(.78배) · 좌 여백 15px=14pt · 우 17px=16pt · apple.com iPadOS 27 hero(11") 숫자 높이 9px/0.738=12.2pt, 중심 14.9pt 일치'};
+  /* iPadOS 26/27 상태바(2026-09-21 재실측, Apple 뉴스룸 13" 렌더 1.057px/pt — 11"/13" 모두 264ppi 라 pt 공유): 숫자 높이 11px=10.4pt → 글꼴 15(이전 17 은 블러 행 포함 과대) · "9:41 AM  Wed Apr 1" 전체 폭 138px=130.6pt(Segoe UI Semibold 15px 132 과 일치) ·
+   * 100% 숫자 높이 = 시간과 동일(percentScale 1) · Wi-Fi 13.2×9.5pt(.82) · 배터리 채움 20.8×9.5 → 외곽 ≈24×11.5(아이콘 11) · 간격 7.6~8.5 → 8 · 좌 여백 17.5px=16.5pt · 우 20px=18.9pt · 세로 중심 16.1pt(30pt 밴드 중앙 15 ±1) */
+  frameProfiles['ipad-air-11'].statusBar={platform:'ios',time:'9:41 AM\u2002Wed Apr 1',icons:['wifi','battery'],batteryText:true,batteryLevel:1,padding:{left:16,right:18},fixedSize:true,fontSize:15,iconSize:11,iconGap:8,wifiScale:.82,batteryScale:1,percentScale:1,letterSpacing:-.17,
+    source:'photo-measured(2026-09-21 재실측): "Apple-iPad-Air-M4-multitasking-260302_big.jpg.large_2x"(1.057px/pt) 숫자 높이 10.4pt → 글꼴 15 · 문자열 폭 130.6pt · 100% 동일 크기 · Wi-Fi 13.2×9.5 · 배터리 외곽 ≈24×11.5 · 간격 8 · 여백 좌 16.5 / 우 18.9pt · 세로 중심 16.1pt · Apple 지원 문서 iPadOS 26 iPad 캡처(홈 버튼형) 도 숫자/여백 비율 동일'};
   /* 외부 화면(466×678, 6.04px/mm): 뉴스룸 홈 화면 이미지(정지 상태) 실측 — 축 48(카메라 중심과 동일) · 시간 중심 92 · 링 Ø40 중심 129 · HIG 도식(1.0944px/pt) 과 일치(92.3 / 127.5).
    * island: Dynamic Island. 정지 상태(홈 화면 이미지·HIG 도식) 는 카메라 원(Ø36, 컷아웃과 동일) 만 보이고, Live Activity(통화 이미지) 에서 세로 필 38×62 @ top 26 으로 확장되며
    * 클러스터가 14.5px 내려온다(시간 106.5 · 링 143.5). 기본 표시는 live(세로 필) — state:'rest' 로 바꾸면 정지 상태. */
@@ -370,7 +417,7 @@
     browserSelect:document.getElementById('browserSelect'),addressBarToggle:document.getElementById('addressBarToggle'),bottomBarToggle:document.getElementById('bottomBarToggle'),
     urlPositionControls:document.getElementById('urlPositionControls'),urlPositionInputs:Array.from(document.querySelectorAll('input[name="urlPosition"]')),
     uiOverlayToggle:document.getElementById('uiOverlayToggle'),safeAreaBtn:document.getElementById('safeAreaBtn'),
-    rotateBtn:document.getElementById('rotateBtn'),refreshBtn:document.getElementById('refreshBtn'),scaleModeInputs:Array.from(document.querySelectorAll('input[name="scaleMode"]')),scaleValue:document.getElementById('scaleValue'),
+    rotateBtn:document.getElementById('rotateBtn'),refreshBtn:document.getElementById('refreshBtn'),scaleInput:document.getElementById('scaleInput'),scaleDownBtn:document.getElementById('scaleDownBtn'),scaleUpBtn:document.getElementById('scaleUpBtn'),scaleFitBtn:document.getElementById('scaleFitBtn'),scaleDeviceBtn:document.getElementById('scaleDeviceBtn'),
     openLink:document.getElementById('openLink'),previewArea:document.getElementById('previewArea'),previewStage:document.getElementById('previewStage'),previewMount:document.getElementById('previewMount'),
     compareBar:document.getElementById('compareBar'),compareCount:document.getElementById('compareCount'),compareNote:document.getElementById('compareNote'),
     compareGrid:document.getElementById('compareGrid'),compareEmpty:document.getElementById('compareEmpty'),
@@ -394,7 +441,11 @@
   const compareViews=new Map();
   let primaryView=null;
 
+  /* 표시 배율: 'fit'(화면 맞춤, 창·기기 변경 시 재계산) | 'manual'(사용자 지정 %, 창 크기가 바뀌어도 유지) | 'device'(공개 inch 기준 물리 근사).
+   * 기기 프레임 전체의 transform: scale 만 바꾸며 iframe CSS 뷰포트·미디어 쿼리·DPR 은 배율과 무관. 100% = 기기 CSS 1px : PC CSS 1px (물리 크기 아님) */
   let scaleMode='device';
+  const SCALE_MIN=25,SCALE_MAX=200,SCALE_STEP=5;
+  let manualScale=1;   /* 수동 배율(비율). 25%~200%, 5% 단위 */
   let showAddressBar=true;
   let showBottomBar=true;
   let uiMode='shrink';        /* shrink: UI 높이만큼 사이트 영역 축소(svh) · overlay: UI 를 콘텐츠 위에 겹침(lvh) */
@@ -427,7 +478,7 @@
       browserUrl:shell.querySelector('.browser_url'),hingeLine:shell.querySelector('.hinge_line'),
       statusCluster:shell.querySelector('.status_cluster'),clusterTime:shell.querySelector('.cluster_time'),clusterRing:shell.querySelector('.cluster_ring'),
       dynamicIsland:shell.querySelector('.dynamic_island'),sideControls:shell.querySelector('.side_controls'),
-      statusTime:shell.querySelector('.status_time'),batteryFill:shell.querySelector('.battery_fill'),statusPercent:shell.querySelector('.status_percent'),
+      statusTime:shell.querySelector('.status_time'),batteryFill:shell.querySelector('.battery_fill'),statusPercent:shell.querySelector('.status_percent'),statusPill:shell.querySelector('.status_pill'),
       keyVolume:shell.querySelector('.key_volume'),keyVolumeB:shell.querySelector('.key_volume_b'),keyPower:shell.querySelector('.key_power'),
       statusIcons:{cellular:shell.querySelector('.icon_cellular'),wifi:shell.querySelector('.icon_wifi'),battery:shell.querySelector('.icon_battery')}
     };
@@ -593,7 +644,9 @@
     }
     const side=layout==='side';
     const safe=getSafeArea(view);
-    const status=metrics.statusBar==null?safe.top:metrics.statusBar;
+    /* 상태바 밴드 높이: 브라우저 프로필 값 → 없으면 프레임 statusBarHeight(세로)/statusBarHeightLandscape(가로) → 없으면 safe-area top (컷아웃 인셋과 상태바 창 높이가 같다고 보는 기본값) */
+    const frameStatus=barsOrientation==='landscape'?view.frameProfile.statusBarHeightLandscape:view.frameProfile.statusBarHeight;
+    const status=metrics.statusBar==null?(frameStatus!=null?frameStatus:safe.top):metrics.statusBar;
     const home=view.frameProfile.homeIndicator===false?0:(metrics.homeIndicator==null?safe.bottom:metrics.homeIndicator);
     const sideInset=metrics.sideInset==='safe-area';
     return{
@@ -714,8 +767,9 @@
   function getStatusBarProfile(view){
     const frame=view.frameProfile;
     const override=frame.statusBar||{};
-    const base=statusBarProfiles[override.platform||frame.platform]||statusBarProfiles.generic;
+    const base=statusBarProfiles[override.profile||override.platform||frame.platform]||statusBarProfiles.generic;
     const merged=Object.assign({},base,override);
+    if(base.pill||override.pill)merged.pill=Object.assign({},base.pill,override.pill);
     if(base.ring||override.ring)merged.ring=Object.assign({},base.ring,override.ring);
     return merged;
   }
@@ -790,7 +844,10 @@
     const dom=view.dom;
     wrap.dataset.statusPlatform=profile.platform;
     wrap.dataset.statusCompact=profile.compact?'true':'false';
-    wrap.dataset.cellularStyle=profile.cellularStyle||'bars';
+    const cellularStyle=profile.cellularStyle||'bars';
+    wrap.dataset.cellularStyle=cellularStyle;
+    wrap.dataset.batteryStyle=profile.batteryStyle||'outline';   /* outline(iOS·Pixel 외곽선+채움) | pill(One UI 7+ 숫자가 든 알약) */
+    if(dom.statusIcons&&dom.statusIcons.cellular)dom.statusIcons.cellular.setAttribute('viewBox',cellularStyle==='bars-thin'?'0 0 11 12':'0 0 18 12');   /* One UI 가는 막대는 폭 비율이 다르다 */
     if(dom.statusTime)dom.statusTime.textContent=profile.time||'';
     const icons=profile.icons||[];
     Object.keys(dom.statusIcons||{}).forEach(name=>{
@@ -809,10 +866,43 @@
       dom.statusPercent.textContent=show?Math.round(level*100)+'%':'';
       dom.statusPercent.style.order=show?String(icons.indexOf('battery')):'';
     }
+    /* One UI 알약 배터리: 숫자가 든 캡슐, 잔량만큼 왼쪽부터 채움(100% 면 전부 채움). SVG 배터리 대신 표시 */
+    if(dom.statusPill){
+      const pill=profile.batteryStyle==='pill'&&icons.indexOf('battery')>=0;
+      const dims=profile.pill||{width:23,height:14,fontSize:9.5};
+      dom.statusPill.hidden=!pill;
+      dom.statusPill.textContent=pill?String(Math.round(level*100)):'';
+      dom.statusPill.style.order=pill?String(icons.indexOf('battery')):'';
+      wrap.style.setProperty('--pill-width',dims.width+'px');
+      wrap.style.setProperty('--pill-height',dims.height+'px');
+      wrap.style.setProperty('--pill-font',dims.fontSize+'px');
+      wrap.style.setProperty('--battery-level',String(Math.round(level*1000)/10)+'%');
+    }
+    /* 타이포·간격: 프로필 값 → CSS 변수 (플랫폼별 하드코딩 대신 데이터로) */
+    wrap.style.setProperty('--status-gap',(profile.iconGap==null?5:profile.iconGap)+'px');
+    wrap.style.setProperty('--status-weight',String(profile.fontWeight||(profile.platform==='ios'?600:500)));
+    wrap.style.setProperty('--status-tracking',(profile.letterSpacing==null?(profile.platform==='ios'?-.17:0):profile.letterSpacing)+'px');
+    wrap.style.setProperty('--status-battery',String(profile.batteryScale||1));
+    wrap.style.setProperty('--status-percent',String(profile.percentScale||.78));   /* 배터리 % 글자 크기(시간 대비): iPad Air 1 · 기본 .78 */
+    wrap.style.setProperty('--status-cellular',String(profile.cellularScale||1));
     /* 고정 크기 상태바(iPad): 가로에서도 글꼴·아이콘 크기를 줄이지 않는다 */
     wrap.dataset.statusFixed=profile.fixedSize?'true':'false';
+    wrap.dataset.statusLegacy=profile.layout==='legacy'?'true':'false';   /* 홈 버튼형 iPhone: 좌 아이콘 · 중앙 시간 · 우 배터리 */
     wrap.style.setProperty('--status-font',(profile.fontSize||16)+'px');
     wrap.style.setProperty('--status-icon',(profile.iconSize||12)+'px');
+    wrap.style.setProperty('--status-wifi',String(profile.wifiScale||1));   /* Wi-Fi 아이콘 높이 비율(iPadOS 는 배터리보다 낮음) */
+    /* 세로 중심(centerY, 화면 상단 기준 px): 노치 iPhone 은 노치 아래쪽(26), 아일랜드 iPhone 은 아일랜드 중앙(29.5). 없으면 밴드 중앙.
+     * 밴드 높이(H) 안에서 align-items:center 를 유지한 채 padding 으로 중심을 옮긴다: 중심 = H/2 + (padTop − padBottom)/2 */
+    const bandHeight=getBrowserBands(view).status;
+    const landscapeNow=getOrientation(view)==='landscape';
+    const centerY=landscapeNow?profile.centerYLandscape:profile.centerY;
+    let padTop=0,padBottom=0;
+    if(centerY!=null&&bandHeight>0){
+      const shift=centerY-bandHeight/2;
+      if(shift>0)padTop=Math.min(bandHeight,shift*2);else padBottom=Math.min(bandHeight,-shift*2);
+    }
+    wrap.style.setProperty('--status-pad-top',padTop+'px');
+    wrap.style.setProperty('--status-pad-bottom',padBottom+'px');
     /* 좌/우 정렬 컷아웃(예: Fold 펼침 우상단 카메라) 과 아이콘이 겹치지 않도록 여백 확보. 가로 모드는 컷아웃이 왼쪽 세로 가장자리라 영향 없음 */
     const cutout=view.frameProfile.cutout;
     const landscape=getOrientation(view)==='landscape';
@@ -830,6 +920,8 @@
       padRight=Math.max(padRight,extent);
       bandPadRight=extent;
     }
+    /* Android 가로: 상태바 창은 컷아웃 safe-area(letterbox 열) 뒤에서 시작하고 그 안에서 프로필의 기본 여백을 둔다(Android DisplayCutout 규칙 — Pixel·Galaxy 가로에서 시계가 홀 쪽 코너에 걸리지 않음). 인셋 값 자체는 프레임 safeAreaLandscape */
+    if(landscape&&(profile.platform==='android'||profile.platform==='generic')){const bandsNow=getBrowserBands(view);const baseL=profile.padding?profile.padding.left:16,baseR=profile.padding?profile.padding.right:14;if(bandsNow.left>0)padLeft=Math.max(padLeft,bandsNow.left+baseL);if(bandsNow.right>0)padRight=Math.max(padRight,bandsNow.right+baseR);}
     wrap.style.setProperty('--status-pad-left',padLeft+'px');
     wrap.style.setProperty('--status-pad-right',padRight+'px');
     wrap.style.setProperty('--band-pad-right',bandPadRight+'px');
@@ -875,13 +967,43 @@
   /* ------------------------------------------------------------------
    * 배율
    * ------------------------------------------------------------------ */
+  function clampScalePercent(value){
+    const number=Number(value);
+    if(!isFinite(number))return null;
+    const stepped=Math.round(number/SCALE_STEP)*SCALE_STEP;
+    return Math.min(SCALE_MAX,Math.max(SCALE_MIN,stepped));
+  }
+  function setManualScale(percent,options){
+    const clamped=clampScalePercent(percent);
+    if(clamped==null){syncScaleControls();return false;}
+    manualScale=clamped/100;
+    scaleMode='manual';
+    updateAllScales();
+    saveDisplayPreference();
+    if(!options||options.announce!==false)announce('미리보기 표시 배율 '+clamped+'% (기기 CSS 1:1 기준)');
+    return true;
+  }
+  function setScaleMode(mode){
+    scaleMode=mode;
+    updateAllScales();
+    saveDisplayPreference();
+    announce(mode==='fit'?'화면 맞춤 배율 '+Math.round(getControlView().scale*100)+'%':'실기기 근사 배율 '+Math.round(getControlView().scale*100)+'%');
+  }
   function syncScaleControls(){
     const view=getControlView();
-    const deviceInput=elements.scaleModeInputs.find(input=>input.value==='device');
     const hasDeviceScale=Boolean(getPhysicalScale(view));
-    if(deviceInput)deviceInput.disabled=!hasDeviceScale;
+    elements.scaleDeviceBtn.disabled=!hasDeviceScale;
     if(scaleMode==='device'&&!hasDeviceScale)scaleMode='fit';
-    elements.scaleModeInputs.forEach(input=>{input.checked=input.value===scaleMode;});
+    elements.scaleFitBtn.setAttribute('aria-pressed',scaleMode==='fit'?'true':'false');
+    elements.scaleDeviceBtn.setAttribute('aria-pressed',scaleMode==='device'?'true':'false');
+    /* 입력 필드는 현재 유효 배율을 보여준다(맞춤·실기기 모드는 계산값, 수동 모드는 지정값). 편집 중에는 덮어쓰지 않는다 */
+    if(document.activeElement!==elements.scaleInput){
+      const current=scaleMode==='manual'?manualScale:view.scale;
+      elements.scaleInput.value=String(Math.round(current*100));
+    }
+    const percent=Math.round((scaleMode==='manual'?manualScale:view.scale)*100);
+    elements.scaleDownBtn.disabled=percent<=SCALE_MIN;
+    elements.scaleUpBtn.disabled=percent>=SCALE_MAX;
   }
 
   function getStagePadding(){
@@ -920,6 +1042,8 @@
       scale=Math.max(view.compare?.12:.18,scale);
     }else if(mode==='device'){
       scale=physical||1;
+    }else if(mode==='manual'){
+      scale=manualScale;   /* 창 크기·기기·회전과 무관하게 사용자가 지정한 값 유지 */
     }
     view.scale=scale;
     view.dom.shell.style.setProperty('--preview-scale',String(scale));
@@ -932,7 +1056,7 @@
   function updateAllScales(){
     syncScaleControls();
     visibleViews().forEach(updateScale);
-    elements.scaleValue.textContent=Math.round(getControlView().scale*100)+'%';
+    syncScaleControls();   /* 계산된 배율을 입력 필드·±버튼 상태에 반영 */
   }
 
   /* ------------------------------------------------------------------
@@ -1127,9 +1251,12 @@
     const bodyHeight=height+insets.top+insets.bottom;
     const body=resolveCorners(profile.radius,bodyWidth,bodyHeight,landscape);
     const screen=resolveCorners(profile.screenRadius,width,height,landscape);
+    /* 글래스 베젤 코너: 프로필 glassRadius 가 있으면 실측값, 없으면 CSS 기본(바디 − 링, 동심 가정) */
+    const glass=profile.glassRadius!=null?resolveCorners(profile.glassRadius,bodyWidth,bodyHeight,landscape):null;
     ['tl','tr','br','bl'].forEach(corner=>{
       shell.style.setProperty('--body-'+corner,body[corner]+'px');
       shell.style.setProperty('--screen-'+corner,screen[corner]+'px');
+      if(glass)shell.style.setProperty('--glass-'+corner,glass[corner]+'px');else shell.style.removeProperty('--glass-'+corner);
     });
     /* 디스플레이 마스크(display.mask:'holes'): 코너별 둥근 사각형에서 컷아웃 홀(렌즈·플래시) 을 뺀 실제 가시 영역. 홀은 반시계 서브패스라 nonzero 규칙으로 뚫린다.
      * 하드웨어(.screen_cutout) 는 .screen_wrap 바깥 별개 레이어라 홀 위에 그대로 그려진다 */
@@ -1226,7 +1353,7 @@
     return url.href;
   }
 
-  const initialPreviewContent='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}html,body{height:100%}body{margin:0;display:grid;place-items:center;padding:6vmin;color:#5b6473;background:#f6f8fb;font-family:-apple-system,"Apple SD Gothic Neo",Roboto,"Noto Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased}.ph{display:grid;justify-items:center;gap:clamp(8px,2.6vmin,16px);text-align:center;word-break:keep-all}.ph svg{display:block;width:clamp(28px,11vmin,56px);height:clamp(28px,11vmin,56px);color:#a4adba;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.ph p{margin:0}.ph .m{color:#3b4453;font-size:clamp(13px,4.2vmin,20px);font-weight:600;line-height:1.45;letter-spacing:-.02em}.ph .s{color:#8a94a3;font-size:clamp(11px,3vmin,13px);line-height:1.5}@media(max-height:200px){.ph .s{display:none}}</style></head><body><main class="ph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.8 5.4 3.8 8.5S14.5 17.9 12 20.5M12 3.5C9.5 6.1 8.2 8.9 8.2 12s1.3 5.9 3.8 8.5"/></svg><p class="m">URL을 입력하면<br>이 화면에 사이트가 표시됩니다.</p><p class="s">상단 주소창에 URL을 입력해 주세요.</p></main></body></html>';
+  const initialPreviewContent='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}html,body{height:100%}body{margin:0;background:#fff;font-family:-apple-system,"Apple SD Gothic Neo",Roboto,"Noto Sans KR",system-ui,sans-serif;color:#a3adba}.sk{background:#eceff3;border-radius:4px}.sk.l{background:#f1f3f6}.pg{display:flex;flex-direction:column;min-height:100%;padding:0 6%}.hd{display:flex;align-items:center;gap:8px;height:44px;border-bottom:1px solid #eef1f5}.hd .lg{width:56px;height:14px;border-radius:5px}.hd .nv{margin-left:auto;display:flex;gap:10px}.hd .nv i{display:block;width:26px;height:6px;border-radius:3px;background:#f1f3f6}.hr{padding:26px 0 18px}.hr .t1,.hr .t2{display:block}.hr .t1{height:16px;width:62%;max-width:420px;border-radius:6px}.hr .t2{height:10px;width:44%;max-width:300px;margin-top:10px;border-radius:5px}.hr p{margin:14px 0 0;font-size:15px;line-height:1.5;letter-spacing:-.01em;color:#98a2b3}.hr p .n{display:none}.bl{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding-bottom:24px}.bl div>i{display:block;height:64px;border-radius:6px;background:#f1f3f6}.bl div>b{display:block;height:8px;width:70%;margin-top:8px;border-radius:4px;background:#eceff3}.bl div>b+b{width:45%;margin-top:6px;background:#f1f3f6}.bl div:nth-child(n+3){display:none}@media(max-width:340px){.hd .nv i:nth-child(n+3){display:none}.hr p .w{display:none}.hr p .n{display:inline}}@media(max-height:280px){.pg{padding:0 5%}.hd{height:34px}.hr{padding:14px 0 10px}.hr .t2{display:none}.hr p{margin-top:8px}.bl div>i{height:36px}.bl div>b+b{display:none}.bl{padding-bottom:12px}}@media(min-width:700px){.pg{padding:0 8%}.hd{height:52px}.hd .lg{width:72px;height:16px}.hd .nv{gap:14px}.hd .nv i{width:34px}.hr{padding:36px 0 24px}.hr .t1{height:20px}.hr .t2{height:12px;margin-top:12px}.hr p{font-size:16px}.bl{grid-template-columns:repeat(3,1fr);gap:16px}.bl div>i{height:88px}.bl div:nth-child(3){display:block}}@media(min-width:1000px){.pg{padding:0 10%}.hr{padding:44px 0 28px}.bl{grid-template-columns:repeat(4,1fr);gap:18px}.bl div>i{height:104px}.bl div:nth-child(4){display:block}}</style></head><body><div class="pg" aria-hidden="true"><div class="hd"><span class="sk lg"></span><span class="nv"><i></i><i></i><i></i><i></i></span></div><div class="hr"><span class="sk t1"></span><span class="sk l t2"></span><p><span class="w">URL을 입력해 미리보기를 시작하세요.</span><span class="n">URL을 입력해 주세요.</span></p></div><div class="bl"><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div></div></div></body></html>';
 
   /* view 에 현재 URL(없으면 안내 화면) 을 로드. iframe 은 재생성하지 않고 src 만 바꾼다 */
   function loadInto(view){
@@ -1610,7 +1737,6 @@
     renderBrowserOptions();
     syncUrlPositionControls();
     syncScaleControls();
-    elements.scaleValue.textContent=Math.round(view.scale*100)+'%';
     updateCompareBar();
   }
 
@@ -1930,7 +2056,7 @@
 
   function saveDisplayPreference(){
     try{
-      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser}));
+      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,manualScale,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser}));
     }catch(error){}
   }
 
@@ -1947,7 +2073,9 @@
   function restoreDisplayPreference(){
     try{
       const saved=JSON.parse(localStorage.getItem('viewportLabDisplay')||'null');
-      if(saved&&['device','fit','actual'].includes(saved.scaleMode))scaleMode=saved.scaleMode;
+      if(saved&&['device','fit','manual'].includes(saved.scaleMode))scaleMode=saved.scaleMode;
+      else if(saved&&saved.scaleMode==='actual'){scaleMode='manual';manualScale=1;}   /* 예전 '100%' 모드 → 수동 100% */
+      if(saved&&typeof saved.manualScale==='number'){const percent=clampScalePercent(saved.manualScale*100);if(percent!=null)manualScale=percent/100;}
       if(saved&&typeof saved.showAddressBar==='boolean')showAddressBar=saved.showAddressBar;
       if(saved&&typeof saved.showBottomBar==='boolean')showBottomBar=saved.showBottomBar;
       if(saved&&['shrink','overlay'].includes(saved.uiMode))uiMode=saved.uiMode;
@@ -2123,7 +2251,17 @@
     saveDisplayPreference();
     announce('safe-area 가이드를 '+(safeAreaGuide?'표시합니다.':'숨겼습니다.'));
   });
-  elements.scaleModeInputs.forEach(input=>input.addEventListener('change',()=>{if(!input.checked)return;scaleMode=input.value;updateAllScales();saveDisplayPreference();announce('미리보기 표시 배율이 '+elements.scaleValue.textContent+'로 변경되었습니다.');}));
+  /* 표시 배율: ± 는 현재 유효 배율(5% 단위 반올림) 기준, 입력은 change(Enter/blur/화살표) 시 적용, 화면 맞춤·실기기는 모드 전환 */
+  const currentScalePercent=()=>Math.round((scaleMode==='manual'?manualScale:getControlView().scale)*100/SCALE_STEP)*SCALE_STEP;
+  elements.scaleDownBtn.addEventListener('click',()=>setManualScale(currentScalePercent()-SCALE_STEP));
+  elements.scaleUpBtn.addEventListener('click',()=>setManualScale(currentScalePercent()+SCALE_STEP));
+  elements.scaleInput.addEventListener('change',()=>{if(!setManualScale(elements.scaleInput.value))elements.scaleInput.value=String(currentScalePercent());});
+  elements.scaleInput.addEventListener('keydown',event=>{
+    if(event.key==='Enter'){event.preventDefault();elements.scaleInput.blur();}
+    else if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault();setManualScale(currentScalePercent()+(event.key==='ArrowUp'?SCALE_STEP:-SCALE_STEP));}
+  });
+  elements.scaleFitBtn.addEventListener('click',()=>setScaleMode('fit'));
+  elements.scaleDeviceBtn.addEventListener('click',()=>setScaleMode('device'));
   elements.syncScroll.addEventListener('change',()=>{syncOptions.scroll=elements.syncScroll.checked;if(syncOptions.scroll)realignScrollSync();updateSyncAvailability();saveComparePreference();announce('스크롤 동기화를 '+(syncOptions.scroll?'켰습니다.':'껐습니다.'));});
   elements.syncRotate.addEventListener('change',()=>{syncOptions.rotate=elements.syncRotate.checked;saveComparePreference();});
   elements.syncRefresh.addEventListener('change',()=>{syncOptions.refresh=elements.syncRefresh.checked;saveComparePreference();});
