@@ -627,6 +627,13 @@ svg {
   --ring-highlight: rgba(255, 255, 255, .55);
   --glass: #08090c;
 }
+/* 평평한 알루미늄 측면(iPad Air/Pro 계열): 무광 링, 검은 유리 베젤 */
+.device_shell[data-family="ipad-modern"] {
+  --ring-finish: linear-gradient(145deg, #b8bcc3 0%, #8a8f97 28%, #5e636b 60%, #a9adb4 100%);
+  --ring-edge: #4d525a;
+  --ring-highlight: rgba(255, 255, 255, .45);
+  --glass: #050608;
+}
 /* 듀얼 패널(display.split): 분리 영역에 바디 마감(힌지) 을 그린다. 위치·폭은 JS 가 넣는 --split-gap 과 베젤 변수로만 계산 */
 .device_shell[data-split]::after {
   content: "";
@@ -675,7 +682,16 @@ svg {
 .device_shell[data-camera="true"] .frame_camera { display: block; width: var(--camera-size); height: var(--camera-size); }
 .device_shell[data-camera="true"][data-orientation="portrait"] .frame_camera { left: calc(50% + var(--camera-x, 0px)); top: var(--camera-top); transform: translate(-50%, -50%); }
 .device_shell[data-camera="true"][data-orientation="landscape"] .frame_camera { top: calc(50% - var(--camera-x, 0px)); left: var(--camera-top); transform: translate(-50%, -50%); }
+/* 긴 변 베젤 카메라·센서(controls.camera/sensor.edge = right|left): 베젤 중앙선 위, 화면 중심에서 offset 만큼 아래(+)/위(−). 가로(반시계) 에서는 right → 상단 변(중심에서 offset 만큼 오른쪽(+)/왼쪽(−)), left → 하단 변 */
+.device_shell[data-camera="true"][data-camera-edge="right"][data-orientation="portrait"] .frame_camera { left: calc(100% - var(--frame-right, 0px) / 2); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-camera="true"][data-camera-edge="right"][data-orientation="landscape"] .frame_camera { top: calc(var(--frame-top, 0px) / 2); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 + var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-camera="true"][data-camera-edge="left"][data-orientation="portrait"] .frame_camera { left: calc(var(--frame-left, 0px) / 2); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-camera="true"][data-camera-edge="left"][data-orientation="landscape"] .frame_camera { top: calc(100% - var(--frame-bottom, 0px) / 2); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 - var(--camera-offset, 0px)); transform: translate(-50%, -50%); }
 .device_shell[data-sensor="true"] .frame_sensor { display: block; width: var(--sensor-size); height: var(--sensor-size); }
+.device_shell[data-sensor="true"][data-sensor-edge="right"][data-orientation="portrait"] .frame_sensor { left: calc(100% - var(--frame-right, 0px) / 2); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-sensor="true"][data-sensor-edge="right"][data-orientation="landscape"] .frame_sensor { top: calc(var(--frame-top, 0px) / 2); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 + var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-sensor="true"][data-sensor-edge="left"][data-orientation="portrait"] .frame_sensor { left: calc(var(--frame-left, 0px) / 2); top: calc(var(--frame-top, 0px) + var(--viewport-height) / 2 + var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
+.device_shell[data-sensor="true"][data-sensor-edge="left"][data-orientation="landscape"] .frame_sensor { top: calc(100% - var(--frame-bottom, 0px) / 2); left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2 - var(--sensor-offset, 0px)); transform: translate(-50%, -50%); }
 .device_shell[data-sensor="true"][data-orientation="portrait"] .frame_sensor { left: 50%; top: var(--sensor-top); transform: translate(-50%, -50%); }
 .device_shell[data-sensor="true"][data-orientation="landscape"] .frame_sensor { top: 50%; left: var(--sensor-top); transform: translate(-50%, -50%); }
 .side_key {
@@ -686,7 +702,21 @@ svg {
 }
 .device_shell[data-family="iphone-modern"] .side_key, .device_shell[data-family="iphone-classic"] .side_key, .device_shell[data-family="duo"] .side_key { background: linear-gradient(#b4b8bf, #6a6f77); border-color: #3f444b; }
 .device_shell[data-family="fold"] .side_key, .device_shell[data-family="flip"] .side_key { background: linear-gradient(#c6cad0, #7f858c); border-color: #4a4f57; }
-.device_shell:not([data-family="neutral"]):not([data-family="ipad-classic"]) .side_key { display: block; }
+.device_shell[data-family="ipad-modern"] .side_key { background: linear-gradient(#c9ccd1, #7d828a); border-color: #4d525a; }
+.device_shell:not([data-family="neutral"]):not([data-family="ipad-classic"]) .side_key:not(.side_key_extra) { display: block; }
+/* 데이터 기반 키(controls.keys → data-keys="custom"): 목록에 있는 키만, JS 가 넣은 변(data-edge)·시작(--key-start)·길이(--key-length) 로 그린다. 가로 변환은 JS(반시계 규칙) */
+.device_shell[data-keys="custom"] .side_key:not([data-edge]) { display: none; }
+.device_shell[data-keys="custom"] .side_key[data-edge] { display: block; }
+.device_shell[data-keys="custom"] .side_key[data-edge="right"] { left: auto; right: -4px; top: var(--key-start, 0px); bottom: auto; width: 4px; height: var(--key-length, 40px); }
+.device_shell[data-keys="custom"] .side_key[data-edge="left"] { left: -4px; right: auto; top: var(--key-start, 0px); bottom: auto; width: 4px; height: var(--key-length, 40px); }
+.device_shell[data-keys="custom"] .side_key[data-edge="top"] { top: -4px; bottom: auto; left: var(--key-start, 0px); right: auto; height: 4px; width: var(--key-length, 40px); }
+.device_shell[data-keys="custom"] .side_key[data-edge="bottom"] { bottom: -4px; top: auto; left: var(--key-start, 0px); right: auto; height: 4px; width: var(--key-length, 40px); }
+/* 커넥터 슬롯(controls.port → data-port = 현재 방향의 변): 변 중앙의 어두운 홈 */
+.frame_port { background: #15181d; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
+.device_shell[data-port="bottom"] .frame_port { display: block; left: 50%; bottom: -1px; width: var(--port-w, 40px); height: var(--port-h, 3px); transform: translateX(-50%); }
+.device_shell[data-port="top"] .frame_port { display: block; left: 50%; top: -1px; width: var(--port-w, 40px); height: var(--port-h, 3px); transform: translateX(-50%); }
+.device_shell[data-port="right"] .frame_port { display: block; top: 50%; right: -1px; width: var(--port-h, 3px); height: var(--port-w, 40px); transform: translateY(-50%); }
+.device_shell[data-port="left"] .frame_port { display: block; top: 50%; left: -1px; width: var(--port-h, 3px); height: var(--port-w, 40px); transform: translateY(-50%); }
 .device_shell[data-orientation="portrait"] .key_volume { left: -4px; top: 20%; width: 4px; height: 82px; }
 .device_shell[data-orientation="portrait"] .key_power { right: -4px; top: 26%; width: 4px; height: 68px; }
 .device_shell[data-orientation="landscape"] .key_volume { left: 20%; top: -4px; width: 82px; height: 4px; }
@@ -853,6 +883,10 @@ svg {
 .device_shell[data-cutout="notch"] .band_status { align-items: flex-start; padding-top: 8px; }     /* 노치(33px) 세로 중심에 맞춤 */
 .device_shell[data-cutout="island"] .band_status { align-items: flex-start; padding-top: 20px; }  /* 아일랜드(11~48px) 세로 중심에 맞춤 */
 .device_shell[data-orientation="landscape"] .band_status { --status-icon-size: 10px; font-size: 12px; }
+/* 고정 크기 상태바(statusBar.fixedSize, iPad): 가로에서도 프로필 글꼴·아이콘 크기 유지. 배터리 % 텍스트는 배터리 아이콘 바로 앞 */
+.screen_wrap[data-status-fixed="true"] .band_status { --status-icon-size: var(--status-icon, 12px); font-size: var(--status-font, 16px); }
+.status_percent { flex: 0 0 auto; font-size: .93em; }
+.status_percent[hidden] { display: none; }
 .band_url { grid-row: 2; display: flex; align-items: center; padding: 6px max(10px, var(--band-pad-right, 0px)) 6px 10px; border-bottom: 1px solid #d5dae2; }   /* --band-pad-right: 밴드 행과 겹치는 측면 컷아웃(Flip8 커버 가로) 회피 */
 .screen_wrap[data-url-position="bottom"] .band_url { grid-row: 4; border-bottom: 0; border-top: 1px solid #d5dae2; }
 .browser_address {
@@ -888,8 +922,8 @@ svg {
   border-radius: 8px 8px 0 0;
   box-shadow: 0 0 0 1px #d5dae2;
 }
-.screen_wrap[data-browser^="ios"], .screen_wrap[data-browser="ipad-safari"] { --band-bg: #f5f5f7; }
-.screen_wrap[data-browser^="ios"] .ui_band, .screen_wrap[data-browser="ipad-safari"] .ui_band { background: var(--band-bg); }
+.screen_wrap[data-browser^="ios"], .screen_wrap[data-browser="ipad-safari"], .screen_wrap[data-browser="ipados-safari"] { --band-bg: #f5f5f7; }
+.screen_wrap[data-browser^="ios"] .ui_band, .screen_wrap[data-browser="ipad-safari"] .ui_band, .screen_wrap[data-browser="ipados-safari"] .ui_band { background: var(--band-bg); }
 .band_toolbar {
   grid-row: 5;
   display: flex;

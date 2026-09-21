@@ -5,7 +5,10 @@
    * 데이터
    *
    * frameProfiles  : 기기 프레임. 레이어별 값을 세로 기준으로 적고, 가로는 JS 가 반시계 90° 회전 규칙으로 계산한다.
-   *   family                 : 형상 언어(바디 마감·측면 키·스피커 등 CSS 분기 키). iphone-modern | iphone-classic | galaxy-bar | pixel | fold | flip | duo | tablet | neutral
+   *   family                 : 형상 언어(바디 마감·측면 키·스피커 등 CSS 분기 키). iphone-modern | iphone-classic | galaxy-bar | pixel | fold | flip | duo | ipad-classic | ipad-modern | neutral
+   *   controls               : 전면 디테일. homeButton{size,ring,bottom} · speaker{width,height,top} · camera/sensor{size, top,offsetX}(상단 베젤) 또는 {size, edge:'right'|'left', offset}(긴 변 베젤, offset 은 화면 중심에서 변을 따라 아래(+)/위(−))
+   *                            keys[{type:'volume'|'power', edge:'top'|'right'|'bottom'|'left', start, length}](세로 기준 변·시작·길이 px, 지정하면 family 기본 키 대신 사용) · port{edge,width,height}(USB-C 등 커넥터 슬롯).
+   *                            가로 모드는 반시계 규칙: top→left, right→top, bottom→right, left→bottom (JS 가 start 를 변환)
    *   top/right/bottom/left  : 베젤(바디 외곽 ~ 디스플레이) 두께. 상하좌우가 달라도 된다
    *   ring                   : 베젤 중 금속 테 두께(px). 나머지 베젤은 검은 글래스로 그린다
    *   radius / screenRadius  : 바디 / 디스플레이 모서리. 숫자(px) · {ratio}(짧은 변 대비) · {tl,tr,br,bl}(코너별, 각 값도 숫자나 {ratio}) 모두 가능
@@ -147,7 +150,26 @@
     'ipad-home':{family:'ipad-classic',top:112,right:56,bottom:112,left:56,ring:8,radius:57,screenRadius:0,platform:'any',obstruction:'화면 밖 홈 버튼·카메라',
       cutout:{type:'none'},safeArea:{top:20,right:0,bottom:0,left:0},safeAreaLandscape:{top:20,right:0,bottom:0,left:0},homeIndicator:false,
       controls:{homeButton:{size:57,ring:3,bottom:28},camera:{size:10,top:51,offsetX:0}},
-      source:{body:'official: iPad 6세대 240.0×169.5mm',bezel:'derived: 측면 (169.5−147.8)/2=10.85mm → 56px · 상하 (240−197.1)/2=21.45mm → 112px',radius:'approximation: 렌더 미확보 (≈11mm 추정)',screenRadius:'official: 각진 코너 (0)',cutout:'n/a',controls:'approximation: 홈 버튼 ≈11mm(57px) 하단 베젤 중앙 · 전면 카메라 상단 베젤 중앙 (미측정)',statusBar:'official: iPadOS 상태바 20pt, 홈 인디케이터 없음'}}
+      source:{body:'official: iPad 6세대 240.0×169.5mm',bezel:'derived: 측면 (169.5−147.8)/2=10.85mm → 56px · 상하 (240−197.1)/2=21.45mm → 112px',radius:'approximation: 렌더 미확보 (≈11mm 추정)',screenRadius:'official: 각진 코너 (0)',cutout:'n/a',controls:'approximation: 홈 버튼 ≈11mm(57px) 하단 베젤 중앙 · 전면 카메라 상단 베젤 중앙 (미측정)',statusBar:'official: iPadOS 상태바 20pt, 홈 인디케이터 없음'}},
+
+    /* iPad Air 11 (M4, 2026) 세로 820×1180: 바디 247.6×178.5×6.1mm · native 2360×1640 264ppi · 대각선 10.86"(27.59cm) 모두 Apple tech specs(support.apple.com/126471, official).
+     * 활성영역(derived): 공식 대각선 275.9mm ÷ 2873.8px = 0.0960mm/px → 226.6×157.4mm → 5.21px/mm(CSS). 베젤 = (178.5−157.4)/2 = 10.55 · (247.6−226.6)/2 = 10.5mm → 55px 4변 동일.
+     * 렌더 실측(photo-measured): Apple tech specs 정면 렌더 "ipad-air-11-inch-m4.png"(1000×1000, 3.37px/mm, 11" 정면) — 바디 코너 r 45px=13.4mm(rms 0.64; 동심 검산 3.0+10.5=13.5 일치) · 화면 코너 r 10px=3.0±0.3mm ·
+     *   카메라(긴 변 우측 베젤 중앙선, 화면 중심에서 위로 32px=9.5mm) · 조도 센서(아래로 33px=9.8mm) · 볼륨 버튼(우측 변, 위에서 19.0mm 부터 20.8mm) · 상단 버튼/Touch ID(상단 변, 우측 끝에서 12.5~30mm).
+     *   교차 확인: Apple 뉴스룸 13" 렌더 "Apple-iPad-Air-M4-multitasking-260302"(5.55px/mm) 화면 코너 r 18px=3.2mm 일치, 상태바 텍스트 중심 2.9mm(≈15pt) → 상태바 28pt.
+     * 카메라가 가로 긴 변(Apple: "Landscape 12MP Center Stage camera") → 세로 기준 오른쪽 베젤, 가로(반시계) 에서는 상단 중앙 왼쪽. */
+    'ipad-air-11':{family:'ipad-modern',top:55,right:55,bottom:55,left:55,ring:5,radius:70,screenRadius:18,platform:'ios',obstruction:'긴 변 베젤 카메라·홈 인디케이터',
+      cutout:{type:'none'},safeArea:{top:28,right:0,bottom:20,left:0},safeAreaLandscape:{top:28,right:0,bottom:20,left:0},homeIndicator:true,homeIndicatorWidth:300,
+      controls:{camera:{size:15,edge:'right',offset:-49},sensor:{size:7,edge:'right',offset:51},
+        keys:[{type:'volume',edge:'right',start:99,length:48},{type:'volume',edge:'right',start:159,length:48},{type:'power',edge:'top',start:774,length:93}],
+        port:{edge:'bottom',width:47,height:3}},
+      source:{nativePhysicalResolution:'official: 2360×1640 (Apple tech specs 126471 "2360-by-1640-pixel resolution at 264 ppi") · 대각선 10.86"/27.59cm official',
+        renderedPhysicalResolution:'derived-orientation: 1640×2360 — 세로(portrait) 프리뷰 기준 width×height 로 정규화, official 원문값 아님',
+        cssViewport:'verified: 820×1180 pt @2x (Use Your Loaf "iPad 2024 Screen Sizes" 2024-05-13, iPad Air 11" M2 · 2360÷2=1180 정합) → 동일 패널(2360×1640 264ppi) 의 M4 모델에 준용(derived). Apple 공식 pt 표기는 확인하지 못함(HIG Layout 표 현재 미게시)',
+        body:'official: 247.6×178.5×6.1mm',bezel:'derived: 공식 대각선 기준 활성영역 226.6×157.4mm → 4변 10.5mm → 55px (렌더 실측 33~35px/3.37=9.8~10.4mm 일치)',ring:'photo-measured: 전면 금속 테 2~4px/3.37 ≈ 0.6~1.2mm → 5px',
+        radius:'photo-measured: 바디 코너 r 45px/3.37=13.4mm → 70px (동심 검산 18+55=73 과 오차 내)',screenRadius:'photo-measured: 화면 코너 r 10px=3.0±0.3mm → 16px ≈ 커뮤니티 참고값 18pt 와 오차 내 → 18px (13" 렌더 실측 3.2mm 일치)',cutout:'n/a',
+        controls:'photo-measured: 카메라 중심 화면 중심 위 9.5mm → −49px (13" 렌더 −9.5mm 일치), Ø 11" 렌더 2.4mm / 13" 렌더 링 포함 3.1mm → 15px · 센서 아래 9.8mm → +51px, Ø≈1.5mm → 7px · 볼륨 2개 우측 변 19.0mm 부터 20.8mm(각 9.3 + 틈 2.2 는 approximation 분할) → start 99/159, 길이 48 · 상단 버튼 상단 변 우측 끝 12.5~30mm → start 774 길이 93 · USB-C 하단 변 중앙(official: tech specs Buttons and Connectors), 폭 9mm→47px approximation',
+        statusBar:'photo-measured(13" 뉴스룸 multitasking 렌더, 11" 과 동일 밀도 264ppi): 상태바 텍스트 중심 화면 상단에서 2.9mm ≈ 15pt → 높이 28pt derived(중심 대칭 가정) · 시간+날짜 좌측, Wi-Fi·배터리 %·배터리 우측 · 여백 좌 15/우 17pt → 16 · 홈 인디케이터 20pt 는 홈 인디케이터형 iPad 표준(verified), 폭 300 approximation(렌더에 미표시)'}}
   };
   Object.keys(frameProfiles).forEach(key=>{frameProfiles[key].id=key;});
 
@@ -170,6 +192,9 @@
     ring:{size:40,stroke:3,arcGap:116,wifiWidth:27,dotSize:4,dotAngles:[-31,-10.5,10.5,31]},timeSize:16,axis:48,timeCenter:92,ringCenter:129};
   frameProfiles['iphone-se'].statusBar={compact:true};
   frameProfiles['ipad-home'].statusBar={platform:'ios',compact:true};
+  /* iPadOS 26/27 상태바(photo-measured, Apple 뉴스룸 13" 렌더): 좌 "9:41 AM  Wed Apr 1" · 우 Wi-Fi · 배터리 % · 배터리. 가로에서도 같은 크기(fixedSize) */
+  frameProfiles['ipad-air-11'].statusBar={platform:'ios',time:'9:41 AM\u2002Wed Apr 1',icons:['wifi','battery'],batteryText:true,batteryLevel:1,padding:{left:16,right:16},fixedSize:true,fontSize:15,iconSize:12,
+    source:'photo-measured: "Apple-iPad-Air-M4-multitasking-260302_big.jpg.large_2x" 시간 텍스트 높이 13px/5.55=2.3mm(≈12pt 숫자 높이 → 글꼴 ≈15pt) · 좌측 여백 16px=2.9mm≈15pt · 우측 배터리 끝 18px=3.2mm≈17pt · 아이콘 높이 10px≈9pt(12px 근사)'};
   /* 외부 화면(466×678, 6.04px/mm): 뉴스룸 홈 화면 이미지(정지 상태) 실측 — 축 48(카메라 중심과 동일) · 시간 중심 92 · 링 Ø40 중심 129 · HIG 도식(1.0944px/pt) 과 일치(92.3 / 127.5).
    * island: Dynamic Island. 정지 상태(홈 화면 이미지·HIG 도식) 는 카메라 원(Ø36, 컷아웃과 동일) 만 보이고, Live Activity(통화 이미지) 에서 세로 필 38×62 @ top 26 으로 확장되며
    * 클러스터가 14.5px 내려온다(시간 106.5 · 링 143.5). 기본 표시는 live(세로 필) — state:'rest' 로 바꾸면 정지 상태. */
@@ -200,6 +225,11 @@
     'ipad-safari':{label:'Safari (iPad)',platform:'ios',urlBarPosition:'top',
       portrait:{statusBar:null,urlBar:50,toolbar:0,homeIndicator:null},
       landscape:{statusBar:null,urlBar:50,toolbar:0,homeIndicator:null}},
+    /* 홈 인디케이터형 iPad(iPadOS 26/27) Safari: 상단 탭 바+주소 필드 한 줄. 상태바 높이는 프레임 safeArea.top(28, iPad Air 렌더 실측) 을 쓰고,
+     * 홈 인디케이터 영역(20) 은 iPad Safari 가 웹 콘텐츠를 그 아래까지 펼치므로 밴드 0(overlay) — safe-area 가이드로만 표시. 탭 바 높이 50 은 iPadOS 15~18 컴팩트 탭 바 준용(approximation, Liquid Glass 툴바 실측 미확보) */
+    'ipados-safari':{label:'Safari (iPadOS)',platform:'ios',urlBarPosition:'top',
+      portrait:{statusBar:null,urlBar:50,toolbar:0,homeIndicator:0},
+      landscape:{statusBar:null,urlBar:50,toolbar:0,homeIndicator:0}},
     /* iPhone Duo(iOS 27) Safari. HIG(official): 툴바·탭바·내비게이션이 카메라 쪽 세로 축(측면 열) 에 놓이고, 내부 화면을 세로로 든 경우만 표준 가로 바.
      * layout:'side' 상태에서는 가로 밴드(상태바·URL·툴바·홈) 를 쓰지 않고 .side_controls 를 콘텐츠 위에 띄운다(뉴스룸 Netflix·Slack 이미지처럼 콘텐츠가 전체 화면).
      *   → 사이트 뷰포트 = 화면 전체. 실제 Safari 의 웹 뷰포트 인셋은 미확인(approximation) 이라 축소/겹침 모드 구분이 없다. safe-area 가이드로 측면 열 영역을 확인할 것.
@@ -264,7 +294,10 @@
     'tablet-768':{name:'iPad 9.7형',group:'tablet',subtitle:'홈 버튼형 · 태블릿 전환점',note:'iPad 9.7형(홈 버튼) 768 × 1024 · 모바일→태블릿 전환 경계',source:'official: iPad 6세대 9.7" 2048 × 1536, DPR 2 → 768 × 1024 · 바디 240.0 × 169.5mm (Apple)',
       frame:'ipad-home',browser:'ipad-safari',dpr:2,states:[{id:'default',label:'기본',width:768,height:1024,diagonal:9.7,physicalWidth:1536,physicalHeight:2048}]},
     'tablet-1024':{name:'iPad 9.7형 가로',group:'tablet',subtitle:'홈 버튼형 · PC 전환 직전',note:'1024px 전후 PC 전환 직전 점검 · iPad 9.7형 가로 자세',source:'official: iPad 6세대 9.7" 2048 × 1536, DPR 2 (가로)',
-      frame:'ipad-home',browser:'ipad-safari',dpr:2,states:[{id:'default',label:'기본',width:1024,height:768,diagonal:9.7,physicalWidth:2048,physicalHeight:1536}]}
+      frame:'ipad-home',browser:'ipad-safari',dpr:2,states:[{id:'default',label:'기본',width:1024,height:768,diagonal:9.7,physicalWidth:2048,physicalHeight:1536}]},
+    /* physicalWidth/Height 는 세로 기준 정규화 값(derived-orientation). Apple 공식 native 표기는 2360×1640 → frameProfiles['ipad-air-11'].source 참조. dpr 2 는 2360÷1180(verified) */
+    'ipad-air-11':{name:'iPad Air 11',group:'tablet',subtitle:'M4 (2026) · 홈 인디케이터형',note:'iPad Air 11 (M4) 820 × 1180 CSS 화면 · 긴 변 카메라 · 상태바 28 · 홈 인디케이터 20',source:'official: 2360 × 1640 px 264ppi · 대각선 10.86"(27.59cm) · 바디 247.6 × 178.5 × 6.1mm (Apple tech specs 126471) · CSS 820 × 1180 @2x 는 verified(개발자 레퍼런스, M2 동일 패널 준용)',
+      frame:'ipad-air-11',browser:'ipados-safari',dpr:2,states:[{id:'default',label:'기본',width:820,height:1180,diagonal:10.86,physicalWidth:1640,physicalHeight:2360}]}
   };
 
   /* ==================================================================
@@ -337,7 +370,8 @@
       browserUrl:shell.querySelector('.browser_url'),hingeLine:shell.querySelector('.hinge_line'),
       statusCluster:shell.querySelector('.status_cluster'),clusterTime:shell.querySelector('.cluster_time'),clusterRing:shell.querySelector('.cluster_ring'),
       dynamicIsland:shell.querySelector('.dynamic_island'),sideControls:shell.querySelector('.side_controls'),
-      statusTime:shell.querySelector('.status_time'),batteryFill:shell.querySelector('.battery_fill'),
+      statusTime:shell.querySelector('.status_time'),batteryFill:shell.querySelector('.battery_fill'),statusPercent:shell.querySelector('.status_percent'),
+      keyVolume:shell.querySelector('.key_volume'),keyVolumeB:shell.querySelector('.key_volume_b'),keyPower:shell.querySelector('.key_power'),
       statusIcons:{cellular:shell.querySelector('.icon_cellular'),wifi:shell.querySelector('.icon_wifi'),battery:shell.querySelector('.icon_battery')}
     };
     if(withIds){
@@ -703,13 +737,22 @@
       const icon=dom.statusIcons[name];
       if(!icon)return;
       const index=icons.indexOf(name);
-      icon.hidden=index<0;
+      icon.toggleAttribute('hidden',index<0);   /* SVG 요소는 .hidden 프로퍼티가 없어 속성으로 토글 (.sb_icon[hidden] 규칙) */
       icon.style.order=index<0?'':String(index);
     });
-    if(dom.batteryFill){
-      const level=Math.max(0,Math.min(1,profile.batteryLevel==null?.82:profile.batteryLevel));
-      dom.batteryFill.setAttribute('width',String(Math.round(19*level*10)/10));
+    const level=Math.max(0,Math.min(1,profile.batteryLevel==null?.82:profile.batteryLevel));
+    if(dom.batteryFill)dom.batteryFill.setAttribute('width',String(Math.round(19*level*10)/10));
+    /* 배터리 % 텍스트(iPadOS 등): 배터리 아이콘 바로 앞, 같은 order */
+    if(dom.statusPercent){
+      const show=!!profile.batteryText&&icons.indexOf('battery')>=0;
+      dom.statusPercent.hidden=!show;
+      dom.statusPercent.textContent=show?Math.round(level*100)+'%':'';
+      dom.statusPercent.style.order=show?String(icons.indexOf('battery')):'';
     }
+    /* 고정 크기 상태바(iPad): 가로에서도 글꼴·아이콘 크기를 줄이지 않는다 */
+    wrap.dataset.statusFixed=profile.fixedSize?'true':'false';
+    wrap.style.setProperty('--status-font',(profile.fontSize||16)+'px');
+    wrap.style.setProperty('--status-icon',(profile.iconSize||12)+'px');
     /* 좌/우 정렬 컷아웃(예: Fold 펼침 우상단 카메라) 과 아이콘이 겹치지 않도록 여백 확보. 가로 모드는 컷아웃이 왼쪽 세로 가장자리라 영향 없음 */
     const cutout=view.frameProfile.cutout;
     const landscape=getOrientation(view)==='landscape';
@@ -851,7 +894,7 @@
     shell.dataset.family=profile.family||'neutral';
     shell.style.setProperty('--ring',(profile.ring==null?4:profile.ring)+'px');
     updateShape(view,profile,landscape,insets);
-    updateFrameDetails(view,profile);
+    updateFrameDetails(view,profile,landscape,insets);
     updateHingeBody(view,profile,landscape);
     updateCutout(view,profile,landscape);
     updateSafeGuides(view);
@@ -885,10 +928,22 @@
   }
 
   /* 전면 하드웨어 디테일(홈 버튼·스피커·카메라·센서): frameProfiles[*].controls 값을 CSS 변수로. 위치는 세로 기준이며 가로 배치는 CSS 가 반시계 규칙으로 옮긴다 */
-  function updateFrameDetails(view,profile){
+  function updateFrameDetails(view,profile,landscape,insets){
     const shell=view.dom.shell;
     const controls=profile.controls||{};
     const set=(name,value)=>shell.style.setProperty(name,value+'px');
+    /* 세로 기준 변(edge) → 현재 방향의 변. 반시계 90°: top→left, right→top, bottom→right, left→bottom */
+    const rotateEdge={top:'left',right:'top',bottom:'right',left:'bottom'};
+    const edgeFor=edge=>landscape?rotateEdge[edge]||edge:edge;
+    /* 세로 기준 바디 크기(px). 가로에서는 현재 폭·높이가 서로 바뀌어 있다 */
+    const bodyWidth=view.currentWidth+insets.left+insets.right,bodyHeight=view.currentHeight+insets.top+insets.bottom;
+    const pw=landscape?bodyHeight:bodyWidth;
+    /* 변을 따라 잰 시작 위치(세로 기준: top/bottom 은 왼쪽에서, left/right 는 위에서) 를 현재 방향으로 변환. (x,y)→(y, W−x) 규칙 */
+    const startFor=(edge,start,length)=>{
+      if(!landscape)return start;
+      if(edge==='top'||edge==='bottom')return pw-start-length;   /* 상단 변 → 왼쪽 변(위에서), 하단 변 → 오른쪽 변(위에서) */
+      return start;                                               /* 오른쪽 변 → 상단 변(왼쪽에서), 왼쪽 변 → 하단 변(왼쪽에서) */
+    };
     const home=controls.homeButton;
     shell.dataset.homeButton=home?'true':'false';
     if(home){set('--home-size',home.size);set('--home-ring',home.ring==null?3:home.ring);set('--home-bottom',home.bottom);}
@@ -897,10 +952,31 @@
     if(speaker){set('--speaker-w',speaker.width);set('--speaker-h',speaker.height);set('--speaker-top',speaker.top);}
     const camera=controls.camera;
     shell.dataset.camera=camera?'true':'false';
-    if(camera){set('--camera-size',camera.size);set('--camera-top',camera.top);set('--camera-x',camera.offsetX||0);}
+    shell.dataset.cameraEdge=camera&&camera.edge?camera.edge:'top';   /* top(상단 베젤, 기존) | right/left(긴 변 베젤 중앙선) */
+    if(camera){set('--camera-size',camera.size);set('--camera-top',camera.top||0);set('--camera-x',camera.offsetX||0);set('--camera-offset',camera.offset||0);}
     const sensor=controls.sensor;
     shell.dataset.sensor=sensor?'true':'false';
-    if(sensor){set('--sensor-size',sensor.size);set('--sensor-top',sensor.top);}
+    shell.dataset.sensorEdge=sensor&&sensor.edge?sensor.edge:'top';
+    if(sensor){set('--sensor-size',sensor.size);set('--sensor-top',sensor.top||0);set('--sensor-offset',sensor.offset||0);}
+    /* 데이터 기반 측면 키(controls.keys): 있으면 family 기본 위치 대신 변·시작·길이로 놓는다. type 별 요소: volume → .key_volume, 두 번째 volume → .key_volume_b, power → .key_power */
+    const keys=Array.isArray(controls.keys)?controls.keys:null;
+    shell.dataset.keys=keys?'custom':'family';
+    const keyElements={volume:[view.dom.keyVolume,view.dom.keyVolumeB],power:[view.dom.keyPower]};
+    const used=new Set();
+    if(keys)keys.forEach(key=>{
+      const pool=keyElements[key.type]||[];
+      const el=pool.find(candidate=>candidate&&!used.has(candidate));
+      if(!el)return;
+      used.add(el);
+      el.dataset.edge=edgeFor(key.edge||'right');
+      el.style.setProperty('--key-start',startFor(key.edge||'right',key.start||0,key.length||0)+'px');
+      el.style.setProperty('--key-length',(key.length||0)+'px');
+    });
+    [view.dom.keyVolume,view.dom.keyVolumeB,view.dom.keyPower].forEach(el=>{if(el&&!used.has(el)){delete el.dataset.edge;el.style.removeProperty('--key-start');el.style.removeProperty('--key-length');}});
+    /* 커넥터 슬롯(controls.port): 세로 기준 변 중앙 */
+    const port=controls.port;
+    shell.dataset.port=port?edgeFor(port.edge||'bottom'):'none';
+    if(port){set('--port-w',port.width||40);set('--port-h',port.height||3);}
   }
 
   /* ------------------------------------------------------------------

@@ -11,6 +11,7 @@
 - 320(범용) / Galaxy S25 360×780 / Android 20:9 범용 360×800 / iPhone 390 / 430 기준 모바일 프리셋
 - iPhone SE(홈 버튼형)·iPhone 18 Pro·Google Pixel 10 프리셋
 - iPad 9.7형(홈 버튼형) 세로/가로
+- iPad Air 11 (M4, 2026, 홈 인디케이터형): 820 × 1180, 긴 변(가로) 카메라 · 볼륨/Touch ID/USB-C 위치 · iPadOS 상태바(시간+날짜, 배터리 %) — 회전 버튼으로 가로
 - Galaxy Z Flip8: 커버 / 펼침 / Flex 90°
 - Galaxy Z Fold8: 커버 / 펼침
 - iPhone Duo(2026, 북 타입 폴더블): 접힘 외부 5.4" / 펼침 내부 7.6" 단일 폴딩 화면 + 접힘선
@@ -20,7 +21,7 @@
     세로 Dynamic Island(외부 화면), 그 아래 Safari 측면 컨트롤(뒤로 원형 + 캡슐 / 하단 캡슐) 이 콘텐츠 위에 떠 있습니다. 내부 화면을 세로로 돌리면 표준 가로 바.
 - 가로·세로 회전, 직접 화면 너비·높이 입력 (회전·직접 입력값은 다시 열 때 복원)
 - 실기기 배율 / 화면 맞춤 / 100% 보기
-- 브라우저 종류 선택: Safari, Chrome (iOS), Chrome, Samsung Internet, Chrome (태블릿), Safari (iPad), Safari (iPhone Duo — Duo 에서만)
+- 브라우저 종류 선택: Safari, Chrome (iOS), Chrome, Samsung Internet, Chrome (태블릿), Safari (iPad — 홈 버튼형), Safari (iPadOS — 홈 인디케이터형: 상태바 28, 탭 바 50, 홈 인디케이터 영역은 콘텐츠 위에 겹침), Safari (iPhone Duo — Duo 에서만)
   · 기기 플랫폼에 맞는 브라우저만 목록에 나오고, 선택은 플랫폼별로 기억됩니다.
 - 상태바 / 주소창 / 툴바 / 홈 인디케이터 밴드를 브라우저별 위치·높이로 표시
   · 주소창 스위치: URL 바 표시 여부 (끄면 스크롤로 숨은 상태. 상태바·홈 인디케이터는 유지)
@@ -115,6 +116,9 @@
                      samsung.com "galaxy-z-flip8-features-colors-design.jpg"(Flip8 접힘 정면), Samsung 뉴스룸 "...Launch_dl3F.jpg"(Flip8 펼침 상단부, 저해상도))
   · approximation  : 근거 없음 — 실제 사양처럼 취급하지 말 것 (Fold8 의 코너·컷아웃, Flip8 펼침 화면 코너·측면 키, Duo 의 접힘선 굵기·Safari 시작 높이·회전 시 클러스터 위치, Android 하단 제스처 바 등)
   · controls 필드(홈 버튼·스피커·카메라·센서) 는 CSS 변수로 그려지며 가로 모드는 반시계 규칙으로 옮겨집니다.
+    camera/sensor 에 edge:'right'|'left' + offset(화면 중심에서 아래 +/위 −) 을 주면 긴 변 베젤(iPad Air 처럼 가로 카메라) 에 놓입니다.
+    keys:[{type:'volume'|'power', edge, start, length}] 를 주면 family 기본 위치 대신 실측 위치에 키를 그리고(두 번째 volume 은 .key_volume_b), port:{edge,width,height} 는 USB-C 같은 커넥터 슬롯입니다.
+  · 해상도는 세 층위로 적습니다: nativePhysicalResolution(제조사 표기 그대로, official) / renderedPhysicalResolution(세로 프리뷰 기준 width×height, derived-orientation) / cssViewport(DPR 가정 파생값, derived 또는 신뢰 자료 확인 시 verified).
 - 기기 형상은 전부 frameProfiles 데이터로 정합니다 (CSS 에 기기명 분기 없음):
   · family: 형상 언어. iphone-modern / iphone-classic / galaxy-bar / pixel / fold / flip / duo / ipad-classic / neutral
     → 바디 마감(금속 링 색·하이라이트·글래스 색), 측면 키, 스피커·홈 버튼 표시가 이 값으로 갈립니다. 새 마감이 필요할 때만 CSS 에 family 하나를 추가합니다.
