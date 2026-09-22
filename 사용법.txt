@@ -10,7 +10,7 @@
 
 포함 기능
 - 320(범용) / Galaxy S25 360×780 / Android 20:9 범용 360×800 / iPhone 390 / 430 기준 모바일 프리셋
-- iPhone SE(홈 버튼형)·iPhone 18 Pro·Google Pixel 10 프리셋
+- iPhone SE (3세대, 홈 버튼형 — 2세대와 외형·해상도 동일)·iPhone 18 Pro·Google Pixel 10 프리셋
 - iPad 9.7형(홈 버튼형): 768 × 1024, 회전 버튼으로 1024 × 768(PC 전환 직전 점검)
 - iPad Air 11 (M4, 2026, 홈 인디케이터형): 820 × 1180, 긴 변(가로) 카메라 · 볼륨/Touch ID/USB-C 위치 · iPadOS 상태바(시간+날짜, 배터리 %) — 회전 버튼으로 가로
 - Galaxy Tab S11 (11.0형): 800 × 1280, 긴 변 베젤 카메라(노치 없음) · One UI 상태바/제스처 바 · 회전 버튼으로 가로 1280 × 800
@@ -24,7 +24,7 @@
     세로 Dynamic Island(외부 화면), 그 아래 Safari 측면 컨트롤(뒤로 원형 + 캡슐 / 하단 캡슐) 이 콘텐츠 위에 떠 있습니다. 내부 화면을 세로로 돌리면 표준 가로 바.
 - 가로·세로 회전, 직접 화면 너비·높이 입력 (회전·직접 입력값은 다시 열 때 복원)
 - 표시 배율: [−] [% 직접 입력] [+] [화면 맞춤] [실기기] — 25~200%, 5% 단위
-- 브라우저 종류 선택: Safari, Chrome (iOS), Chrome, Samsung Internet, Chrome (태블릿), Chrome (Android 태블릿) / Samsung Internet (태블릿) — Galaxy Tab 에서만, 상태바 24·내비 바 24 를 브라우저 프로필에서 관리, Safari (iPad — 홈 버튼형), Safari (iPadOS — 홈 인디케이터형: 상태바 30, 탭 바 50, 홈 인디케이터 영역은 콘텐츠 위에 겹침), Safari (iPhone Duo — Duo 에서만)
+- 브라우저 종류 선택: Safari, Chrome (iOS — 옴니박스 밴드 50·툴바 44+홈 34, [← → + 탭 …] 구성, 실기기 캡처 기준), Chrome, Samsung Internet, Chrome (태블릿), Chrome (Android 태블릿) / Samsung Internet (태블릿) — Galaxy Tab 에서만, 상태바 24·내비 바 24 를 브라우저 프로필에서 관리, Safari (iPad — 홈 버튼형), Safari (iPadOS — 홈 인디케이터형: 상태바 30, 탭 바 50, 홈 인디케이터 영역은 콘텐츠 위에 겹침), Safari (iPhone Duo — Duo 에서만)
   · 기기 플랫폼에 맞는 브라우저만 목록에 나오고, 선택은 플랫폼별로 기억됩니다.
 - 상태바 / 주소창 / 툴바 / 홈 인디케이터 밴드를 브라우저별 위치·높이로 표시
   · 주소창 스위치: URL 바 표시 여부 (끄면 스크롤로 숨은 상태. 상태바·홈 인디케이터는 유지)

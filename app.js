@@ -60,7 +60,7 @@
     'iphone-se':{family:'iphone-classic',top:110,right:28,bottom:110,left:28,ring:10,radius:65,screenRadius:0,platform:'ios',obstruction:'화면 밖 홈 버튼·카메라',
       cutout:{type:'none'},safeArea:{top:20,right:0,bottom:0,left:0},safeAreaLandscape:{top:0,right:0,bottom:0,left:0},homeIndicator:false,
       controls:{homeButton:{size:67,ring:3,bottom:21},speaker:{width:74,height:7,top:55},camera:{size:15,top:50,offsetX:-69},sensor:{size:10,top:25}},
-      source:{body:'official: 138.4×67.3mm (Apple tech specs 111866)',bezel:'derived: 측면 (67.3−58.5)/2=4.4mm → 28px · 상하 (138.4−104.05)/2=17.2mm → 110px',radius:'photo-measured: Commons "IPhone SE (2nd generation) white vector.svg" rect ry 66.0 / 바디 폭 439.4 (0.150) → 65px',screenRadius:'official: 4.7" LCD 각진 코너 (0)',cutout:'n/a',controls:'photo-measured(같은 파일): 홈 버튼 r 34.13→외경 10.45mm(67px)·내경 9.3mm(60px)·중심 하단에서 8.5mm(55px) · 스피커 75.9×7.1→74×7px 중심 상단 9.1mm · 카메라 r 7.74→15px 중심 x −10.7mm · 센서 점 r 4.9→10px',statusBar:'official: iOS 상태바 20pt'}},
+      source:{body:'official: 138.4×67.3mm (Apple tech specs 111866)',bezel:'derived: 측면 (67.3−58.5)/2=4.4mm → 28px · 상하 (138.4−104.05)/2=17.2mm → 110px',radius:'photo-measured: Commons "IPhone SE (2nd generation) white vector.svg"(2세대 벡터 — 3세대와 바디 동일) rect ry 66.0 / 바디 폭 439.4 (0.150) → 65px',screenRadius:'official: 4.7" LCD 각진 코너 (0)',cutout:'n/a',controls:'photo-measured(같은 파일): 홈 버튼 r 34.13→외경 10.45mm(67px)·내경 9.3mm(60px)·중심 하단에서 8.5mm(55px) · 스피커 75.9×7.1→74×7px 중심 상단 9.1mm · 카메라 r 7.74→15px 중심 x −10.7mm · 센서 점 r 4.9→10px',statusBar:'official: iOS 상태바 20pt'}},
 
     /* iPhone 14 Pro Max / 15 Plus / 16 Plus (430×932): 바디 160.7×77.6mm(Apple, 14 Pro Max), 활성영역 71.2×154.3mm(6.69") → 6.04px/mm */
     'iphone-dynamic':{family:'iphone-modern',top:19,right:19,bottom:19,left:19,ring:8,radius:74,screenRadius:55,platform:'ios',obstruction:'다이내믹 아일랜드',
@@ -254,8 +254,13 @@
   /* iPhone SE(홈 버튼형, 20pt 레거시 바) — photo-measured: Apple 뉴스룸 "Apple-iPhoneSE-iOS-Focus-220308_carousel.jpg.large_2x"(iOS 15, 화면 641px = 375pt → 1.709px/pt).
    * 배치가 노치형과 다르다: 좌측 셀룰러·Wi-Fi, 중앙 "9:41 AM", 우측 "100%" + 배터리(layout:'legacy'). 숫자 높이 15px=8.8pt → 글꼴 12.5 · 셀룰러 27×18px=15.8×10.5pt · Wi-Fi 24×17px=14×10pt · 배터리 40×17px=23.4×10pt → 아이콘 11 ·
    * 좌 여백 12px=7pt · 우 ≈12px=7pt · 시간 중심 = 화면 중심. fixedSize 로 compact 기본(12/9) 대신 프레임 값 사용 */
-  frameProfiles['iphone-se'].statusBar={compact:true,fixedSize:true,layout:'legacy',time:'9:41 AM',batteryText:true,batteryLevel:1,fontSize:12.5,iconSize:11,wifiScale:1,batteryScale:1,padding:{left:7,right:6},iconGap:5,letterSpacing:-.1,
-    source:'photo-measured(2026-09-21 재실측): Apple 뉴스룸 "Apple-iPhoneSE-iOS-Focus-220308" + Maps 이미지 — LCD 활성영역(검은 테 5px 제외) 642px = 375pt(1.712px/pt) 기준 숫자 높이 8.8pt(글꼴 12.5) · 셀룰러 16.9×10.5 · Wi-Fi 14.6×10.5 · 배터리 23.4×10.5pt · 100% 폭 31pt · 여백 좌 6.7 / 우 6.1pt · 셀룰러↔Wi-Fi 4.7 · %↔배터리 4pt · 시간 중심 = 화면 중심, 세로 중심 10pt(20pt 바 중앙)'};
+  /* iPhone SE (3세대) 상태바 — 기본 프리셋은 Display Zoom '표준'(CSS 375×667) 으로 통일(2026-09-21 5차).
+   *   표준 모드 기준값(photo-measured): Apple 뉴스룸 iOS 15 SE 이미지(1.712px/pt) 숫자 8.8pt · Commons iOS 18 4.7" 실기기 캡처(2px/pt) 숫자 8.5pt · 셀룰러 16.5×10.5 · 배터리 외곽 24×11.5 · 여백 좌 6.5 / 우 5.5 · %↔배터리 5.5 · 세로 중심 10(20pt 바 중앙)
+   *   → Windows 대체 글꼴(Arial 600) 렌더 기준 fontSize 12.5(숫자 8.95px) · 자간 −.1 · 아이콘 11 · 배터리 1.05(24×11.6) · 여백 6.5/5.5 · iconGap 5 · centerY 미지정(밴드 20 중앙 10 = 가이드 중앙).
+   *   사용자 제공 reference(user-provided reference image, images/1.png, 375 좌표계로 정규화 — 표준 기준보다 약 1.17배 크게 측정됨, Display Zoom '확대' 여부는 설정 정보 미확인·미확정): 숫자 10.7 · "10:00" 폭 37 · 셀룰러 19.5×12.7 · 배터리 27×13.6 · 여백 8/8 · 중심 11.7(바 23.4 상당) · Wi-Fi·% 없음.
+   *   ×1.17 은 Display Zoom 확대(CSS 뷰포트 320×568) 의 비율과 일치하는 '가능성' 이며, 확대 모드라면 뷰포트도 달라지므로 기본 프로필에 섞지 않는다. 향후 확장 메모: iPhone SE 에 '표준 375×667' / '확대 320×568' state 를 두고 확대 state 에서만 위 참고값(15/13/1.05/8/8) 을 쓰는 방식으로 분리 가능(이번 작업에서는 미추가). */
+  frameProfiles['iphone-se'].statusBar={compact:true,fixedSize:true,layout:'legacy',time:'9:41 AM',icons:['cellular','wifi','battery'],batteryText:true,batteryLevel:1,fontSize:12.5,iconSize:11,wifiScale:1,batteryScale:1.05,padding:{left:6.5,right:5.5},iconGap:5,letterSpacing:-.1,
+    source:'photo-measured(표준 모드): Apple 뉴스룸 iOS 15 SE 이미지 숫자 8.8pt · Commons "Onion Browser 2.8.1 on iPhone.png"(iOS 18 4.7" 실기기 캡처 2px/pt) 숫자 8.5 · 셀룰러 16.5×10.5 · 배터리 24×11.5 · 여백 6.5/5.5 · %↔배터리 5.5 · 중심 10 → 12.5/11/1.05/6.5/5.5 · reference(user-provided reference image images/1.png — 표준 기준보다 약 1.17배 크게 측정된 사용자 제공 reference, Display Zoom 확대 여부 미확정): 숫자 10.7 · 셀룰러 19.5×12.7 · 배터리 27×13.6 · 여백 8/8 · 중심 11.7 — 확대 모드(뷰포트 320×568) 가능성이 있어 기본 프로필 미적용'};
   /* 노치·아일랜드 iPhone: 상태 항목이 노치/아일랜드 양옆 "귀" 의 중앙에 놓인다 → 시간 좌측 여백 = 귀 중심 − 시간 폭/2, 우측 여백 = 귀 중심 − 아이콘 묶음 폭/2 (derived: 컷아웃 폭 기준).
    * HIG "status-bar-visible@2x"(아일랜드 iPhone, 536px = 393pt, 1.364px/pt) 실측: 시간 x 53.5~89pt(중심 71.5) · 배터리 우측 끝 358pt(여백 35) · 숫자 높이 11.7pt(글꼴 ≈17) · 배터리 27.9×12.5 · 셀룰러 18.3×11 · Wi-Fi 18.3×9.5pt → derived 값(52.5/31.5) 과 3pt 내 일치 */
   /* 노치 iPhone(390): 뉴스룸 "Apple-iPhone-14-iPhone-14-Plus-Find-My-location-share-220907"(1.783px/pt) 실측 — 시간 x 37.7~69.7(중심 53.4 ≈ 귀 중심 55.5) · 세로 중심 26.3pt(노치 33pt 의 아래쪽, 47pt 바의 중앙이 아님!) ·
@@ -300,9 +305,16 @@
     'ios-safari':{label:'Safari',platform:'ios',urlBarPosition:'bottom',
       portrait:{statusBar:null,urlBar:50,toolbar:49,homeIndicator:null},
       landscape:{statusBar:0,urlBar:40,toolbar:0,homeIndicator:null,sideInset:'safe-area'}},
+    /* Chrome (iOS) — 2026-09-22 photo-measured (user-provided reference image images/2.png: iPhone 17 Pro 실기기 Chrome 캡처 941×2048 = 402×874pt, 2.341px/pt).
+     *   상단: 상태바(62) 아래 옴니박스 밴드 50.3 → 50 · pill 35.7 → 36(밴드 안 상 4.2 / 하 10.3, 좌우 여백 9.6, 완전 둥근) · URL 글자 x-height 7.3 / 캡 10.3 → 14pt, 가운데 정렬 ·
+     *   선행 아이콘 19pt @ pill 안쪽 12.4 · 후행 공유 아이콘 16×18 @ 안쪽 16.3 · 페이지 시작 112.3.
+     *   하단: 툴바 43.3 → 44 + 홈 인디케이터 영역 34(툴바 배경이 이어짐, 캡처에는 인디케이터 미표시) · 버튼 5개 [← → + 탭 …] 중심 x 31.4 / 116.2 / 201 / 285.6 / 362.9(점 아이콘 실측; 대칭 배치면 370.6), y 818.5 = 툴바 44 의 중앙 ·
+     *   ← → 화살표 22×18 · + 원 Ø36 안 글리프 18 · 탭 카운터 24×24 · 점 Ø4.7 피치 8.8. 값은 ios-chrome 공통(pt) 이며 기기별 safe-area·아일랜드·뷰포트는 frameProfiles 가 담당(18 Pro 는 402×874 로 17 Pro 와 같은 좌표계).
+     *   가로 44 는 기존값 유지(가로 캡처 없음, approximation). 레이아웃 세부(pill 여백·아이콘·버튼 슬롯) 는 styles.css [data-browser="ios-chrome"] 규칙 */
     'ios-chrome':{label:'Chrome (iOS)',platform:'ios',urlBarPosition:'top',
-      portrait:{statusBar:null,urlBar:52,toolbar:48,homeIndicator:null},
-      landscape:{statusBar:0,urlBar:44,toolbar:0,homeIndicator:null,sideInset:'safe-area'}},
+      portrait:{statusBar:null,urlBar:50,toolbar:44,homeIndicator:null},
+      landscape:{statusBar:0,urlBar:44,toolbar:0,homeIndicator:null,sideInset:'safe-area'},
+      source:'photo-measured (user-provided reference image images/2.png, iPhone 17 Pro Chrome 2.341px/pt): 상단 밴드 50.3 · pill 36(상 4.2/하 10.3, 여백 9.6) · URL 14pt 중앙 · 툴바 43.3 + 홈 34 · 버튼 중심 31.4/116.2/201/285.6/362.9 · approximation: 가로 44, 선행 아이콘(캡처는 Gemini 스파클 → 페이지 정보 자물쇠로 대체), 라이트 테마 색'},
     'android-chrome':{label:'Chrome',platform:'android',urlBarPosition:'top',
       portrait:{statusBar:null,urlBar:56,toolbar:0,homeIndicator:null},
       landscape:{statusBar:null,urlBar:48,toolbar:0,homeIndicator:null,sideInset:'safe-area'}},
@@ -365,7 +377,8 @@
       frame:'iphone-notch',browser:'ios-safari',dpr:3,states:[{id:'default',label:'기본',width:390,height:844,diagonal:6.1,physicalWidth:1170,physicalHeight:2532}]},
     'mobile-430':{name:'대형 모바일',group:'base',subtitle:'iPhone 14 Pro Max·15/16 Plus',note:'430 × 932 기준 · 다이내믹 아일랜드 가림 포함',source:'official: 6.7" 2796 × 1290, DPR 3 · 바디 160.7 × 77.6mm (14 Pro Max)',
       frame:'iphone-dynamic',browser:'ios-safari',dpr:3,states:[{id:'default',label:'기본',width:430,height:932,diagonal:6.7,physicalWidth:1290,physicalHeight:2796}]},
-    'iphone-se':{name:'iPhone SE',group:'phone',subtitle:'홈 버튼형 (2·3세대)',note:'홈 버튼·상하단 베젤을 포함한 iPhone SE 프레임',source:'official: iPhone SE 2/3세대 4.7" 1334 × 750, DPR 2 · 바디 138.4 × 67.3mm',
+    /* 대표 모델 = iPhone SE (3세대, 2022). 2세대(2020) 와 바디·4.7" 1334×750·CSS 375×667·홈 버튼 구조가 같아 외형/뷰포트 테스트 목적에서는 중복이라 별도 프리셋을 두지 않는다(공식 이미지·상태바 검증 자료가 2022년 SE 기준). */
+    'iphone-se':{name:'iPhone SE (3세대)',group:'phone',subtitle:'홈 버튼형 · 2022',note:'홈 버튼·상하단 베젤을 포함한 iPhone SE (3세대) 프레임 — 2세대와 외형·해상도 동일',source:'official: iPhone SE (3세대, 2022) 4.7" 1334 × 750 326ppi, DPR 2 · 바디 138.4 × 67.3mm (Apple tech specs 111866) · 2세대(2020) 도 동일 수치라 대표 모델로 3세대만 등록',
       frame:'iphone-se',browser:'ios-safari',dpr:2,states:[{id:'default',label:'기본',width:375,height:667,diagonal:4.7,physicalWidth:750,physicalHeight:1334}]},
     'iphone-pro':{name:'iPhone 18 Pro',group:'phone',subtitle:'다이내믹 아일랜드',note:'402 × 874 CSS 화면 · 다이내믹 아일랜드 가림 포함',source:'official: 6.3" 2622 × 1206, DPR 3 → 402 × 874 (Apple iPhone 18 Pro tech specs)',
       frame:'iphone-dynamic-pro',browser:'ios-safari',dpr:3,states:[{id:'default',label:'기본',width:402,height:874,diagonal:6.3,physicalWidth:1206,physicalHeight:2622}]},

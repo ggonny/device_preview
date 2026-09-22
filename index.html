@@ -279,14 +279,20 @@
             <span class="browser_reload">
               <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
             </span>
+            <!-- Chrome (iOS) 옴니박스 후행 공유 아이콘 (ios-chrome 에서만 표시, 새로고침 대신) -->
+            <span class="browser_share">
+              <svg viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+            </span>
           </div>
         </div>
         <div class="site_view">
           <iframe title="사이트 반응형 미리보기"></iframe>
         </div>
         <div class="ui_band band_toolbar" aria-hidden="true">
-          <span><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></span>
-          <span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
+          <span class="tb_back"><svg viewBox="0 0 24 24"><path class="chev" d="m15 18-6-6 6-6"/><path class="arrow" d="M20 12H4M10 6l-6 6 6 6"/></svg></span>
+          <span class="tb_forward"><svg viewBox="0 0 24 24"><path class="chev" d="m9 18 6-6-6-6"/><path class="arrow" d="M4 12h16M14 6l6 6-6 6"/></svg></span>
+          <!-- Chrome (iOS) 새 탭 + (원형 배경), ios-chrome 에서만 표시 -->
+          <span class="tb_new"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
           <span class="tb_home"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg></span>
           <span class="tb_share"><svg viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
           <span class="tb_bookmark"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span>

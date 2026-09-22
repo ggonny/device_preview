@@ -1112,10 +1112,10 @@ svg {
 /* 레거시 배치(statusBar.layout:'legacy', 홈 버튼형 iPhone): 셀룰러·Wi-Fi 는 왼쪽, 시간은 화면 중앙(absolute), 배터리 %·배터리는 오른쪽. .status_icons 는 display:contents 로 풀어 밴드의 flex 항목으로 만든다 */
 .screen_wrap[data-status-legacy="true"] .band_status { position: relative; justify-content: flex-start; }
 .screen_wrap[data-status-legacy="true"] .status_icons { display: contents; }
-.screen_wrap[data-status-legacy="true"] .status_time { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-.screen_wrap[data-status-legacy="true"] .icon_cellular { margin-right: 5px; }
-.screen_wrap[data-status-legacy="true"] .status_percent { margin-left: auto; margin-right: 4px; font-size: 1em; }   /* SE 공식 이미지: 100% 숫자 높이 = 시간과 동일 */
-.screen_wrap[data-status-legacy="true"] .status_percent[hidden] + .icon_battery { margin-left: auto; }
+.screen_wrap[data-status-legacy="true"] .status_time { position: absolute; left: 50%; top: calc(50% + (var(--status-pad-top, 0px) - var(--status-pad-bottom, 0px)) / 2); transform: translate(-50%, -50%); }   /* 프로필 centerY(상하 padding) 를 절대 배치 시간에도 적용 */
+.screen_wrap[data-status-legacy="true"] .icon_cellular { margin-right: var(--status-gap, 5px); }   /* 레거시 배치는 display:contents 라 gap 대신 margin — 프로필 iconGap (실기기 캡처: 셀룰러↔Wi-Fi 4.7 · %↔배터리 5.5pt) */
+.screen_wrap[data-status-legacy="true"] .status_percent { margin-left: auto; margin-right: var(--status-gap, 5px); font-size: 1em; }   /* SE 공식 이미지·실기기 캡처: 100% 숫자 높이 = 시간과 동일 */
+.screen_wrap[data-status-legacy="true"] .status_percent[hidden] ~ .icon_battery { margin-left: auto; }   /* % 텍스트가 없을 때 배터리를 오른쪽 끝으로 (사이에 .status_pill 이 있어 일반 형제 선택자) */
 /* 고정 크기 상태바(statusBar.fixedSize, iPad): 가로에서도 프로필 글꼴·아이콘 크기 유지. 배터리 % 텍스트는 배터리 아이콘 바로 앞 */
 .screen_wrap[data-status-fixed="true"] .band_status { --status-icon-size: var(--status-icon, 12px); font-size: var(--status-font, 16px); }
 .status_percent { flex: 0 0 auto; font-size: calc(1em * var(--status-percent, .78)); }   /* 프로필 percentScale (iPad Air 재실측: 100% 숫자 = 시간과 동일 크기 → 1) */
@@ -1168,12 +1168,34 @@ svg {
 }
 .band_toolbar > span { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; }
 .band_toolbar .tab_count { width: 19px; height: 19px; border: 1.5px solid currentColor; border-radius: 5px; font-size: 10px; font-weight: 700; line-height: 1; }
-.band_toolbar .tb_share, .band_toolbar .tb_bookmark { display: none; }
+.band_toolbar .tb_share, .band_toolbar .tb_bookmark, .band_toolbar .tb_new { display: none; }
+.band_toolbar .arrow, .browser_share { display: none; }   /* Chrome (iOS) 전용 화살표·공유 아이콘 */
 .screen_wrap[data-browser="ios-safari"] .band_toolbar .tb_home, .screen_wrap[data-browser="ios-safari"] .band_toolbar .tb_menu { display: none; }
 .screen_wrap[data-browser="ios-safari"] .band_toolbar .tb_share, .screen_wrap[data-browser="ios-safari"] .band_toolbar .tb_bookmark { display: inline-flex; }
 .screen_wrap[data-browser="ios-safari"] .band_toolbar { color: var(--point-color); border-top: 0; }
-.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_home { display: none; }
-.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_share { display: inline-flex; }
+/* Chrome (iOS) — 사용자 제공 iPhone 17 Pro 실기기 캡처 photo-measured(2026-09-22, 2.341px/pt). 밴드 높이(50/44) 는 browserProfiles['ios-chrome'].
+ * 옴니박스: 밴드 50 안에 pill 36 (상 4 / 하 10), 좌우 여백 10, 완전 둥근 평면 회색(테두리·그림자 없음), 글자 14pt 가운데, 선행 페이지 정보 19, 후행 공유 16×18(안쪽 16).
+ * 툴바: 44 + 홈 영역 34 에 같은 배경, 버튼 5개 [← → + 탭 …] 36 슬롯을 space-between + 좌우 13.4 로 놓아 중심 31.4 / 116.2 / 201 / 285.8 / 370.6(실측 점 아이콘 362.9 는 글리프 오프셋으로 보고 대칭 배치). */
+.screen_wrap[data-browser="ios-chrome"] { --band-bg: #fff; }
+.screen_wrap[data-browser="ios-chrome"] .band_url { padding: 4px 10px 10px; border-bottom: 1px solid #e3e6ea; }
+.screen_wrap[data-browser="ios-chrome"] .browser_address { height: 36px; max-height: 36px; box-sizing: border-box; gap: 8px; padding: 0 12px; background: #eef0f3; border-color: transparent; box-shadow: none; }
+.screen_wrap[data-browser="ios-chrome"] .browser_lock { width: 19px; height: 19px; }
+.screen_wrap[data-browser="ios-chrome"] .browser_url { text-align: center; font-size: 14px; color: #3c4043; }
+.screen_wrap[data-browser="ios-chrome"] .browser_reload { display: none; }
+.screen_wrap[data-browser="ios-chrome"] .browser_share { display: block; width: 16px; height: 18px; margin-right: 4px; flex: 0 0 auto; color: #5f6368; }
+.screen_wrap[data-browser="ios-chrome"] .browser_share svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar { justify-content: space-between; padding: 0 13.4px; color: #3c4043; border-top: 1px solid #e3e6ea; }
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar > span { width: 36px; height: 36px; }
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_home, .screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_share { display: none; }
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_new { display: inline-flex; border-radius: 50%; background: #e8eaed; }
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_new svg { width: 30px; height: 30px; stroke-width: 2; }   /* 글리프 14/24 × 30 = 17.5 ≈ 18 */
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_back svg, .screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_forward svg { width: 30px; height: 30px; stroke-width: 2.2; }   /* 화살표 16×12/24 × 30 = 20×15 + 획 ≈ 22×18 */
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .chev { display: none; }
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .arrow { display: initial; }
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_forward { opacity: .45; }   /* 캡처: 앞으로 비활성 */
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tab_count { width: 24px; height: 24px; margin: 0 6px; border-width: 2px; border-radius: 6px; font-size: 13px; }   /* 24 상자 + 좌우 6 = 36 슬롯 (space-between 균등 배치 유지) */
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_menu svg { width: 30px; height: 30px; transform: rotate(90deg); }   /* 세로 점 → 가로 "…", 피치 7/24 × 30 = 8.75 */
+.screen_wrap[data-browser="ios-chrome"] .band_toolbar .tb_menu circle { fill: currentColor; stroke: currentColor; stroke-width: 1.5; }   /* Ø (2 + 1.5) × 1.25 = 4.4 */
 .band_home { grid-row: 6; position: relative; background: #fff; }
 .screen_wrap[data-browser^="ios"] .band_home { background: var(--band-bg); }
 .screen_wrap[data-browser="android-chrome"] .band_home { background: #fff; }
