@@ -199,6 +199,10 @@ svg {
 }
 .device_group { padding-top: 18px; }
 .device_group h3 { margin: 0 10px 8px; color: var(--muted-color); font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+/* 기준 폭(범용) 그룹: 실기기가 아님을 제목 옆 안내와 점선 구분선으로 표시 (기존 목록 UI 유지) */
+.device_group h3 .group_hint { margin-left: 6px; color: #7f8aa0; font-size: 11px; font-weight: 500; letter-spacing: 0; }
+.device_group[data-kind="generic"] .device_list { padding-bottom: 10px; border-bottom: 1px dashed #d5dae2; }
+.device_group[data-kind="generic"] .device_btn strong { font-weight: 560; }
 .device_list { display: grid; gap: 4px; }
 .device_btn {
   width: 100%;
@@ -605,150 +609,6 @@ svg {
 }
 .preview_mount { position: relative; flex: 0 0 auto; margin: auto; transition: width .24s ease, height .24s ease; }
 
-/* ---------- 5b. 시작 화면 (.intro_screen) ----------
- * URL 이 연결되기 전 스테이지 위를 덮는 소개 영역. app.js updateIntro() 가 hidden / .preview_stage.is_intro 를 토글한다.
- * 아래 기기 셸은 레이아웃을 유지한 채 visibility 만 숨겨 기존 배율·측정 로직에 영향을 주지 않는다. 실루엣(.intro_device) 은 CSS 장식이며 frameProfiles 와 무관 */
-.intro_screen {
-  position: absolute;
-  inset: 0;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 28px;
-  background: inherit;   /* 스테이지의 그리드 배경을 그대로 이어받아 경계 없이 덮는다 */
-  overflow: auto;
-}
-.intro_screen[hidden] { display: none; }
-.preview_stage.is_intro { overflow: hidden; }
-.preview_stage.is_intro > .preview_mount, .preview_stage.is_intro > .compare_grid, .preview_stage.is_intro > .compare_empty { visibility: hidden; }
-.intro_inner {
-  width: min(100%, 640px);
-  margin: auto;
-  padding: 30px 40px 22px;
-  text-align: center;
-  background: rgba(255, 255, 255, .86);
-  border: 1px solid rgba(255, 255, 255, .9);
-  border-radius: 18px;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, .12), inset 0 0 0 1px rgba(193, 202, 215, .5);
-  backdrop-filter: blur(6px);
-}
-.intro_kicker {
-  margin: 0 0 12px;
-  color: var(--point-color);
-  font: 600 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-}
-.intro_title {
-  margin: 0;
-  color: var(--text-color);
-  font-size: clamp(22px, 2.3vw, 30px);
-  font-weight: 800;
-  line-height: 1.28;
-  letter-spacing: -.035em;
-  word-break: keep-all;
-}
-.intro_desc {
-  margin: 10px 0 0;
-  color: var(--sub-color);
-  font-size: 14px;
-  line-height: 1.7;
-  word-break: keep-all;
-}
-/* 디바이스 실루엣: 스마트폰 / 폴더블(접힘선) / 태블릿(가로). 단순 outline, 장식 전용 */
-.intro_devices {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 18px;
-  margin: 20px 0 0;
-  color: #7b8798;
-}
-.intro_device {
-  position: relative;
-  display: block;
-  border: 2px solid currentColor;
-  background: rgba(255, 255, 255, .6);
-}
-.intro_device i {
-  position: absolute;
-  display: block;
-  background: currentColor;
-  border-radius: 99px;
-  opacity: .55;
-}
-.intro_device.is_phone { width: 30px; height: 54px; border-radius: 7px; }
-.intro_device.is_phone i { left: 50%; top: 3px; width: 10px; height: 3px; transform: translateX(-50%); }          /* 상단 노치 */
-.intro_device.is_fold { width: 50px; height: 54px; border-radius: 6px; }
-.intro_device.is_fold i { left: 50%; top: 4px; bottom: 4px; width: 2px; border-radius: 1px; transform: translateX(-50%); }   /* 접힘선 */
-.intro_device.is_fold::after { content: ""; position: absolute; right: 5px; top: 5px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .55; }
-.intro_device.is_tablet { width: 74px; height: 54px; border-radius: 7px; }
-.intro_device.is_tablet i { left: 50%; top: 3px; width: 4px; height: 4px; transform: translateX(-50%); }         /* 긴 변 카메라 */
-.intro_actions { margin-top: 18px; }
-.intro_cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 22px;
-  font-size: 15px;
-  box-shadow: 0 8px 20px rgba(19, 110, 241, .28);
-}
-.intro_cta svg { width: 18px; height: 18px; }
-.intro_cta:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 3px; }
-.intro_hint { margin: 10px 0 0; color: var(--muted-color); font-size: 13px; }
-.intro_hint kbd {
-  display: inline-block;
-  padding: 1px 6px;
-  color: #344054;
-  background: #f1f4f8;
-  border: 1px solid #cfd6e0;
-  border-bottom-width: 2px;
-  border-radius: 5px;
-  font: 600 11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
-}
-/* 기능 칩: 보조 정보 수준으로 낮은 대비의 작은 pill */
-.intro_features {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  margin: 18px 0 0;
-  padding: 14px 0 0;
-  border-top: 1px solid var(--line-color);
-  list-style: none;
-}
-.intro_features li {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  color: var(--muted-color);
-  background: #f4f6f9;
-  border: 1px solid #dfe5ed;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .01em;
-}
-.intro_features li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--point-color); opacity: .7; }
-/* 각주: Scroll Sync* — 외부 출처는 Same-Origin Policy 로 제한됨을 보조 정보 수준으로 표시 */
-.intro_note { margin: 10px 0 0; color: var(--muted-color); font-size: 11px; line-height: 1.5; }
-.intro_skip {
-  margin-top: 8px;
-  padding: 4px 2px;
-  color: var(--muted-color);
-  background: none;
-  border: 0;
-  font-size: 12px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-.intro_skip:hover { color: var(--point-color); }
-.intro_skip:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; border-radius: 4px; }
-
 /* ---------- 6. 기기 프레임 ----------
  * 레이어: .device_shell(바디 = 금속 링, --body-* 코너) → ::before(글래스 베젤, 링 안쪽 검은 유리) → .screen_wrap(디스플레이 마스크, --screen-* 코너)
  * 값은 전부 frameProfiles 데이터에서 CSS 변수로 들어온다. 마감·측면 키·스피커 등 형상 언어는 data-family 로만 분기한다(기기명 분기 없음).
@@ -803,12 +663,6 @@ svg {
   --ring-edge: #1a1d22;
   --ring-highlight: rgba(255, 255, 255, .18);
   --glass: #030405;
-}
-.device_shell[data-family="pixel"] {
-  --ring-finish: linear-gradient(145deg, #7a808a 0%, #3a3f47 30%, #1d2127 65%, #6b717a 100%);
-  --ring-edge: #2a2e35;
-  --ring-highlight: rgba(255, 255, 255, .3);
-  --glass: #060708;
 }
 .device_shell[data-family="fold"], .device_shell[data-family="flip"] {
   --ring-finish: linear-gradient(145deg, #c2c6cc 0%, #7b8189 26%, #3a3f47 56%, #9ea3aa 100%);
@@ -1082,7 +936,7 @@ svg {
 .battery_body { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .38; }
 .battery_fill { fill: currentColor; stroke: none; }
 .battery_tip { fill: currentColor; stroke: none; opacity: .38; }
-/* 셀룰러 변형: bars(iOS 4막대) · wedge(Pixel 부채꼴) · bars-thin(One UI 가는 4막대) — 하나만 표시 */
+/* 셀룰러 변형: bars(iOS 4막대) · wedge(표준 Android 부채꼴) · bars-thin(One UI 가는 4막대) — 하나만 표시 */
 .cellular_bars, .cellular_wedge, .cellular_bars_thin { display: none; }
 .screen_wrap[data-cellular-style="bars"] .cellular_bars, .screen_wrap[data-cellular-style="wedge"] .cellular_wedge, .screen_wrap[data-cellular-style="bars-thin"] .cellular_bars_thin { display: initial; }
 .icon_cellular .cellular_bars_thin rect { fill: currentColor; stroke: none; }
@@ -1646,10 +1500,6 @@ svg {
   .browser_select { max-width: 100%; }
   .tool_actions { justify-self: stretch; padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--line-color); }
   .preview_stage { min-height: 460px; padding: 24px; }
-  .intro_screen { padding: 20px 12px; }
-  .intro_inner { padding: 26px 20px 22px; border-radius: 14px; }
-  .intro_devices { gap: 14px; margin-top: 20px; transform: scale(.85); transform-origin: center bottom; }
-  .intro_cta { width: 100%; justify-content: center; }
   .compare_grid { grid-template-columns: 1fr; gap: 14px; }
   .compare_bar { flex-wrap: wrap; }
   .compare_note { margin-left: 0; white-space: normal; }
