@@ -1364,7 +1364,8 @@
     return url.href;
   }
 
-  const initialPreviewContent='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}html,body{height:100%}body{margin:0;background:#fff;font-family:-apple-system,"Apple SD Gothic Neo",Roboto,"Noto Sans KR",system-ui,sans-serif;color:#a3adba}.sk{background:#eceff3;border-radius:4px}.sk.l{background:#f1f3f6}.pg{display:flex;flex-direction:column;min-height:100%;padding:0 6%}.hd{display:flex;align-items:center;gap:8px;height:44px;border-bottom:1px solid #eef1f5}.hd .lg{width:56px;height:14px;border-radius:5px}.hd .nv{margin-left:auto;display:flex;gap:10px}.hd .nv i{display:block;width:26px;height:6px;border-radius:3px;background:#f1f3f6}.hr{padding:26px 0 18px}.hr .t1,.hr .t2{display:block}.hr .t1{height:16px;width:62%;max-width:420px;border-radius:6px}.hr .t2{height:10px;width:44%;max-width:300px;margin-top:10px;border-radius:5px}.hr p{margin:14px 0 0;font-size:15px;line-height:1.5;letter-spacing:-.01em;color:#98a2b3}.hr p .n{display:none}.bl{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding-bottom:24px}.bl div>i{display:block;height:64px;border-radius:6px;background:#f1f3f6}.bl div>b{display:block;height:8px;width:70%;margin-top:8px;border-radius:4px;background:#eceff3}.bl div>b+b{width:45%;margin-top:6px;background:#f1f3f6}.bl div:nth-child(n+3){display:none}@media(max-width:340px){.hd .nv i:nth-child(n+3){display:none}.hr p .w{display:none}.hr p .n{display:inline}}@media(max-height:280px){.pg{padding:0 5%}.hd{height:34px}.hr{padding:14px 0 10px}.hr .t2{display:none}.hr p{margin-top:8px}.bl div>i{height:36px}.bl div>b+b{display:none}.bl{padding-bottom:12px}}@media(min-width:700px){.pg{padding:0 8%}.hd{height:52px}.hd .lg{width:72px;height:16px}.hd .nv{gap:14px}.hd .nv i{width:34px}.hr{padding:36px 0 24px}.hr .t1{height:20px}.hr .t2{height:12px;margin-top:12px}.hr p{font-size:16px}.bl{grid-template-columns:repeat(3,1fr);gap:16px}.bl div>i{height:88px}.bl div:nth-child(3){display:block}}@media(min-width:1000px){.pg{padding:0 10%}.hr{padding:44px 0 28px}.bl{grid-template-columns:repeat(4,1fr);gap:18px}.bl div>i{height:104px}.bl div:nth-child(4){display:block}}</style></head><body><div class="pg" aria-hidden="true"><div class="hd"><span class="sk lg"></span><span class="nv"><i></i><i></i><i></i><i></i></span></div><div class="hr"><span class="sk t1"></span><span class="sk l t2"></span><p><span class="w">URL을 입력해 미리보기를 시작하세요.</span><span class="n">URL을 입력해 주세요.</span></p></div><div class="bl"><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div></div></div></body></html>';
+  /* placeholder 는 srcdoc(같은 출처) 이라 스크롤바 숨김 규칙을 문서 안에 직접 둔다: scrollbar-width(Firefox·Chromium 121+) + ::-webkit-scrollbar(WebKit·구 Chromium). overflow 는 건드리지 않아 스크롤은 그대로 */
+  const initialPreviewContent='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}html,body{height:100%;scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}body{margin:0;background:#fff;font-family:-apple-system,"Apple SD Gothic Neo",Roboto,"Noto Sans KR",system-ui,sans-serif;color:#a3adba}.sk{background:#eceff3;border-radius:4px}.sk.l{background:#f1f3f6}.pg{display:flex;flex-direction:column;min-height:100%;padding:0 6%}.hd{display:flex;align-items:center;gap:8px;height:44px;border-bottom:1px solid #eef1f5}.hd .lg{width:56px;height:14px;border-radius:5px}.hd .nv{margin-left:auto;display:flex;gap:10px}.hd .nv i{display:block;width:26px;height:6px;border-radius:3px;background:#f1f3f6}.hr{padding:26px 0 18px}.hr .t1,.hr .t2{display:block}.hr .t1{height:16px;width:62%;max-width:420px;border-radius:6px}.hr .t2{height:10px;width:44%;max-width:300px;margin-top:10px;border-radius:5px}.hr p{margin:14px 0 0;font-size:15px;line-height:1.5;letter-spacing:-.01em;color:#98a2b3}.hr p .n{display:none}.bl{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding-bottom:24px}.bl div>i{display:block;height:64px;border-radius:6px;background:#f1f3f6}.bl div>b{display:block;height:8px;width:70%;margin-top:8px;border-radius:4px;background:#eceff3}.bl div>b+b{width:45%;margin-top:6px;background:#f1f3f6}.bl div:nth-child(n+3){display:none}@media(max-width:340px){.hd .nv i:nth-child(n+3){display:none}.hr p .w{display:none}.hr p .n{display:inline}}@media(max-height:280px){.pg{padding:0 5%}.hd{height:34px}.hr{padding:14px 0 10px}.hr .t2{display:none}.hr p{margin-top:8px}.bl div>i{height:36px}.bl div>b+b{display:none}.bl{padding-bottom:12px}}@media(min-width:700px){.pg{padding:0 8%}.hd{height:52px}.hd .lg{width:72px;height:16px}.hd .nv{gap:14px}.hd .nv i{width:34px}.hr{padding:36px 0 24px}.hr .t1{height:20px}.hr .t2{height:12px;margin-top:12px}.hr p{font-size:16px}.bl{grid-template-columns:repeat(3,1fr);gap:16px}.bl div>i{height:88px}.bl div:nth-child(3){display:block}}@media(min-width:1000px){.pg{padding:0 10%}.hr{padding:44px 0 28px}.bl{grid-template-columns:repeat(4,1fr);gap:18px}.bl div>i{height:104px}.bl div:nth-child(4){display:block}}</style></head><body><div class="pg" aria-hidden="true"><div class="hd"><span class="sk lg"></span><span class="nv"><i></i><i></i><i></i><i></i></span></div><div class="hr"><span class="sk t1"></span><span class="sk l t2"></span><p><span class="w">URL을 입력해 미리보기를 시작하세요.</span><span class="n">URL을 입력해 주세요.</span></p></div><div class="bl"><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div></div></div></body></html>';
 
   /* view 에 현재 URL(없으면 안내 화면) 을 로드. iframe 은 재생성하지 않고 src 만 바꾼다 */
   function loadInto(view){
@@ -1383,9 +1384,30 @@
   }
 
   function onFrameLoad(view){
-    if(currentUrl&&view.dom.siteFrame.getAttribute('src')===currentUrl)view.loaded=true;
+    if(currentUrl&&view.dom.siteFrame.getAttribute('src')===currentUrl){view.loaded=true;applyMobileScrollbarStyle(view);}
     if(view.compare)attachScrollSync(view);
     updateLoadStatus();
+  }
+
+  /* 모바일 스크롤바 표현(2026-09-22): 같은 출처 문서에만 "스크롤바를 그리지 않는" 최소 스타일(html/body 의 scrollbar-width:none + ::-webkit-scrollbar 0) 을 한 번 주입한다.
+   * - 사이트 CSS 를 수정·덮어쓰지 않고 <style id> 하나만 추가하며, 같은 문서에 두 번 넣지 않는다(새로고침으로 문서가 새로 생기면 다시 1회).
+   * - 스크롤 자체(휠·터치패드·키보드·프로그램 scrollTo, 스크롤 동기화) 는 그대로. iframe 크기·CSS 뷰포트·getSiteViewport() 도 그대로 — 문서 안에서 스크롤바가 차지하던 폭만 콘텐츠로 돌아간다(실기기 overlay 스크롤바와 같은 상태).
+   * - 다른 출처(SecurityError) 는 getSameOriginWindow() 가 null 을 주므로 시도하지 않는다. 폭 보정·마스크·뷰포트 변경 같은 우회는 하지 않는다 → 외부 사이트의 데스크톱 스크롤바는 제한사항. */
+  const MOBILE_SCROLLBAR_STYLE_ID='devicePreviewScrollbarStyle';
+  const MOBILE_SCROLLBAR_CSS='html,body{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}';
+  function applyMobileScrollbarStyle(view){
+    const win=getSameOriginWindow(view);
+    if(!win)return false;
+    try{
+      const doc=win.document;
+      if(doc.getElementById(MOBILE_SCROLLBAR_STYLE_ID))return true;
+      const style=doc.createElement('style');
+      style.id=MOBILE_SCROLLBAR_STYLE_ID;
+      style.setAttribute('data-device-preview','scrollbar');
+      style.textContent=MOBILE_SCROLLBAR_CSS;
+      (doc.head||doc.documentElement).appendChild(style);
+      return true;
+    }catch(error){return false;}
   }
 
   function updateLoadStatus(){
@@ -2133,7 +2155,10 @@
         else if(devices[deviceId])selectDevice(deviceId,savedDevice.stateId,{rotated:restoreRotated,announce:false});
       }
       const savedUrl=localStorage.getItem('viewportLabUrl');
-      if(savedUrl)elements.siteUrl.value=savedUrl;
+      if(savedUrl){
+        elements.siteUrl.value=savedUrl;
+        loadUrl(savedUrl);
+      }
     }catch(error){}
   }
 

@@ -57,7 +57,7 @@
           <div class="current_device">
             <span class="state_dot" aria-hidden="true"></span>
             <div>
-              <strong id="currentDevice">iPhone 기본</strong>
+              <strong id="currentDevice">모바일 기본</strong>
               <span id="currentMeta">390 × 844 · 세로</span>
             </div>
           </div>
@@ -179,7 +179,7 @@
             <p><strong>다중 비교</strong> 왼쪽 상단에서 ‘다중 비교’를 선택하면 기기를 최대 4개까지 체크해 나란히 볼 수 있습니다. URL·새로고침·회전·브라우저 UI·주소창 위치·safe-area 가이드·배율은 모든 기기에 함께 적용되고, 카드마다 회전·새로고침·화면 상태·제거를 개별로 조작할 수 있습니다. <strong>스크롤 동기화</strong>는 각 문서의 스크롤 비율(scrollTop ÷ 스크롤 가능 높이)로 맞추며, 브라우저 보안 정책상 이 도구와 <em>같은 출처(same-origin)</em>에서 열린 페이지에서만 동작합니다.</p>
             <p><strong>safe-area 가이드</strong> iframe 안의 페이지는 <code>env(safe-area-inset-*)</code> 값을 받을 수 없으므로, 노치·다이내믹 아일랜드·펀치홀·홈 인디케이터가 차지하는 영역을 빗금 가이드로 표시합니다. 가이드와 겹치는 콘텐츠는 실기기에서 가려질 수 있습니다.</p>
             <p><strong>실기기 배율</strong> 공개된 화면 크기와 CSS 뷰포트를 기준으로 계산한 물리 크기 근사값입니다. 모니터 크기와 운영체제 배율에 따라 실제 크기와 차이가 날 수 있습니다.</p>
-            <p><strong>실기기 확인 필요</strong> iframe에서 바꿀 수 없는 UA, 실제 DPR 렌더링, 터치·<code>hover</code>·<code>pointer</code> 미디어, safe-area 환경변수, <code>dvh/svh/lvh</code> 단위, 대상 페이지의 <code>&lt;meta name="viewport"&gt;</code> 처리, 가상 키보드, 브라우저 자동 숨김, 실제 힌지·화면 분할 API. Windows 브라우저에서는 iframe 안에 데스크톱 스크롤바(약 17px)가 생겨 콘텐츠 폭이 줄어들 수 있습니다.</p>
+            <p><strong>실기기 확인 필요</strong> iframe에서 바꿀 수 없는 UA, 실제 DPR 렌더링, 터치·<code>hover</code>·<code>pointer</code> 미디어, safe-area 환경변수, <code>dvh/svh/lvh</code> 단위, 대상 페이지의 <code>&lt;meta name="viewport"&gt;</code> 처리, 가상 키보드, 브라우저 자동 숨김, 실제 힌지·화면 분할 API. 스크롤바: URL 없는 자리표시 페이지와 이 도구와 같은 출처의 페이지는 모바일처럼 스크롤바를 숨깁니다(스크롤은 그대로). 다른 출처의 외부 사이트는 보안 정책상 iframe 안의 스크롤바 스타일을 제어할 수 없어 Windows 에서는 데스크톱 스크롤바(약 17px)가 보이고 그만큼 콘텐츠 폭이 줄어들 수 있습니다.</p>
             <p>브라우저 UI와 검은 노치·카메라·접힘선은 콘텐츠와 가시 영역을 확인하기 위한 시각적 근사치이므로 최종 검수는 실기기에서 진행해 주세요.</p>
             <p>화면이 비어 있다면 대상 사이트가 <code>X-Frame-Options</code> 또는 <code>CSP frame-ancestors</code>로 iframe 표시를 막은 경우일 수 있습니다. 이때는 오른쪽 위 새 창 버튼으로 확인해 주세요.</p>
           </div>
