@@ -77,8 +77,8 @@
     /* Galaxy S25 (360×780): 바디 146.9×70.5mm(Samsung), 활성영역 66.0×143.0mm(6.2" 2340×1080) → 5.45px/mm. 렌더: Commons "Galaxy S25 Black (front).png" 1024×1536, 7.0px/mm */
     'galaxy-bar':{family:'galaxy-bar',top:11,right:12,bottom:11,left:12,ring:5,radius:36,screenRadius:24,platform:'android',obstruction:'상단 펀치홀 카메라',
       cutout:{type:'hole',width:19,height:19,top:17,align:'center'},
-      safeArea:{top:38,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:38},homeIndicator:true,homeIndicatorWidth:108,
-      source:{body:'official: Galaxy S25 146.9×70.5mm',bezel:'derived: 측면 (70.5−66.0)/2=2.25mm → 12px · 상하 1.95mm → 11px (렌더 실측 2.5mm/14px 와 15% 내 일치)',radius:'photo-measured: 바디 코너 45~49px/7.0 = 6.4~7.0mm → 36px',screenRadius:'photo-measured: 화면 코너 ≈30px/7.0 = 4.3mm → 24px',cutout:'photo-measured: 홀 지름 24px/7.0=3.4mm → 19px · 중심 화면 상단에서 4.9mm → 27px(top 17)',controls:'approximation: 측면 키',statusBar:'derived: Android 상태바는 컷아웃 하단(36.5px)+여백 → 38px · 하단 제스처 바 24px approximation'}},
+      safeArea:{top:36,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:36},statusBarHeight:38,homeIndicator:true,homeIndicatorWidth:108,   /* safe top 36 = 홀 하단(컷아웃 경계) · statusBarHeight 38 = 홀 하단 + 2(One UI 상태바 창) — Fold8 커버와 같은 분리 규칙(2026-09-22) */
+      source:{body:'official: Galaxy S25 146.9×70.5mm',bezel:'derived: 측면 (70.5−66.0)/2=2.25mm → 12px · 상하 1.95mm → 11px (렌더 실측 2.5mm/14px 와 15% 내 일치)',radius:'photo-measured: 바디 코너 45~49px/7.0 = 6.4~7.0mm → 36px',screenRadius:'photo-measured: 화면 코너 ≈30px/7.0 = 4.3mm → 24px',cutout:'photo-measured: 홀 지름 24px/7.0=3.4mm → 19px · 중심 화면 상단에서 4.9mm → 27px(top 17)',controls:'approximation: 측면 키',statusBar:'derived: safeArea.top 36 = 홀 하단(컷아웃 경계 17+19) · statusBarHeight 38 = 홀 하단 + 2 여백(One UI 상태바 창, 여백은 approximation) · 가로 left 36 = 회전 시 홀 하단(letterbox 경계) · 하단 제스처 바 24 · 가로 상단 24 는 AOSP 기본값 준용(derived, One UI 미확인) · 가로 하단 16 approximation'}},
 
     /* Galaxy Z Flip8 접힘(FlexWindow 316×349): 접힌 바디 75.4×85.7mm(Samsung, official), 커버 native 1048×948 · 대각선 104.8mm(4.1형) 342ppi(official, 한국 뉴스룸·samsung.com/sec) → 세로 기준 width×height 로 정규화하면 948×1048(derived-orientation) → 활성영역 70.4×77.8mm → 4.49px/mm.
      * 렌더 실측: samsung.com "galaxy-z-flip8-features-colors-design.jpg"(2048×1232, 접힘 정면, 5.93px/mm — 화면 418×461px 비율 1.103 = 공식 1.1055 와 0.2% 내 일치).
@@ -90,27 +90,27 @@
       /* dual-hole: [플래시][렌즈][렌즈] 가로 배치 상자. bottom/offset 은 상자의 아래·오른쪽 가장자리 거리(세로 기준). lens/ring/lensGap/flash/flashGap 으로 상자 크기와 홀 위치가 정해진다 */
       cutout:{type:'dual-hole',align:'right',offset:10,bottom:10,lens:59,ring:4,lensGap:5,flash:18,flashGap:12},
       display:{mask:'holes'},   /* 디스플레이 마스크 = 코너별 둥근 사각형 − 렌즈·플래시 홀 (실제 가시 영역). 하드웨어(.screen_cutout) 는 마스크 밖 별개 레이어 */
-      safeArea:{top:0,right:0,bottom:72,left:0},safeAreaLandscape:{top:0,right:72,bottom:16,left:0},homeIndicator:true,homeIndicatorWidth:72,homeIndicatorCenter:76,   /* 가로 상태바 24 → 0 (2026-09-21): 세로 커버 화면에 상태바가 없음이 verified 이고 가로 상태바가 있다는 근거가 없어 제거(derived) */
+      safeArea:{top:0,right:0,bottom:72,left:0},safeAreaLandscape:{top:0,right:72,bottom:16,left:0},homeIndicator:true,homeIndicatorWidth:72,homeIndicatorCenter:76,   /* 가로 상태바 24 → 0 (2026-09-21): 세로 커버 화면에 상태바가 없음이 photo-observed(뉴스룸 실사진) 이고 가로 상태바가 있다는 근거가 없어 제거(derived) */
       source:{nativePhysicalResolution:'official: 1048×948 (Samsung 뉴스룸 한국·samsung.com/sec 스펙 표기 · 글로벌 영문 뉴스룸 사양표는 948 x 1048 순서로 인쇄) · 대각선 104.8mm official',renderedPhysicalResolution:'derived-orientation: 948×1048 — 프로그램이 세로(portrait) 기준 width×height 로 정규화한 값, official 원문값 아님',cssViewport:'derived: 948×1048 ÷ DPR 3 = 316×349.3 (DPR 3 가정 · Samsung 은 CSS 폭·DPR 을 공개하지 않음)',visibleArea:'photo-measured: 코너 r 0.5/4.7mm 와 렌즈 2개·플래시 홀을 뺀 영역 (Samsung: "actual viewable area is less due to the rounded corners and camera hole")',
         body:'official: 접힘 75.4×85.7×13.1mm',bezel:'derived: 측면 (75.4−70.4)/2=2.5mm → 11px (렌더 실측 15px/5.93=2.53mm 일치) · 상단 패널 2.9mm → 13px · 하단 2.3mm → 10px (렌더 실측 비율을 공식 높이에 맞춤)',ring:'photo-measured: 프레임 8px/5.93=1.35mm → 6px',
         radius:'photo-measured: 아래 코너 r 41.4px=7.0mm → 31px (우하단 원 맞춤 rms 0.28, 좌하단은 손가락에 가려 대칭 가정) · 위(힌지 쪽) 코너 r≈1.5px=0.25mm → 2px',screenRadius:'photo-measured: 아래 코너 r≈28px=4.7mm → 21px · 위 코너 r 2~3px=0.5mm → 2px',
         hingeBody:'photo-measured: 힌지 스파인 15px=2.5mm → 12px · 양옆 안쪽 8px=1.35mm → 6px · 끝 r 6.5px=1.1mm → 5px',
         cutout:'photo-measured: 렌즈 외경 78px=13.2mm → 59px · 링 4px · 렌즈 간격 6px=1.0mm → 5px · 중심 간격 84px=14.2mm → 64px · 우측 렌즈 중심이 화면 우측·하단 가장자리에서 각 52~53px=8.9mm → 40px · 플래시 외경(테 포함) 24px=4.0mm → 18px, 중심이 좌측 렌즈 중심에서 66px=11.1mm → 50px 왼쪽 (First Look 사진 dl8 의 비율 렌즈 간격/지름 0.08 일치)',
         cameraDiameter:'photo-measured: 13.2mm (위 cutout 참조)',controls:'approximation: 측면 키(사진상 접힘 우측 변 상단부에 볼륨·전원)',
-        statusBar:'verified: 뉴스룸 First Look dl9.jpg(커버 앱) 에 상태바 없음 → 0 · 하단 밴드 72 = 렌즈 상단까지 69.5 + 여백 derived(내비게이션 바가 카메라 왼쪽에 놓이는 사진 구조) · 제스처 바 위치·폭(중심 76, 폭 72) approximation · 가로 상태바는 세로와 같이 없음(0, derived: 세로 verified 사실에서 유도 — 가로 커버 화면 공식 이미지 미확보) · 가로 하단 16 은 다른 Android 프로필 준용(approximation)'}},
+        statusBar:'photo-observed: 뉴스룸 First Look dl9.jpg(커버 앱 실사진) 에 상태바 없음 → 0 (실기기 직접 측정 아님 → verified 아님) · 하단 밴드 72 = 렌즈 상단까지 69.5 + 여백 derived(내비게이션 바가 카메라 왼쪽에 놓이는 사진 구조) — **전체 폭 72 띠는 실제 하드웨어 가림이 아니라 Samsung 커버 앱(dl9) 에서 관찰된 하단 UI 보호 구조를 단순화한 approximation**(커버 브라우저 실측 없음). 실제 하드웨어 obstruction 은 display.mask holes 와 dual-hole 카메라·플래시 영역(x 153~306 × y 280~339, 렌즈 중심 아래에서 39.5 = photo-measured) 뿐이며, 렌즈 중심(39.5) 과 띠 중심(36) 의 3.5px 차이는 실측값 유지에 따른 것(2026-09-22 확정, 카메라를 띠 중앙에 맞추지 않음) · 제스처 바 위치·폭(중심 76, 폭 72) approximation · 가로 상태바는 세로와 같이 없음(0, derived: 세로 photo-observed 사실에서 유도 — 가로 커버 화면 공식 이미지 미확보) · 가로 하단 16 은 다른 Android 프로필 준용(approximation)'}},
 
     /* Galaxy Z Flip8 펼침 (360×840): 바디 75.4×166.9mm(Samsung official), 메인 native 2520×1080 · 대각선 174.1mm(6.9형) 400ppi(official) → 세로 기준 정규화 1080×2520(derived-orientation) → 활성영역 68.6×160.0mm → 5.25px/mm.
      * 렌더: 뉴스룸 보도자료 "Launch_dl3F.jpg"(1440×960, 펼침 정면·후면, 3.6px/mm 저해상도 — 상단부만 보임) 로 펀치홀·상단 베젤만 확인. 코너·측면 키는 미측정 */
     'flip8-open':{family:'flip',top:18,right:18,bottom:18,left:18,ring:6,radius:40,screenRadius:22,platform:'android',obstruction:'상단 펀치홀·접힘선',
       cutout:{type:'hole',width:19,height:19,top:10,align:'center'},
-      safeArea:{top:32,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:32},homeIndicator:true,homeIndicatorWidth:108,
-      source:{nativePhysicalResolution:'official: 2520×1080 (Samsung 뉴스룸 한국·samsung.com/sec 스펙 표기 · 글로벌 영문 뉴스룸 사양표는 1080 x 2520 순서로 인쇄) · 대각선 174.1mm official',renderedPhysicalResolution:'derived-orientation: 1080×2520 — 프로그램이 세로(portrait) 기준 width×height 로 정규화한 값, official 원문값 아님',cssViewport:'derived: 1080×2520 ÷ DPR 3 = 360×840 (DPR 3 가정 · Samsung 은 CSS 폭·DPR 을 공개하지 않음)',body:'official: 펼침 75.4×166.9mm',bezel:'derived: 측면 (75.4−68.6)/2=3.4mm → 18px · 상하 (166.9−160.0)/2=3.45mm → 18px (400ppi 기준 활성영역; 렌더 상단 frame+glass ≈3.9mm 저해상도 참고)',radius:'derived: 동심 가정 22+18=40',screenRadius:'approximation: Galaxy S25 실측(4.3mm) 준용 → 22px (렌더 저해상도라 미측정)',cutout:'photo-measured(저해상도 3.6px/mm, ±0.3mm): 홀 지름 13~14px=3.7mm → 19px · 중심 화면 상단에서 13.5px=3.75mm → 20px(top 10)',controls:'approximation',statusBar:'derived: 컷아웃 하단 29px+여백 → 32px · 하단 24px approximation'}},
+      safeArea:{top:29,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:29},statusBarHeight:32,homeIndicator:true,homeIndicatorWidth:108,   /* safe top 29 = 홀 하단 · statusBarHeight 32 = 홀 하단 + 3 (2026-09-22 분리) */
+      source:{nativePhysicalResolution:'official: 2520×1080 (Samsung 뉴스룸 한국·samsung.com/sec 스펙 표기 · 글로벌 영문 뉴스룸 사양표는 1080 x 2520 순서로 인쇄) · 대각선 174.1mm official',renderedPhysicalResolution:'derived-orientation: 1080×2520 — 프로그램이 세로(portrait) 기준 width×height 로 정규화한 값, official 원문값 아님',cssViewport:'derived: 1080×2520 ÷ DPR 3 = 360×840 (DPR 3 가정 · Samsung 은 CSS 폭·DPR 을 공개하지 않음)',body:'official: 펼침 75.4×166.9mm',bezel:'derived: 측면 (75.4−68.6)/2=3.4mm → 18px · 상하 (166.9−160.0)/2=3.45mm → 18px (400ppi 기준 활성영역; 렌더 상단 frame+glass ≈3.9mm 저해상도 참고)',radius:'derived: 동심 가정 22+18=40',screenRadius:'approximation: Galaxy S25 실측(4.3mm) 준용 → 22px (렌더 저해상도라 미측정)',cutout:'photo-measured(저해상도 3.6px/mm, ±0.3mm): 홀 지름 13~14px=3.7mm → 19px · 중심 화면 상단에서 13.5px=3.75mm → 20px(top 10)',controls:'approximation',statusBar:'derived: safeArea.top 29 = 홀 하단(컷아웃 경계 10+19) · statusBarHeight 32 = 홀 하단 + 3 여백(One UI 상태바 창, 여백은 approximation) · 가로 left 29 = 회전 시 홀 하단 · 하단 제스처 바 24 · 가로 상단 24 는 AOSP 기본값 준용(derived) · 가로 하단 16 approximation'}},
 
     /* Flex(반접힘): 펼침 프로필에서 유도. 아래 코너는 힌지라 각짐 */
     'flip8-flex':{family:'flip',top:18,right:18,bottom:22,left:18,ring:6,radius:{tl:40,tr:40,br:8,bl:8},screenRadius:{tl:22,tr:22,br:0,bl:0},platform:'android',obstruction:'상단 펀치홀·하단 힌지',
       cutout:{type:'hole',width:19,height:19,top:10,align:'center'},
-      safeArea:{top:32,right:0,bottom:0,left:0},safeAreaLandscape:{top:24,right:0,bottom:0,left:32},homeIndicator:false,
-      source:{body:'derived: flip8-open 준용',bezel:'derived: flip8-open 준용, 하단은 힌지 approximation',radius:'derived: 상단 flip8-open · 하단 approximation(힌지)',screenRadius:'derived: 상단 flip8-open · 하단 0(화면이 접힘선까지 이어짐)',cutout:'derived: flip8-open 준용',controls:'approximation',statusBar:'derived: flip8-open 준용'}},
+      safeArea:{top:29,right:0,bottom:0,left:0},safeAreaLandscape:{top:24,right:0,bottom:0,left:29},statusBarHeight:32,homeIndicator:false,   /* flip8-open 과 같은 분리(safe 29 / 상태바 32) */
+      source:{body:'derived: flip8-open 준용',bezel:'derived: flip8-open 준용, 하단은 힌지 approximation',radius:'derived: 상단 flip8-open · 하단 approximation(힌지)',screenRadius:'derived: 상단 flip8-open · 하단 0(화면이 접힘선까지 이어짐)',cutout:'derived: flip8-open 준용',controls:'approximation',statusBar:'derived: flip8-open 준용(safeArea.top 29 = 홀 하단 · statusBarHeight 32 = 홀 하단 + 3) · Flex 상단 앱 영역엔 제스처 바 없음(bottom 0)'}},
 
     /* Galaxy Z Fold8 접힘(커버 416×657): 접힌 바디 81.9×123.9mm(Samsung), 커버 활성영역 74.7×118.0mm(5.5" 1972×1248) → 5.57px/mm */
     /* Fold8 커버(접힘 정면, 2026-09-21 photo-measured): samsung.com US 갤러리 Scene7 투명 PNG "us-galaxy-z-fold8-f971-600257-sm-f971ulvaxaa-553840953"(2052×1641, 화면 753px = 416 CSS px → 1.81px/px, 바디 836px = 81.9mm → 10.2px/mm).
@@ -131,8 +131,8 @@
      * 회전(반시계) 시 홀은 왼쪽 변 위에서 187~205 → 가로 상태바 행(24) 과 겹치지 않음. safeAreaLandscape.left 38 = 홀 오른쪽 30 + 여백 8(세로 상태바 38 과 같은 '컷아웃을 감싸는' 규칙, derived) */
     'fold8-open':{family:'fold',top:20,right:19,bottom:20,left:19,ring:6,radius:35,screenRadius:16,platform:'android',obstruction:'상단 우측(폭 76%) 카메라·접힘선',
       cutout:{type:'hole',width:18,height:18,top:12,align:'right',offset:187},
-      safeArea:{top:38,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:38},homeIndicator:true,homeIndicatorWidth:140,
-      source:{body:'official: 펼침 161.4×123.9mm',bezel:'derived: 측면 (161.4−154.1)/2=3.65mm → 19px · 상하 3.8mm → 20px',radius:'derived: 동심 가정 16+19=35',screenRadius:'approximation: 렌더 미확보 (좁은 코너)',cutout:'photo-measured: 뉴스룸 Launch_dl5_F.jpg(1.071px/CSSpx, 저해상도 ±1.5px) 홀 Ø18.7 · 중심 우측에서 196 / 상단에서 21 → top 12 · offset 187',controls:'approximation',statusBar:'derived: 세로 38 = 홀 하단 30 + 8 · 가로 left 38 = 회전 시 왼쪽 변 홀(187~205) 의 오른쪽 30 + 8 (Android 측면 컷아웃 letterbox 규칙) · 가로 상단 24 는 다른 Android 프로필 준용 approximation'}},
+      safeArea:{top:30,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:30},statusBarHeight:33,homeIndicator:true,homeIndicatorWidth:140,   /* safe top 30 = 홀 하단 · statusBarHeight 33 = 홀 하단 + 3 (2026-09-22: 근거 없던 +8 여백 제거, 다른 Galaxy 와 같은 규칙) */
+      source:{body:'official: 펼침 161.4×123.9mm',bezel:'derived: 측면 (161.4−154.1)/2=3.65mm → 19px · 상하 3.8mm → 20px',radius:'derived: 동심 가정 16+19=35',screenRadius:'approximation: 렌더 미확보 (좁은 코너)',cutout:'photo-measured: 뉴스룸 Launch_dl5_F.jpg(1.071px/CSSpx, 저해상도 ±1.5px) 홀 Ø18.7 · 중심 우측에서 196 / 상단에서 21 → top 12 · offset 187',controls:'approximation',statusBar:'derived: safeArea.top 30 = 홀 하단(컷아웃 경계 12+18) · statusBarHeight 33 = 홀 하단 + 3 여백(다른 Galaxy 와 같은 규칙, 여백은 approximation; 2026-09-22 이전의 +8 은 근거 없어 제거) · 가로 left 30 = 회전 시 왼쪽 변 홀(187~205) 의 오른쪽 경계(Android 측면 컷아웃 letterbox 규칙) · 가로 상단 24 는 AOSP 기본값 준용(derived) · 가로 하단 16 approximation'}},
 
     /* iPhone Duo 접힘(외부 466×678): 접힌 바디 84.1×117.8mm(Apple specs), 외부 화면 5.36" 표준 사각형(Apple) 2034×1398 → 77.1×112.2mm → 6.04px/mm.
      * 렌더 실측: Apple 뉴스룸 "Apple-iPhone-Duo-display-sizes-260909.jpg"(3840×2160 원본, 9.48px/mm; 화면 종횡비 1.455 = 공식 2034/1398 일치).
@@ -276,7 +276,7 @@
   frameProfiles['galaxy-bar'].statusBar={profile:'oneui',centerY:23,source:'photo-measured: Samsung 뉴스룸 One UI 7 Official Rollout dl1.jpg(Galaxy S25 정면 렌더, 1.128px/CSSpx) — 시간 12:45 숫자 높이 10(글꼴 14) 좌 14.6 · 5G/막대/알약 100 우 14.6 · 막대 10.6×12 · 알약 23×14 · 간격 7~8 · 세로 중심 23(derived: 렌더에서 시간 중심 = 홀 중심 − 2.8px 관계를 실기기 홀 중심 26.5 에 적용, 밴드 38 안)'};
   frameProfiles['flip8-open'].statusBar={profile:'oneui',source:'derived: One UI 8 = Galaxy S25 렌더 실측 + Z Fold8 Ultra 잠금 화면 사진(First Look dl3.jpg) 아이콘 형상 준용, Flip8 자체 캡처 미확보'};
   frameProfiles['flip8-flex'].statusBar={profile:'oneui',source:'derived: flip8-open 준용'};
-  frameProfiles['flip8-cover'].statusBar={profile:'oneui',source:'verified(세로): 뉴스룸 First Look dl9.jpg 커버 앱 화면에 상태바 없음 → safeArea.top 0 유지 · 가로도 상태바 없음(safeAreaLandscape.top 0, derived) — 커버 앱이 가로에서 회전할 때의 공식 이미지는 미확보'};
+  frameProfiles['flip8-cover'].statusBar={profile:'oneui',source:'photo-observed(세로): 뉴스룸 First Look dl9.jpg 커버 앱 실사진에 상태바 없음 → safeArea.top 0 유지(실기기 직접 측정 아님) · 가로도 상태바 없음(safeAreaLandscape.top 0, derived) — 커버 앱이 가로에서 회전할 때의 공식 이미지는 미확보'};
   frameProfiles['fold8-cover'].statusBar={profile:'oneui',source:'derived: One UI 8 = Galaxy S25 렌더 실측 준용 · 세로 중심은 밴드(33) 중앙 16.5 = 실측 홀 중심 20.2 − 2.8(S25 렌더 관계) 과 일치 · Fold8 커버 UI 캡처 미확보'};
   frameProfiles['fold8-open'].statusBar={profile:'oneui',source:'derived: 뉴스룸 First Look dl3.jpg(Z Fold8 Ultra 펼침 잠금 화면 실사진 14.35px/mm) — Wi-Fi 1.88×1.32 · 막대 1.88×2.0 · 알약 4.0×2.4mm · 간격 1.1mm · 우 여백 4.1mm · 세로 중심 3.3mm — Ultra 모델 값이라 Fold8 에는 형상·비율만 준용, 여백은 S25 값'};
   /* iPadOS 26/27 상태바(photo-measured, Apple 뉴스룸 13" 렌더): 좌 "9:41 AM  Wed Apr 1" · 우 Wi-Fi · 배터리 % · 배터리. 가로에서도 같은 크기(fixedSize) */
@@ -1328,8 +1328,26 @@
     }
   }
 
-  function updateSafeGuides(view){
+  /* safe-area "가이드 표시" 전용 인셋(2026-09-23). 데이터(frameProfiles.safeArea) 는 건드리지 않는다.
+   * 펀치홀 Android 는 safeArea.top 이 곧 홀 하단(컷아웃 경계) 이라 가이드 선이 원형 카메라에 정확히 접해 — 안티앨리어싱 때문에 — 떠 보인다.
+   * iPhone 은 노치·아일랜드 아래로 safe-area 가 더 내려와(예: 18 Pro 아일랜드 하단 48 < safe 62) 자연스러운 여백이 생기므로, 같은 상태를 만들어 준다:
+   *   세로  guide.top  = max(safeArea.top, statusBarHeight)            (= 홀 하단 + One UI 상태바 여백)
+   *   가로  guide.left = safeAreaLandscape.left + 세로와 같은 보호 여백 (statusBarHeight − safeArea.top)
+   * 사이트 뷰포트·브라우저 밴드 높이·가로 sideInset(letterbox) 은 모두 getSafeArea() 원본을 그대로 쓴다 — 이 값은 .safe_guides 표시에만 쓰인다. */
+  function getSafeGuide(view){
     const safe=getSafeArea(view);
+    const profile=view.frameProfile;
+    const cutout=profile.cutout;
+    if(!cutout||cutout.type!=='hole'||!profile.safeArea||profile.statusBarHeight==null)return safe;
+    const margin=profile.statusBarHeight-profile.safeArea.top;   /* 홀 하단 → 상태바 창 하단(콘텐츠 시작) 여백 */
+    if(!(margin>0))return safe;
+    return getOrientation(view)==='portrait'
+      ? Object.assign({},safe,{top:Math.max(safe.top,profile.statusBarHeight)})
+      : Object.assign({},safe,{left:safe.left+margin});
+  }
+
+  function updateSafeGuides(view){
+    const safe=getSafeGuide(view);
     const shell=view.dom.shell;
     shell.dataset.safeGuide=safeAreaGuide?'true':'false';
     shell.style.setProperty('--safe-top',safe.top+'px');
