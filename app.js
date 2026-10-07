@@ -119,7 +119,11 @@
      * 상단 세 값 분리: safeArea.top 30 = 홀 하단(= env(safe-area-inset-top) 의미, 가이드 높이) · statusBarHeight 33 = 홀 하단 + 3(One UI 상태바 창, 콘텐츠 시작) · 상태바 텍스트 중심 = 밴드 중앙 16.5(홀 중심 20.2 − 2.8 관계와 일치) */
     /* 베젤·스파인(2026-09-21 같은 렌더 photo-measured, 1.81px/CSSpx): 프레임(링) 13~14px → 7 · 검은 글래스 상하 22px → 12.2 / 우 21px → 11.6 / 좌 22.5px → 12.4 → 베젤(링+글래스) 상하 19.6 · 우 19.3 · 좌(앞판) 18.5.
      * 힌지 스파인은 앞판 바깥 별개 레이어(Duo 외부와 같은 북타입 구조 — 앞판과 스파인 사이 1px 홈, 상하 안쪽으로 들어간 끝, 바깥 코너만 둥긂): 폭 14.5px → 8 · 상하 안쪽 13px → 7 · 바깥 코너 6~8px → 4. 좌측 총 폭 19 + 8 = 27(실측 26.5) */
-    'fold8-cover':{family:'fold',top:20,right:19,bottom:20,left:19,ring:7,radius:{tl:5,tr:18,br:18,bl:5},glassRadius:9,screenRadius:7,platform:'android',obstruction:'상단 펀치홀 카메라',
+    /* 2026-10-06: 아래 Fold8 두 프로필의 하드웨어 px(베젤·링·코너·홀·스파인) 는 위 주석처럼 CSS 416 / 816 = DPR 3 좌표계에서 mm 를 환산해 만든 값 → frameReferenceDpr:3
+     * (실제 기기의 DPR 이 아니라 이 프로필 px 값의 환산 기준 좌표계).
+     * 기기 DPR(2.25, 실기기 캡처) 이 다르므로 scaleFrameProfile() 이 같은 mm 가 되도록 3/2.25 = ×1.333 으로 환산한다. cutoutInsets 는 홀 경계에서 정해지는 인셋 변(세로 top · 가로 left) 이라 함께 환산하고,
+     * statusBarHeight 는 환산된 홀 하단 + 기존 여백 3. 단 state 에 실측 시스템 인셋(insets) 이 있으면(Fold8 커버) 그 값이 이 사진 기반 값보다 우선한다(getMeasuredInsets). Android UI dp 값(제스처 바 bottom 24 · 가로 top 24 / bottom 16 · homeIndicatorWidth · 상태바 글꼴) 은 DPR 과 무관하게 그대로 둔다. */
+    'fold8-cover':{family:'fold',top:20,right:19,bottom:20,left:19,ring:7,radius:{tl:5,tr:18,br:18,bl:5},glassRadius:9,screenRadius:7,platform:'android',frameReferenceDpr:3,cutoutInsets:{portrait:'top',landscape:'left'},obstruction:'상단 펀치홀 카메라',
       hingeBody:{type:'spine',side:'left',width:8,inset:7,radius:4},
       cutout:{type:'hole',width:20,height:20,top:10,align:'center'},
       safeArea:{top:30,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:30},statusBarHeight:33,homeIndicator:true,homeIndicatorWidth:108,
@@ -129,7 +133,7 @@
     /* Fold8 펼침 카메라 홀(2026-09-21 photo-measured): 뉴스룸 보도자료 Launch_dl5_F.jpg(1440×960, 펼침 정면 카메라 앱 렌더, 화면 874px = 816 CSS px → 1.071px/px, 종횡비 1.324 = 1848×2448 일치) —
      * 홀 Ø20px → 18.7 CSS px(18 유지) · 중심 화면 좌측에서 620 / 우측에서 196 · 상단에서 21 → top 12 · offset(우측 가장자리→홀 오른쪽) 187. 코너가 아니라 폭의 76% 지점.
      * 회전(반시계) 시 홀은 왼쪽 변 위에서 187~205 → 가로 상태바 행(24) 과 겹치지 않음. safeAreaLandscape.left 38 = 홀 오른쪽 30 + 여백 8(세로 상태바 38 과 같은 '컷아웃을 감싸는' 규칙, derived) */
-    'fold8-open':{family:'fold',top:20,right:19,bottom:20,left:19,ring:6,radius:35,screenRadius:16,platform:'android',obstruction:'상단 우측(폭 76%) 카메라·접힘선',
+    'fold8-open':{family:'fold',top:20,right:19,bottom:20,left:19,ring:6,radius:35,screenRadius:16,platform:'android',frameReferenceDpr:3,cutoutInsets:{portrait:'top',landscape:'left'},obstruction:'상단 우측(폭 76%) 카메라·접힘선',
       cutout:{type:'hole',width:18,height:18,top:12,align:'right',offset:187},
       safeArea:{top:30,right:0,bottom:24,left:0},safeAreaLandscape:{top:24,right:0,bottom:16,left:30},statusBarHeight:33,homeIndicator:true,homeIndicatorWidth:140,   /* safe top 30 = 홀 하단 · statusBarHeight 33 = 홀 하단 + 3 (2026-09-22: 근거 없던 +8 여백 제거, 다른 Galaxy 와 같은 규칙) */
       source:{body:'official: 펼침 161.4×123.9mm',bezel:'derived: 측면 (161.4−154.1)/2=3.65mm → 19px · 상하 3.8mm → 20px',radius:'derived: 동심 가정 16+19=35',screenRadius:'approximation: 렌더 미확보 (좁은 코너)',cutout:'photo-measured: 뉴스룸 Launch_dl5_F.jpg(1.071px/CSSpx, 저해상도 ±1.5px) 홀 Ø18.7 · 중심 우측에서 196 / 상단에서 21 → top 12 · offset 187',controls:'approximation',statusBar:'derived: safeArea.top 30 = 홀 하단(컷아웃 경계 12+18) · statusBarHeight 33 = 홀 하단 + 3 여백(다른 Galaxy 와 같은 규칙, 여백은 approximation; 2026-09-22 이전의 +8 은 근거 없어 제거) · 가로 left 30 = 회전 시 왼쪽 변 홀(187~205) 의 오른쪽 경계(Android 측면 컷아웃 letterbox 규칙) · 가로 상단 24 는 AOSP 기본값 준용(derived) · 가로 하단 16 approximation'}},
@@ -395,10 +399,18 @@
       /* Flex: 펼친 화면의 상단 절반. 물리값은 width×dpr 로 자동 계산(1080 × 1260), 실기기 배율은 전체 화면 기준(scaleWidth/Height). */
       {id:'flex',label:'Flex 90°',width:360,height:420,diagonal:6.9,scaleWidth:360,scaleHeight:840,frame:'flip8-flex',hinge:'horizontal',hingeSize:8,hingePosition:99,note:'펼친 화면 상단 절반 점검용 360 × 420 · 실제 Flex Mode는 실기기 확인 필요'}
     ]},
-    'z-fold':{name:'Galaxy Z Fold8',group:'fold',subtitle:'커버·펼침',note:'Galaxy Z Fold8 공개 물리 해상도와 DPR 3 기준',source:'official: 커버 5.5" 1972 × 1248 · 메인 7.6" 2448 × 1848, DPR 3 · 바디 펼침 161.4 × 123.9 / 접힘 81.9 × 123.9mm (Samsung, GSMArena)',
-      browser:'android-chrome',dpr:3,states:[
-      {id:'cover',label:'커버 화면',width:416,height:657,diagonal:5.5,physicalWidth:1248,physicalHeight:1972,frame:'fold8-cover',note:'커버 화면 416 × 657 CSS 화면 · 펀치홀 포함'},
-      {id:'open',label:'펼침',width:816,height:616,diagonal:7.6,physicalWidth:2448,physicalHeight:1848,orientation:'portrait',browser:'tablet-chrome',frame:'fold8-open',hinge:'vertical',hingeSize:4,note:'메인 화면 816 × 616 CSS 화면 · 카메라와 접힘선 포함'}
+    /* Galaxy Z Fold8 — 실기기 프로필 하나(2026-10-07 확정). 사용자 실제 Fold8 의 Chrome 캡처로 검증한 상태(effective DPR 2.25) 를 그대로 쓴다.
+     * Device Preview 는 설정 조합 시뮬레이터가 아니라 실제 기기 프리뷰라, 화면 확대/축소 단계별 프로필을 따로 두지 않는다. CSS 크기 = 물리 px ÷ 2.25 의 정수 반올림 */
+    'z-fold':{name:'Galaxy Z Fold8',group:'fold',subtitle:'커버·펼침',note:'Galaxy Z Fold8 공개 물리 해상도 · 실기기 Chrome 캡처 기준 DPR 2.25',source:'official: 커버 5.5" 1972 × 1248 · 메인 7.6" 2448 × 1848 · 바디 펼침 161.4 × 123.9 / 접힘 81.9 × 123.9mm (Samsung, GSMArena) · Samsung 은 DPR 를 공개하지 않음 · verified: 사용자 Galaxy Z Fold8 실기기 Chrome 긴 캡처 측정(2026-10-06, 커버 1248 × 11090 · 펼침 2448 × 10921 원본 해상도) — CSS height 50px 표 행(.ds_table td) = 112.5 screenshot px(커버·펼침 동일) → effective scale 2.25 · 교차 확인: 펼침 캡처에 1040px 초과에서만 보이는 .left_nav 노출(2448 ÷ 2.25 = 1088), Chrome UI 도 같은 배율 · 프리뷰 대조: 텍스트·UI 크기 0~2.6%, 주요 요소 위치 ±1px · derived: DPR 2.25 는 스크린샷 실측에서 계산(Chrome window.devicePixelRatio 를 직접 읽지 않음) · CSS 554.67 × 876.44 / 1088 × 821.33 → 정수 반올림',
+      browser:'android-chrome',dpr:2.25,states:[
+      {id:'cover',label:'커버 화면',width:555,height:876,diagonal:5.5,physicalWidth:1248,physicalHeight:1972,frame:'fold8-cover',note:'커버 화면 555 × 876 CSS 화면(1248 × 1972 ÷ 2.25) · 펀치홀 포함',
+        /* 실측 시스템 인셋(logical dp, DPR 2.25 기준): 컷아웃 하단 104 · 상태바 110 물리 px(Samsung RTL 실측 — 정수 물리 px 로 고정된 하드웨어 기준값) ÷ 2.25 */
+        insets:{cutoutTop:46.22,statusBar:48.89},
+        insetsSource:'derived: windowinsets.info "Galaxy Z Fold8"(InsetsProbe 1.1.2 on Samsung Remote Test Lab SM-F971N, 2026-09-22) 커버 실측 컷아웃 하단 39.62dp · 상단 41.9dp @density 420 = 104 / 110 물리 px(Fold7·Fold8 Ultra 실측도 정수 물리 px, Fold7 은 컷아웃 102px 인데 상태바 110px → px 고정값) ÷ 2.25 = 46.22 / 48.89dp · 360 캡처의 Chrome 툴바 중심 164px 도 상태바 110px 와 일치 · 하단 48dp 는 3버튼 내비 값이라 미적용(제스처 내비 24 유지)',
+        /* 브라우저 밴드 덮어쓰기: 선택된 브라우저가 android-chrome 일 때 세로 urlBar 만 48(나머지는 공용 프로필 상속). 공용 android-chrome 56 은 그대로 */
+        browserMetrics:{'android-chrome':{portrait:{urlBar:48}}},
+        browserMetricsSource:'verified: 사용자 Galaxy Z Fold8 Chrome 커버 캡처 측정(2026-10-06) — 상단 UI 218 screenshot px = 상태바 110 + Chrome 툴바 108, 108 ÷ DPR 2.25 = 48dp(주소 글자 중심 164px = 110~218 구간 중앙, 오차 약 ±3dp) · Fold8 커버 1기기 근거라 공용 android-chrome(56) 에는 반영하지 않음'},
+      {id:'open',label:'펼침',width:1088,height:821,diagonal:7.6,physicalWidth:2448,physicalHeight:1848,orientation:'portrait',browser:'tablet-chrome',frame:'fold8-open',hinge:'vertical',hingeSize:4,note:'메인 화면 1088 × 821 CSS 화면(2448 × 1848 ÷ 2.25) · 카메라와 접힘선 포함'}
     ]},
     'iphone-duo':{name:'iPhone Duo',group:'fold',subtitle:'북 타입 폴더블',note:'단일 7.6" 폴딩 내부 화면 + 접힘선 · 외부 5.4" · 힌지 쪽 각진 코너',source:'official: 외부 5.4" 1398 × 2034 · 내부 7.6" 2670 × 1878, DPR 3 · 바디 펼침 164.6 × 117.8 / 접힘 84.1 × 117.8mm · 표준 사각형 대각선 5.36" / 7.58" (Apple iPhone Duo specs)',
       browser:'ios-safari',dpr:3,states:[
@@ -470,6 +482,9 @@
   function announce(message){elements.viewportStatus.textContent=message;}
   function allViews(){return [primaryView].concat(Array.from(compareViews.values()));}
   function visibleViews(){return viewMode==='compare'?Array.from(compareViews.values()):[primaryView];}
+  /* 지금 화면에 실제로 보이는 view 인지 — 다중 비교 중의 primaryView(#previewMount 는 display:none) 는 false.
+   * 숨은 iframe 이 같은 URL 을 중복 요청·유지하지 않도록 loadInto/reloadView 가 이 값을 본다(DOM·view 구조는 그대로). */
+  function isViewActive(view){return view===primaryView?viewMode==='single':viewMode==='compare';}
   /* 컨트롤 패널이 값을 표시할 기준 view: 단일 보기는 primaryView, 다중 비교는 첫 카드(없으면 primaryView) */
   function getControlView(){
     if(viewMode==='compare'){const first=compareViews.values().next().value;return first||primaryView;}
@@ -569,7 +584,57 @@
   function getFrameProfile(view){
     const device=getDevice(view);
     const state=getState(view);
-    return frameProfiles[state&&state.frame||device&&device.frame]||frameProfiles.neutral;
+    const profile=frameProfiles[state&&state.frame||device&&device.frame]||frameProfiles.neutral;
+    return scaleFrameProfile(profile,getDpr(view),getMeasuredInsets(view));
+  }
+
+  /* state.insets(실측 시스템 인셋: 컷아웃 하단·상태바, 현재 DPR 의 logical dp) 가 있으면 사진 기반 환산값 대신 쓴다. 정수 반올림 */
+  function getMeasuredInsets(view){
+    const state=getState(view);
+    if(!state||!state.insets)return null;
+    return{cutoutTop:Math.round(state.insets.cutoutTop),statusBar:Math.round(state.insets.statusBar)};
+  }
+
+  /* 하드웨어 치수의 DPR 환산(frameReferenceDpr 를 가진 프로필만 — 현재 Fold8 두 개).
+   * 프로필 px 는 frameReferenceDpr 좌표계의 CSS px 로 환산된 물리 치수라, 현재 DPR 에서도 같은 mm 가 되도록 frameReferenceDpr/DPR 배.
+   * 환산: 베젤·링·코너·홀·스파인 + cutoutInsets 가 가리키는 인셋 변(홀 경계) + statusBarHeight 의 홀 부분(여백은 유지).
+   * measured(getMeasuredInsets) 가 있으면 컷아웃 인셋 변·statusBarHeight 는 사진 기반 값 대신 실측값을 쓴다.
+   * 유지: Android UI dp 값(나머지 safe-area 변, homeIndicatorWidth, statusBar 프로필) */
+  const scaledFrameCache=new Map();
+  function scaleFrameProfile(profile,dpr,measured){
+    if(!profile.frameReferenceDpr||!dpr||profile.frameReferenceDpr===dpr)return profile;
+    const key=profile.id+'@'+dpr+(measured?'|'+measured.cutoutTop+'/'+measured.statusBar:'');
+    if(scaledFrameCache.has(key))return scaledFrameCache.get(key);
+    const k=profile.frameReferenceDpr/dpr;
+    const px=value=>typeof value==='number'?Math.round(value*k*10)/10:value;
+    const scaleKeys=(obj,keys)=>{
+      if(!obj)return obj;
+      const out=Object.assign({},obj);
+      keys.forEach(key=>{if(typeof out[key]==='number')out[key]=px(out[key]);});
+      return out;
+    };
+    const corners=value=>value&&typeof value==='object'&&!('ratio' in value)?scaleKeys(value,['tl','tr','br','bl']):px(value);
+    const scaled=Object.assign({},profile,{
+      top:px(profile.top),right:px(profile.right),bottom:px(profile.bottom),left:px(profile.left),
+      ring:px(profile.ring),radius:corners(profile.radius),glassRadius:corners(profile.glassRadius),screenRadius:corners(profile.screenRadius),
+      cutout:scaleKeys(profile.cutout,['width','height','top','bottom','offset','depth','length','lens','ring','lensGap','flash','flashGap']),
+      hingeBody:scaleKeys(profile.hingeBody,['width','inset','radius','size'])
+    });
+    const sides=profile.cutoutInsets||{};
+    if(sides.portrait&&profile.safeArea){
+      scaled.safeArea=Object.assign({},profile.safeArea,{[sides.portrait]:Math.round(profile.safeArea[sides.portrait]*k)});
+      if(typeof profile.statusBarHeight==='number'&&sides.portrait==='top')scaled.statusBarHeight=scaled.safeArea.top+(profile.statusBarHeight-profile.safeArea.top);
+    }
+    if(sides.landscape&&profile.safeAreaLandscape){
+      scaled.safeAreaLandscape=Object.assign({},profile.safeAreaLandscape,{[sides.landscape]:Math.round(profile.safeAreaLandscape[sides.landscape]*k)});
+    }
+    if(measured){
+      if(sides.portrait&&scaled.safeArea)scaled.safeArea=Object.assign({},scaled.safeArea,{[sides.portrait]:measured.cutoutTop});
+      if(sides.landscape&&scaled.safeAreaLandscape)scaled.safeAreaLandscape=Object.assign({},scaled.safeAreaLandscape,{[sides.landscape]:measured.cutoutTop});   /* 회전 시 같은 물리 컷아웃 경계 */
+      scaled.statusBarHeight=measured.statusBar;
+    }
+    scaledFrameCache.set(key,scaled);
+    return scaled;
   }
 
   function getSafeArea(view){
@@ -653,6 +718,10 @@
       metrics=Object.assign({},fallback[barsOrientation]||fallback.portrait,{statusBar:0});
       styleId=fallback.id||profile.standardFallback||profileId;
     }
+    /* state 별 브라우저 밴드 덮어쓰기(state.browserMetrics[프로필 id][방향]) — 공용 프로필 값을 상속하고 지정한 항목만 바꾼다(예: Fold8 커버 Chrome urlBar 48) */
+    const state=getState(view);
+    const override=state&&state.browserMetrics&&state.browserMetrics[profileId];
+    if(override&&override[barsOrientation])metrics=Object.assign({},metrics,override[barsOrientation]);
     const side=layout==='side';
     const safe=getSafeArea(view);
     /* 상태바 밴드 높이: 브라우저 프로필 값 → 없으면 프레임 statusBarHeight(세로)/statusBarHeightLandscape(가로) → 없으면 safe-area top (컷아웃 인셋과 상태바 창 높이가 같다고 보는 기본값) */
@@ -1382,51 +1451,37 @@
     return url.href;
   }
 
-  /* placeholder 는 srcdoc(같은 출처) 이라 스크롤바 숨김 규칙을 문서 안에 직접 둔다: scrollbar-width(Firefox·Chromium 121+) + ::-webkit-scrollbar(WebKit·구 Chromium). overflow 는 건드리지 않아 스크롤은 그대로 */
-  const initialPreviewContent='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}html,body{height:100%;scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}body{margin:0;background:#fff;font-family:-apple-system,"Apple SD Gothic Neo",Roboto,"Noto Sans KR",system-ui,sans-serif;color:#a3adba}.sk{background:#eceff3;border-radius:4px}.sk.l{background:#f1f3f6}.pg{display:flex;flex-direction:column;min-height:100%;padding:0 6%}.hd{display:flex;align-items:center;gap:8px;height:44px;border-bottom:1px solid #eef1f5}.hd .lg{width:56px;height:14px;border-radius:5px}.hd .nv{margin-left:auto;display:flex;gap:10px}.hd .nv i{display:block;width:26px;height:6px;border-radius:3px;background:#f1f3f6}.hr{padding:26px 0 18px}.hr .t1,.hr .t2{display:block}.hr .t1{height:16px;width:62%;max-width:420px;border-radius:6px}.hr .t2{height:10px;width:44%;max-width:300px;margin-top:10px;border-radius:5px}.hr p{margin:14px 0 0;font-size:15px;line-height:1.5;letter-spacing:-.01em;color:#98a2b3}.hr p .n{display:none}.bl{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding-bottom:24px}.bl div>i{display:block;height:64px;border-radius:6px;background:#f1f3f6}.bl div>b{display:block;height:8px;width:70%;margin-top:8px;border-radius:4px;background:#eceff3}.bl div>b+b{width:45%;margin-top:6px;background:#f1f3f6}.bl div:nth-child(n+3){display:none}@media(max-width:340px){.hd .nv i:nth-child(n+3){display:none}.hr p .w{display:none}.hr p .n{display:inline}}@media(max-height:280px){.pg{padding:0 5%}.hd{height:34px}.hr{padding:14px 0 10px}.hr .t2{display:none}.hr p{margin-top:8px}.bl div>i{height:36px}.bl div>b+b{display:none}.bl{padding-bottom:12px}}@media(min-width:700px){.pg{padding:0 8%}.hd{height:52px}.hd .lg{width:72px;height:16px}.hd .nv{gap:14px}.hd .nv i{width:34px}.hr{padding:36px 0 24px}.hr .t1{height:20px}.hr .t2{height:12px;margin-top:12px}.hr p{font-size:16px}.bl{grid-template-columns:repeat(3,1fr);gap:16px}.bl div>i{height:88px}.bl div:nth-child(3){display:block}}@media(min-width:1000px){.pg{padding:0 10%}.hr{padding:44px 0 28px}.bl{grid-template-columns:repeat(4,1fr);gap:18px}.bl div>i{height:104px}.bl div:nth-child(4){display:block}}</style></head><body><div class="pg" aria-hidden="true"><div class="hd"><span class="sk lg"></span><span class="nv"><i></i><i></i><i></i><i></i></span></div><div class="hr"><span class="sk t1"></span><span class="sk l t2"></span><p><span class="w">URL을 입력해 미리보기를 시작하세요.</span><span class="n">URL을 입력해 주세요.</span></p></div><div class="bl"><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div></div></div></body></html>';
+  /* placeholder(srcdoc) 는 URL 이 없을 때 보여 주는 자리표시 와이어프레임이다. */
+  const initialPreviewContent='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}html,body{height:100%}body{margin:0;background:#fff;font-family:-apple-system,"Apple SD Gothic Neo",Roboto,"Noto Sans KR",system-ui,sans-serif;color:#a3adba}.sk{background:#eceff3;border-radius:4px}.sk.l{background:#f1f3f6}.pg{display:flex;flex-direction:column;min-height:100%;padding:0 6%}.hd{display:flex;align-items:center;gap:8px;height:44px;border-bottom:1px solid #eef1f5}.hd .lg{width:56px;height:14px;border-radius:5px}.hd .nv{margin-left:auto;display:flex;gap:10px}.hd .nv i{display:block;width:26px;height:6px;border-radius:3px;background:#f1f3f6}.hr{padding:26px 0 18px}.hr .t1,.hr .t2{display:block}.hr .t1{height:16px;width:62%;max-width:420px;border-radius:6px}.hr .t2{height:10px;width:44%;max-width:300px;margin-top:10px;border-radius:5px}.hr p{margin:14px 0 0;font-size:15px;line-height:1.5;letter-spacing:-.01em;color:#98a2b3}.hr p .n{display:none}.bl{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding-bottom:24px}.bl div>i{display:block;height:64px;border-radius:6px;background:#f1f3f6}.bl div>b{display:block;height:8px;width:70%;margin-top:8px;border-radius:4px;background:#eceff3}.bl div>b+b{width:45%;margin-top:6px;background:#f1f3f6}.bl div:nth-child(n+3){display:none}@media(max-width:340px){.hd .nv i:nth-child(n+3){display:none}.hr p .w{display:none}.hr p .n{display:inline}}@media(max-height:280px){.pg{padding:0 5%}.hd{height:34px}.hr{padding:14px 0 10px}.hr .t2{display:none}.hr p{margin-top:8px}.bl div>i{height:36px}.bl div>b+b{display:none}.bl{padding-bottom:12px}}@media(min-width:700px){.pg{padding:0 8%}.hd{height:52px}.hd .lg{width:72px;height:16px}.hd .nv{gap:14px}.hd .nv i{width:34px}.hr{padding:36px 0 24px}.hr .t1{height:20px}.hr .t2{height:12px;margin-top:12px}.hr p{font-size:16px}.bl{grid-template-columns:repeat(3,1fr);gap:16px}.bl div>i{height:88px}.bl div:nth-child(3){display:block}}@media(min-width:1000px){.pg{padding:0 10%}.hr{padding:44px 0 28px}.bl{grid-template-columns:repeat(4,1fr);gap:18px}.bl div>i{height:104px}.bl div:nth-child(4){display:block}}</style></head><body><div class="pg" aria-hidden="true"><div class="hd"><span class="sk lg"></span><span class="nv"><i></i><i></i><i></i><i></i></span></div><div class="hr"><span class="sk t1"></span><span class="sk l t2"></span><p><span class="w">URL을 입력해 미리보기를 시작하세요.</span><span class="n">URL을 입력해 주세요.</span></p></div><div class="bl"><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div><div><i></i><b></b><b></b></div></div></div></body></html>';
 
   /* view 에 현재 URL(없으면 안내 화면) 을 로드. iframe 은 재생성하지 않고 src 만 바꾼다 */
   function loadInto(view){
     const frame=view.dom.siteFrame;
     view.loaded=false;
-    if(!currentUrl){frame.removeAttribute('src');frame.srcdoc=initialPreviewContent;return;}
+    /* URL 이 없거나 지금 보이지 않는 view 면 사이트를 싣지 않는다. 이미 placeholder 면 문서를 다시 만들지 않는다. */
+    if(!currentUrl||!isViewActive(view)){
+      if(frame.hasAttribute('src')||frame.srcdoc!==initialPreviewContent){frame.removeAttribute('src');frame.srcdoc=initialPreviewContent;}
+      return;
+    }
     frame.removeAttribute('srcdoc');
     frame.src=currentUrl;
   }
 
   function reloadView(view){
-    if(!currentUrl)return false;
+    if(!currentUrl||!isViewActive(view))return false;
     view.loaded=false;
     view.dom.siteFrame.src=currentUrl;
     return true;
   }
 
   function onFrameLoad(view){
-    if(currentUrl&&view.dom.siteFrame.getAttribute('src')===currentUrl){view.loaded=true;applyMobileScrollbarStyle(view);}
+    if(currentUrl&&view.dom.siteFrame.getAttribute('src')===currentUrl){view.loaded=true;}
     if(view.compare)attachScrollSync(view);
     updateLoadStatus();
   }
 
-  /* 모바일 스크롤바 표현(2026-09-22): 같은 출처 문서에만 "스크롤바를 그리지 않는" 최소 스타일(html/body 의 scrollbar-width:none + ::-webkit-scrollbar 0) 을 한 번 주입한다.
-   * - 사이트 CSS 를 수정·덮어쓰지 않고 <style id> 하나만 추가하며, 같은 문서에 두 번 넣지 않는다(새로고침으로 문서가 새로 생기면 다시 1회).
-   * - 스크롤 자체(휠·터치패드·키보드·프로그램 scrollTo, 스크롤 동기화) 는 그대로. iframe 크기·CSS 뷰포트·getSiteViewport() 도 그대로 — 문서 안에서 스크롤바가 차지하던 폭만 콘텐츠로 돌아간다(실기기 overlay 스크롤바와 같은 상태).
-   * - 다른 출처(SecurityError) 는 getSameOriginWindow() 가 null 을 주므로 시도하지 않는다. 폭 보정·마스크·뷰포트 변경 같은 우회는 하지 않는다 → 외부 사이트의 데스크톱 스크롤바는 제한사항. */
-  const MOBILE_SCROLLBAR_STYLE_ID='devicePreviewScrollbarStyle';
-  const MOBILE_SCROLLBAR_CSS='html,body{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}';
-  function applyMobileScrollbarStyle(view){
-    const win=getSameOriginWindow(view);
-    if(!win)return false;
-    try{
-      const doc=win.document;
-      if(doc.getElementById(MOBILE_SCROLLBAR_STYLE_ID))return true;
-      const style=doc.createElement('style');
-      style.id=MOBILE_SCROLLBAR_STYLE_ID;
-      style.setAttribute('data-device-preview','scrollbar');
-      style.textContent=MOBILE_SCROLLBAR_CSS;
-      (doc.head||doc.documentElement).appendChild(style);
-      return true;
-    }catch(error){return false;}
-  }
+  /* 스크롤바 처리(2026-09-29 종료): 여기서는 아무것도 하지 않는다.
+   * 미리보기 iframe 안의 스크롤바는 강제로 숨기지 않는다 — CLAUDE.md "스크롤바" 결론 참조. */
 
   function updateLoadStatus(){
     if(!currentUrl)return;
@@ -2096,10 +2151,14 @@
       });
       renderStates();
       allViews().forEach(renderView);
+      /* 숨겨지는 단일 셸은 사이트를 놓아 준다(placeholder 로 되돌림 — 네트워크·메모리 중복 방지) */
+      if(changed)loadInto(primaryView);
       updateControls();
       if(settings.announce!==false)announce('다중 비교 모드. 비교 기기 '+compareViews.size+' / '+MAX_COMPARE+'. 왼쪽 목록에서 체크해 추가하거나 해제합니다.');
     }else{
       clearCompareViews();
+      /* 단일 보기로 돌아오면 현재 URL 을 다시 싣는다(기존 loadInto 경로 그대로) */
+      if(changed)loadInto(primaryView);
       renderDeviceNav();
       renderStates();
       updatePreview({announce:false});
@@ -2172,6 +2231,13 @@
         if(deviceId==='custom'&&savedDevice.width&&savedDevice.height)applyCustomSize(savedDevice.width,savedDevice.height,{rotated:restoreRotated,announce:false});
         else if(devices[deviceId])selectDevice(deviceId,savedDevice.stateId,{rotated:restoreRotated,announce:false});
       }
+    }catch(error){}
+  }
+
+  /* 저장된 URL 복원. 보기 모드(단일/다중 비교) 가 정해진 뒤에 실행해야
+   * 비교 모드에서 숨겨질 단일 셸이 사이트를 한 번 요청하는 일이 없다. */
+  function restoreSavedUrl(){
+    try{
       const savedUrl=localStorage.getItem('viewportLabUrl');
       if(savedUrl){
         elements.siteUrl.value=savedUrl;
@@ -2342,5 +2408,6 @@
   updatePreview({announce:false});
   restorePreference();
   restoreComparePreference();
+  restoreSavedUrl();
   registerWebMcpTools();
 })();
