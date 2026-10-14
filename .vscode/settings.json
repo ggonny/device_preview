@@ -1,3 +1,4 @@
 {
-    "liveServer.settings.port": 5501
+    "liveServer.settings.port": 5501,
+    "liveServer.settings.AdvanceCustomBrowserCmdLine": "chrome --enable-features=OverlayScrollbar --user-data-dir=%TEMP%\\device-preview-chrome --no-first-run --no-default-browser-check"
 }

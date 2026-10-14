@@ -395,6 +395,17 @@ svg {
 .switch_address { grid-area: address; }
 .switch_toolbar { grid-area: toolbar; }
 .switch_overlay { grid-area: overlay; }
+/* iOS Safari 실측 viewport 설정 행(Safari 탭 레이아웃 · viewport-fit) — 실측 데이터 기기에서만 3행으로 추가(숨김일 때는 행·간격 자체가 없음) */
+.browser_controls[data-safari="true"] {
+  grid-template-areas:
+    "select  select  position"
+    "address toolbar overlay"
+    "safari  safari  safari";
+}
+.safari_controls { grid-area: safari; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.safari_controls[hidden] { display: none; }
+.safari_controls .position_controls { grid-area: auto; justify-self: auto; }
+.seg_label { padding: 0 4px 0 6px; color: #66718a; font-size: 11px; font-weight: 650; }
 .switch_control { display: inline-flex; align-items: center; gap: 5px; color: #475467; font-size: 12px; font-weight: 650; cursor: pointer; }
 .switch_control input {
   position: relative;
@@ -431,7 +442,7 @@ svg {
   grid-area: tools;
   justify-self: end;
   display: grid;
-  grid-template-columns: repeat(4, minmax(36px, 1fr));
+  grid-template-columns: repeat(5, minmax(36px, 1fr));   /* 1행 아이콘 5개(회전 · safe-area · 가림 검사 · 새로고침 · 새 창) — 2026-10-12 가림 검사 버튼 추가로 4 → 5, 2행 배율 컨트롤은 전체 폭 */
   gap: 6px;
   padding-left: 14px;
   border-left: 1px solid var(--line-color);
@@ -622,8 +633,9 @@ svg {
   position: absolute;
   left: 0;
   top: 0;
-  width: calc(var(--viewport-width) + var(--frame-left, 14px) + var(--frame-right, 14px));
-  height: calc(var(--viewport-height) + var(--frame-top, 14px) + var(--frame-bottom, 14px));
+  /* border-box: 바깥 크기 = 화면 + 좌우(상하) 프레임 + 자신의 border 1px × 2 — border 를 빼먹으면 화면이 오른쪽·아래로 2px 넘쳐 베젤이 13/11 로 비대칭이 된다(2026-10-07 수정) */
+  width: calc(var(--viewport-width) + var(--frame-left, 14px) + var(--frame-right, 14px) + 2px);
+  height: calc(var(--viewport-height) + var(--frame-top, 14px) + var(--frame-bottom, 14px) + 2px);
   padding: var(--frame-top, 14px) var(--frame-right, 14px) var(--frame-bottom, 14px) var(--frame-left, 14px);
   background: var(--ring-finish);
   border: 1px solid var(--ring-edge);
@@ -761,13 +773,14 @@ svg {
 .device_shell[data-family="ipad-modern"] .side_key { background: linear-gradient(#c9ccd1, #7d828a); border-color: #4d525a; }
 .device_shell[data-family="galaxy-tab"] .side_key { background: linear-gradient(#8a8f97, #4a4f57); border-color: #2c3037; }
 .device_shell:not([data-family="neutral"]):not([data-family="ipad-classic"]) .side_key:not(.side_key_extra) { display: block; }
-/* 데이터 기반 키(controls.keys → data-keys="custom"): 목록에 있는 키만, JS 가 넣은 변(data-edge)·시작(--key-start)·길이(--key-length) 로 그린다. 가로 변환은 JS(반시계 규칙) */
+/* 데이터 기반 키(controls.keys → data-keys="custom"): 목록에 있는 키만, JS 가 넣은 변(data-edge)·시작(--key-start)·길이(--key-length) 로 그린다. 가로 변환은 JS(반시계 규칙)
+ * 두께(--key-thick) = 보이는 돌출 + 셸 border 1px. 기본 4px(돌출 3), keys 항목에 protrusion 이 있을 때만 JS 가 넣는다 */
 .device_shell[data-keys="custom"] .side_key:not([data-edge]) { display: none; }
 .device_shell[data-keys="custom"] .side_key[data-edge] { display: block; }
-.device_shell[data-keys="custom"] .side_key[data-edge="right"] { left: auto; right: -4px; top: var(--key-start, 0px); bottom: auto; width: 4px; height: var(--key-length, 40px); }
-.device_shell[data-keys="custom"] .side_key[data-edge="left"] { left: -4px; right: auto; top: var(--key-start, 0px); bottom: auto; width: 4px; height: var(--key-length, 40px); }
-.device_shell[data-keys="custom"] .side_key[data-edge="top"] { top: -4px; bottom: auto; left: var(--key-start, 0px); right: auto; height: 4px; width: var(--key-length, 40px); }
-.device_shell[data-keys="custom"] .side_key[data-edge="bottom"] { bottom: -4px; top: auto; left: var(--key-start, 0px); right: auto; height: 4px; width: var(--key-length, 40px); }
+.device_shell[data-keys="custom"] .side_key[data-edge="right"] { left: auto; right: calc(-1 * var(--key-thick, 4px)); top: var(--key-start, 0px); bottom: auto; width: var(--key-thick, 4px); height: var(--key-length, 40px); }
+.device_shell[data-keys="custom"] .side_key[data-edge="left"] { left: calc(-1 * var(--key-thick, 4px)); right: auto; top: var(--key-start, 0px); bottom: auto; width: var(--key-thick, 4px); height: var(--key-length, 40px); }
+.device_shell[data-keys="custom"] .side_key[data-edge="top"] { top: calc(-1 * var(--key-thick, 4px)); bottom: auto; left: var(--key-start, 0px); right: auto; height: var(--key-thick, 4px); width: var(--key-length, 40px); }
+.device_shell[data-keys="custom"] .side_key[data-edge="bottom"] { bottom: calc(-1 * var(--key-thick, 4px)); top: auto; left: var(--key-start, 0px); right: auto; height: var(--key-thick, 4px); width: var(--key-length, 40px); }
 /* 커넥터 슬롯(controls.port → data-port = 현재 방향의 변): 변 중앙의 어두운 홈 */
 .frame_port { background: #15181d; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); }
 .device_shell[data-port="bottom"] .frame_port { display: block; left: 50%; bottom: -1px; width: var(--port-w, 40px); height: var(--port-h, 3px); transform: translateX(-50%); }
@@ -830,7 +843,7 @@ svg {
   left: var(--frame-left, 0px);              /* .screen_wrap 과 같은 x 기준 → --hinge-position(%) 이 접힘선과 일치 */
   top: -1px;
   width: var(--viewport-width);
-  height: calc(var(--viewport-height) + var(--frame-top, 0px) + var(--frame-bottom, 0px));
+  height: calc(var(--viewport-height) + var(--frame-top, 0px) + var(--frame-bottom, 0px) + 2px);   /* 셸 바깥 위 → 바깥 아래(border 포함) */
   background: none;
 }
 .device_shell[data-hinge-body="seam"] .hinge_body::before, .device_shell[data-hinge-body="seam"] .hinge_body::after {
@@ -851,7 +864,7 @@ svg {
 .device_shell[data-hinge-body="seam"][data-hinge="horizontal"] .hinge_body {
   left: -1px;
   top: var(--frame-top, 0px);
-  width: calc(var(--viewport-width) + var(--frame-left, 0px) + var(--frame-right, 0px));
+  width: calc(var(--viewport-width) + var(--frame-left, 0px) + var(--frame-right, 0px) + 2px);   /* 셸 바깥 왼쪽 → 바깥 오른쪽(border 포함) */
   height: var(--viewport-height);
 }
 .device_shell[data-hinge-body="seam"][data-hinge="horizontal"] .hinge_body::before, .device_shell[data-hinge-body="seam"][data-hinge="horizontal"] .hinge_body::after {
@@ -880,7 +893,7 @@ svg {
   overflow: hidden;
   background: #fff;
   border-radius: var(--screen-tl, 16px) var(--screen-tr, 16px) var(--screen-br, 16px) var(--screen-bl, 16px);   /* 디스플레이 마스크: 상태바·브라우저 UI·iframe 모두 이 안에서 clipping. 듀얼 패널은 JS 가 clip-path(path) 를 덧씌움 */
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, .06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);   /* 화면 경계 하이라이트 — 안쪽에 그려 화면 밖으로 밝은 1px 이 나오지 않게(2026-10-13, 이전 바깥 그림자) */
   transition: width .24s ease, height .24s ease, border-radius .24s ease;
 }
 .screen_wrap[data-platform="android"] { background: #000; }   /* Android 가로 letterbox */
@@ -895,6 +908,17 @@ svg {
   background: #fff;
 }
 .site_view iframe { width: 100%; height: 100%; display: block; background: #fff; border: 0; }
+/* 실측 CSS viewport(app.js state.browserViewport — iPhone 18 Pro Safari): iframe 크기·위치는 실측값(--site-*), 브라우저 UI 밴드는 그리드 행에 그대로 그려져 iframe 위에 놓이는 시각 레이어.
+ * 절대 배치 그리드 자식은 grid-area 를 컨테이너 전체로 잡아야 화면 좌표 기준이 된다 */
+.screen_wrap[data-viewport-model="measured"] .site_view {
+  position: absolute;
+  grid-area: 1 / 1 / -1 / -1;
+  left: var(--site-x, 0px);
+  top: var(--site-y, 0px);
+  width: var(--site-w, 100%);
+  height: var(--site-h, 100%);
+}
+.screen_wrap[data-viewport-model="measured"][data-home-over-site="true"] .band_home { background: transparent; }   /* 가로: 실측 viewport 가 화면 아래 끝까지 → 인디케이터만 콘텐츠 위에 */
 .ui_band {
   position: relative;
   z-index: 3;
@@ -916,13 +940,13 @@ svg {
   align-items: center;
   justify-content: space-between;
   padding: var(--status-pad-top, 0px) var(--status-pad-right, 14px) var(--status-pad-bottom, 0px) var(--status-pad-left, 16px);   /* 상하 padding = 프로필 centerY(세로 중심) 를 밴드 중앙에서 옮기는 값 */
-  --status-ink: #0f172a;   /* 상태바 잉크색(알약 배터리 채움에도 사용) */
+  --status-ink: var(--status-ink-profile, #0f172a);   /* 상태바 잉크색(알약 배터리 채움에도 사용). 프로필 ink 가 있으면 JS 가 --status-ink-profile 로 넣는다(One UI #4a4a4a) */
   color: var(--status-ink);
   font-size: var(--status-font, 16px);
   font-weight: var(--status-weight, 600);
   line-height: 1;
   letter-spacing: var(--status-tracking, -.17px);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: var(--status-numeric, tabular-nums);   /* 프로필 numeric — One UI 시계는 비례 숫자(실기기 캡처에서 "1" 자리만 좁음) */
 }
 .status_time { flex: 0 0 auto; }
 .status_icons { display: flex; align-items: center; gap: var(--status-gap, 5px); flex: 0 0 auto; }
@@ -930,15 +954,21 @@ svg {
 .sb_icon[hidden] { display: none; }
 .icon_cellular rect, .icon_cellular .wedge_fill { fill: currentColor; stroke: none; }
 .icon_cellular .wedge_bg { fill: currentColor; stroke: none; opacity: .28; }
-.icon_wifi path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.icon_wifi .wifi_arcs path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+/* Wi-Fi 변형(data-wifi-style): arcs(표준 Android·범용) · fan(iOS — Apple iOS 26 공식 이미지 실측: 90° 부채꼴을 바깥 띠·가운데 띠·아래 쐐기로 나눈 채움) · oneui(Samsung 공식 사진 실측: 두꺼운 호 3개 + 아래 점) — 하나만 표시 */
+.wifi_arcs, .wifi_fan, .wifi_oneui { display: none; }
+.screen_wrap[data-wifi-style="arcs"] .wifi_arcs, .screen_wrap[data-wifi-style="fan"] .wifi_fan, .screen_wrap[data-wifi-style="oneui"] .wifi_oneui { display: initial; }
+.icon_wifi .wifi_fan path { fill: currentColor; stroke: currentColor; stroke-width: .7; stroke-linejoin: round; }   /* 모서리를 살짝 둥글게(실기기 아이콘) */
+.icon_wifi .wifi_oneui path { fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; }
+.icon_wifi .wifi_oneui circle { fill: currentColor; stroke: none; }
 /* iPhone 상태바 Wi-Fi 호 두께 ≈ 높이의 18% (HIG·SE 공식 이미지 실측) — iPhone 프레임(비 compact·비 fixed ios, 레거시 SE) 에만 */
-.screen_wrap[data-status-platform="ios"]:not([data-status-compact="true"]):not([data-status-fixed="true"]) .icon_wifi path, .screen_wrap[data-status-legacy="true"] .icon_wifi path { stroke-width: 2.2; }
+.screen_wrap[data-status-platform="ios"]:not([data-status-compact="true"]):not([data-status-fixed="true"]) .icon_wifi .wifi_arcs path, .screen_wrap[data-status-legacy="true"] .icon_wifi .wifi_arcs path { stroke-width: 2.2; }
 .battery_body { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .38; }
 .battery_fill { fill: currentColor; stroke: none; }
 .battery_tip { fill: currentColor; stroke: none; opacity: .38; }
-/* 셀룰러 변형: bars(iOS 4막대) · wedge(표준 Android 부채꼴) · bars-thin(One UI 가는 4막대) — 하나만 표시 */
-.cellular_bars, .cellular_wedge, .cellular_bars_thin { display: none; }
-.screen_wrap[data-cellular-style="bars"] .cellular_bars, .screen_wrap[data-cellular-style="wedge"] .cellular_wedge, .screen_wrap[data-cellular-style="bars-thin"] .cellular_bars_thin { display: initial; }
+/* 셀룰러 변형: bars(iOS 4막대) · bars-wide · bars-high(짧은 막대가 높은 iOS 4막대) · wedge(표준 Android 부채꼴) · bars-thin(One UI 가는 4막대) — 하나만 표시 */
+.cellular_bars, .cellular_wedge, .cellular_bars_thin, .cellular_bars_wide, .cellular_bars_high { display: none; }
+.screen_wrap[data-cellular-style="bars"] .cellular_bars, .screen_wrap[data-cellular-style="wedge"] .cellular_wedge, .screen_wrap[data-cellular-style="bars-thin"] .cellular_bars_thin, .screen_wrap[data-cellular-style="bars-wide"] .cellular_bars_wide, .screen_wrap[data-cellular-style="bars-high"] .cellular_bars_high { display: initial; }
 .icon_cellular .cellular_bars_thin rect { fill: currentColor; stroke: none; }
 /* 아이콘별 높이 비율(프로필 batteryScale · cellularScale · wifiScale): 실기기 실측에서 배터리 외곽선이 다른 아이콘보다 조금 크고 Wi-Fi 는 낮다 */
 .icon_battery { height: calc(var(--status-icon-size) * var(--status-battery, 1)); }
@@ -956,8 +986,8 @@ svg {
   background: linear-gradient(to right, var(--status-ink) var(--battery-level, 100%), color-mix(in srgb, var(--status-ink) 28%, transparent) 0);
   color: #fff;   /* 채움 위 숫자 = 밴드 배경색(밝은 상태바) */
   font-size: var(--pill-font, 9.5px);
-  font-weight: 700;
-  letter-spacing: 0;
+  font-weight: 500;
+  letter-spacing: var(--pill-tracking, 0px);   /* 프로필 pill.letterSpacing — Windows 대체 글꼴(Arial Bold) 숫자가 실기기보다 넓어 좁힌다 */
   line-height: 1;
 }
 .status_pill[hidden] { display: none; }
@@ -972,7 +1002,7 @@ svg {
 .screen_wrap[data-status-legacy="true"] .status_percent[hidden] ~ .icon_battery { margin-left: auto; }   /* % 텍스트가 없을 때 배터리를 오른쪽 끝으로 (사이에 .status_pill 이 있어 일반 형제 선택자) */
 /* 고정 크기 상태바(statusBar.fixedSize, iPad): 가로에서도 프로필 글꼴·아이콘 크기 유지. 배터리 % 텍스트는 배터리 아이콘 바로 앞 */
 .screen_wrap[data-status-fixed="true"] .band_status { --status-icon-size: var(--status-icon, 12px); font-size: var(--status-font, 16px); }
-.status_percent { flex: 0 0 auto; font-size: calc(1em * var(--status-percent, .78)); }   /* 프로필 percentScale (iPad Air 재실측: 100% 숫자 = 시간과 동일 크기 → 1) */
+.status_percent { flex: 0 0 auto; font-size: calc(1em * var(--status-percent, .78)); letter-spacing: var(--status-percent-tracking, var(--status-tracking, -.17px)); margin-right: var(--status-percent-trim, 0px); }   /* 프로필 percentScale(iPad Air 재실측: 100% 숫자 = 시간과 동일 크기 → 1) · percentLetterSpacing(iPad Air 자간, 끝 글자 뒤 자간은 margin 으로 상쇄) */
 .status_percent[hidden] { display: none; }
 .band_url { grid-row: 2; display: flex; align-items: center; padding: 6px max(10px, var(--band-pad-right, 0px)) 6px 10px; border-bottom: 1px solid #d5dae2; }   /* --band-pad-right: 밴드 행과 겹치는 측면 컷아웃(Flip8 커버 가로) 회피 */
 .screen_wrap[data-url-position="bottom"] .band_url { grid-row: 4; border-bottom: 0; border-top: 1px solid #d5dae2; }
@@ -1067,6 +1097,53 @@ svg {
   transform: translateX(-50%);
 }
 .screen_wrap[data-platform="android"] .home_indicator { height: 4px; opacity: .7; }
+/* Android 3버튼 내비(data-nav="buttons"): 홈 인디케이터 대신 [최근 앱 · 홈 · 뒤로]. 중심 x = 가운데 ±101(Galaxy S25 RTL 캡처 photo-measured: 78 / 180 / 281 @360).
+ * 세로에서만 그린다(가로 3버튼 배치는 미확인). 하단 컷아웃 옆에 몰리는 기기는 JS 가 --nav-*-x · --nav-bar-height 로 위치를 넣는다(Flip8 커버) */
+.nav_buttons { display: none; }
+.screen_wrap[data-nav="buttons"] .home_indicator { display: none; }
+.device_shell[data-orientation="portrait"] .screen_wrap[data-nav="buttons"] .nav_buttons {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: #4b5563;
+}
+.nav_buttons > span {
+  position: absolute;
+  top: calc(100% - var(--nav-bar-height, 100%) / 2);   /* 기본 = 밴드 가운데 · --nav-bar-height 가 있으면 밴드 아래쪽 그 높이의 가운데 */
+  transform: translate(-50%, -50%);
+}
+.nav_recent {
+  left: var(--nav-recent-x, calc(50% - 101px));
+  width: 14px;
+  height: 14px;
+  border-left: 1.6px solid currentColor;
+  border-right: 1.6px solid currentColor;
+}
+.nav_recent::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1.6px;
+  background: currentColor;
+  transform: translateX(-50%);
+  content: "";
+}
+.nav_home {
+  left: var(--nav-home-x, 50%);
+  width: 15px;
+  height: 15px;
+  border: 1.6px solid currentColor;
+  border-radius: 5px;
+}
+.nav_buttons .nav_back {   /* .nav_buttons > span 의 transform 보다 우선 */
+  left: var(--nav-back-x, calc(50% + 101px));
+  width: 11px;
+  height: 11px;
+  border-bottom: 1.6px solid currentColor;
+  border-left: 1.6px solid currentColor;
+  transform: translate(-10%, -50%) rotate(45deg);   /* 회전한 꺾쇠의 보이는 획 중심을 목표 x(+101) 에 맞춤 */
+}
 
 /* UI 겹침(overlay) 모드: URL 바·툴바가 행을 차지하지 않고 사이트 위에 얹힌다 → iframe 높이 = lvh */
 .screen_wrap[data-ui-mode="overlay"] .band_url, .screen_wrap[data-ui-mode="overlay"] .band_toolbar {
@@ -1323,6 +1400,106 @@ svg {
 .safe_guides .guide_bottom { left: 0; right: 0; bottom: 0; height: var(--safe-bottom, 0px); }
 .safe_guides .guide_left { left: 0; top: 0; bottom: 0; width: var(--safe-left, 0px); }
 .safe_guides .guide_right { right: 0; top: 0; bottom: 0; width: var(--safe-right, 0px); }
+/* 가림 검사 레이어(2026-10-12, 1차 — 단일 보기). safe-area 가이드(빨간 빗금) 와 의미를 나눈다:
+ *   하드웨어 컷아웃 = 빨간 점선(실제 가림) · OS UI 띠 = 파란 실선 · 브라우저 UI 띠 = 파란 점선 · safe-area = 주황 점선 경계(주의)
+ *   겹친 사이트 요소: 실제 가림(하드웨어 · OS · 브라우저) = 주황 실선 · safe-area 만 = 주황 점선(주의)
+ * 좌표는 화면(CSS px) 기준으로 app.js 가 넣는다. pointer-events 없음 — iframe 클릭 · 스크롤 · 링크를 막지 않는다 */
+.occlusion_layer { position: absolute; inset: 0; z-index: 6; display: none; pointer-events: none; }
+.device_shell[data-occlusion="true"] .occlusion_layer { display: block; }
+.occlusion_layer > span { position: absolute; box-sizing: border-box; pointer-events: none; }
+.occlusion_layer .oz_hardware { border: 1.5px dashed var(--danger-color); background: rgba(200, 30, 30, .1); }
+.occlusion_layer .oz_os { border: 1px solid var(--point-color); background: rgba(19, 110, 241, .06); }
+.occlusion_layer .oz_browser { border: 1px dashed var(--point-color); background: rgba(19, 110, 241, .06); }
+.occlusion_layer .oz_safe { border: 1px dashed #b45309; }
+.occlusion_layer .oe_hit { border: 2px solid #ea580c; background: rgba(234, 88, 12, .1); }
+.occlusion_layer .oe_warn { border: 2px dashed #b45309; }
+/* 화면 가장자리에 닿은 변(app.js placeOcclusionBox → data-edge) 은 테두리를 그리지 않는다 — 화면 경계 자체가 그 변이고, 소수 배율에서 경계 픽셀에 걸린 테두리가 베젤 위로 1px 색 줄처럼 보이던 문제 */
+.occlusion_layer [data-edge~="l"] { border-left-width: 0; }
+.occlusion_layer [data-edge~="t"] { border-top-width: 0; }
+.occlusion_layer [data-edge~="r"] { border-right-width: 0; }
+.occlusion_layer [data-edge~="b"] { border-bottom-width: 0; }
+.occlusion_status { min-width: 0; display: inline-flex; align-items: center; gap: 8px; color: #7c2d12; font-weight: 650; }
+.occlusion_status[hidden] { display: none; }
+.occlusion_text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.occlusion_recheck {
+  flex: 0 0 auto;
+  height: 24px;
+  padding: 0 8px;
+  color: #344054;
+  background: #fff;
+  border: 1px solid #bcc5d1;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.occlusion_recheck:hover { background: #f2f5f8; }
+.occlusion_recheck:disabled { color: #8a95a8; background: #f4f6f9; cursor: not-allowed; }
+.occlusion_recheck[hidden] { display: none; }
+/* 겹친 요소 번호(목록 번호와 같음) · 목록에서 고른 요소 강조(굵은 파란 이중 테두리 + 번호, 약 1.8초) */
+.occlusion_layer .oe_num {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  color: #fff;
+  background: #c2410c;
+  font: 700 11px/16px Arial, sans-serif;
+  text-align: center;
+  border-radius: 0 0 4px 0;
+}
+.occlusion_layer .oe_focus { border: 4px solid var(--focus-color); outline: 2px solid #fff; outline-offset: -6px; }   /* 굵은 테두리 + 안쪽 흰 선(음수 outline-offset). 이전 바깥 box-shadow 링은 화면 가장자리에서 밖으로 나갔음 — 이제 모두 요소 rect 안에 그려지고 가장자리 변은 data-edge 로 생략 */
+.occlusion_layer .oe_focus.is_stale { border-style: dashed; }
+.occlusion_layer .oe_focus .oe_num { background: var(--focus-color); }
+/* 가림 요소 목록: 푸터 위에 뜨는 작은 목록(레이아웃 자리를 차지하지 않음) */
+.preview_footer { position: relative; }
+.occlusion_list {
+  position: absolute;
+  right: 14px;
+  bottom: calc(100% + 6px);
+  z-index: 20;
+  width: min(440px, calc(100% - 28px));
+  max-height: 300px;
+  overflow: auto;
+  padding: 8px;
+  color: #344054;
+  background: #fff;
+  border: 1px solid #c5ceda;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .18);
+}
+.occlusion_list[hidden] { display: none; }
+.occlusion_items { margin: 0; padding: 0; list-style: none; }
+.occlusion_items button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 2px 8px;
+  padding: 6px 8px;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+.occlusion_items button:hover { background: #f2f5f8; }
+.occlusion_items button:focus-visible { outline: 3px solid var(--focus-color); outline-offset: -1px; }
+.occlusion_items .oi_num { grid-row: 1 / 3; align-self: start; color: #fff; background: #c2410c; border-radius: 4px; font-weight: 700; text-align: center; line-height: 20px; }
+.occlusion_items .oi_name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: #111827; font-family: ui-monospace, Consolas, monospace; }
+.occlusion_items .oi_meta { color: #536071; }
+.occlusion_list_note { margin: 6px 8px 0; color: #9a3412; font-size: 12px; font-weight: 650; }
+.occlusion_list_note:empty { display: none; }
+.occlusion_copy_box { display: grid; gap: 6px; }
+.occlusion_copy_box[hidden] { display: none; }
+.occlusion_copy_box .occlusion_list_note { margin: 0; }
+.occlusion_copy_box .occlusion_recheck { justify-self: end; }
+.occlusion_copy_text { width: 100%; min-height: 160px; padding: 6px 8px; color: #111827; background: #f8fafc; border: 1px solid #cdd5df; border-radius: 6px; font: 12px/1.5 ui-monospace, Consolas, monospace; resize: vertical; }
+.occlusion_copy_text:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 1px; }
+.occlusion_recheck:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 1px; }
 
 /* ---------- 9. 푸터·안내 ---------- */
 .preview_footer {
@@ -1343,6 +1520,24 @@ svg {
 .load_status.is_loading .status_icon { background: #e4a11b; animation: statusPulse 1s ease-in-out infinite; }
 .load_status.is_loaded .status_icon { background: #16a667; }
 .preview_footer > span { flex: 0 0 auto; color: #5b6778; text-align: right; }
+/* 실행 환경 경고(classic 스크롤바 감지 시에만 표시) — 대비 #7a4b00 / #fff8e6 ≈ 7:1 */
+.env_notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0 0 8px;
+  padding: 7px 12px;
+  color: #7a4b00;
+  background: #fff8e6;
+  border: 1px solid #f0d48f;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.env_notice[hidden] { display: none; }
+.env_notice_link { color: #174d91; font-weight: 650; text-underline-offset: 2px; }
+.env_notice_link:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 2px; border-radius: 3px; }
 .test_notice { margin-top: 12px; background: #fff; border: 1px solid var(--line-color); border-radius: 10px; }
 .test_notice summary { padding: 12px 16px; color: #344054; font-size: 14px; font-weight: 650; cursor: pointer; }
 .test_notice summary::marker { color: var(--point-color); }
@@ -1498,6 +1693,7 @@ svg {
   .size_controls { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; }
   .size_field { width: 100%; }
   .browser_controls { justify-self: stretch; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "select position" "address toolbar" "overlay overlay"; white-space: normal; }
+  .browser_controls[data-safari="true"] { grid-template-areas: "select position" "address toolbar" "overlay overlay" "safari safari"; }
   .browser_select { max-width: 100%; }
   .tool_actions { justify-self: stretch; padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--line-color); }
   .preview_stage { min-height: 460px; padding: 24px; }

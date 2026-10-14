@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<script>
+  /* viewport-fit 모드: ?safe=cover(기본) · ?safe=auto(viewport-fit 없음 = 일반 사이트 기본값).
+   * 파싱 중 document.write 로 meta 를 넣어 첫 레이아웃부터 해당 모드로 계산되게 한다(로드 후 교체하지 않음) */
+  (function(){
+    var m=/[?&]safe=(auto|cover)/.exec(location.search);
+    var mode=m?m[1]:'cover';
+    window.__VIEWPORT_FIT__=mode;
+    document.write('<meta name="viewport" content="width=device-width, initial-scale=1'+(mode==='cover'?', viewport-fit=cover':'')+'">');
+  })();
+</script>
+<title>Safari viewport 측정</title>
+<style>
+  /* 실기기 Safari 의 CSS viewport · safe-area 값을 수집하는 독립 측정 페이지 (Device Preview 본체와 무관) */
+  * { box-sizing: border-box; }
+  /* 모바일 폭 넘침 방지: 폼 컨트롤의 기본 최소 폭(약 230px) 이 grid 열을 밀어 페이지가 viewport 보다 넓어지면 Safari 가 축소 표시(scale < 1)해 측정값이 오염된다 */
+  html, body { margin: 0; padding: 0; }
+  body {
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    color: #111827;
+    background: #f3f4f6;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap {
+    padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 12px) 24px calc(env(safe-area-inset-left) + 12px);
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 18px 0 6px; }
+  p { margin: 4px 0; }
+  .muted { color: #4b5563; font-size: 13px; }
+  .wrap > *, .card > * { min-width: 0; }
+  .card {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 10px 0;
+  }
+  .form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .form > * { min-width: 0; }
+  .form label { display: flex; flex-direction: column; font-size: 12px; color: #374151; gap: 2px; min-width: 0; }
+  .form .full { grid-column: 1 / -1; }
+  input, select, textarea {
+    font: inherit;
+    font-size: 16px;
+    padding: 6px 8px;
+    border: 1px solid #9ca3af;
+    border-radius: 6px;
+    background: #fff;
+    color: #111827;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  textarea { min-height: 44px; resize: vertical; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .buttons button { min-width: 0; max-width: 100%; }
+  button {
+    font: inherit;
+    font-size: 15px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid #1d4ed8;
+    background: #2563eb;
+    color: #fff;
+  }
+  button.secondary { background: #fff; color: #1d4ed8; }
+  button.danger { background: #fff; color: #b91c1c; border-color: #b91c1c; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 6px 10px; }
+  .grid > * { min-width: 0; }
+  .kv { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed #e5e7eb; padding: 2px 0; }
+  .kv span { min-width: 0; overflow-wrap: anywhere; }
+  .kv span:first-child { color: #374151; font-size: 12px; }
+  .kv span:last-child { text-align: right; }
+  .num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; font-weight: 600; }
+  .group-title { font-size: 12px; font-weight: 700; color: #1f2937; margin: 8px 0 2px; grid-column: 1 / -1; }
+  .checklist li { margin: 2px 0; }
+  .log {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: #111827;
+    color: #e5e7eb;
+    border-radius: 8px;
+    padding: 8px;
+    max-height: 50vh;
+    max-width: 100%;
+    overflow: auto;
+    overflow-wrap: anywhere;
+  }
+  .status { font-size: 13px; color: #065f46; min-height: 1.2em; }
+  /* 스크롤 중에도 보이는 작은 실시간 표시(화면 가림 최소화, 접기 가능) */
+  .mini {
+    position: fixed;
+    right: calc(env(safe-area-inset-right) + 6px);
+    top: calc(env(safe-area-inset-top) + 6px);
+    z-index: 10;
+    background: rgba(17, 24, 39, .82);
+    color: #fff;
+    border-radius: 8px;
+    padding: 4px 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.35;
+    max-width: 52vw;
+  }
+  .mini button { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 5px; }
+  .mini.is_folded .mini_body { display: none; }
+  /* 화면상 viewport 경계 marker: layout viewport 의 위·아래 끝에 고정(스크린샷으로 실제 화면 위치 확인용). 문서 흐름·측정값에 영향 없음 */
+  .marker { position: fixed; left: 0; right: 0; height: 5px; z-index: 20; pointer-events: none; }
+  .marker_top { top: 0; background: #ef4444; }
+  .marker_bottom { bottom: 0; background: #2563eb; }
+  .mode { display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+  .mode_links { font-size: 13px; margin: 6px 0 0; overflow-wrap: anywhere; }
+  .mode_links a { color: #1d4ed8; }
+  /* 측정용 숨은 probe (레이아웃에 영향 없음) */
+  .probe { position: fixed; left: 0; top: 0; width: 1px; visibility: hidden; pointer-events: none; }
+  .probe_safe { position: fixed; left: 0; top: 0; width: 0; height: 0; visibility: hidden; pointer-events: none;
+    padding-top: env(safe-area-inset-top); padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); }
+  /* 스크롤용 긴 영역 */
+  .ruler { margin-top: 20px; }
+  .ruler div { height: 100px; border-top: 1px solid #cbd5e1; font-size: 12px; color: #6b7280; padding-left: 4px; }
+  .ruler div:nth-child(5n) { border-top-color: #64748b; color: #111827; font-weight: 600; }
+  @media (orientation: landscape) {
+    .form { grid-template-columns: repeat(4, 1fr); }
+    .form .full { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<div class="marker marker_top" aria-hidden="true"></div>
+<div class="marker marker_bottom" aria-hidden="true"></div>
+<!-- 측정 probe -->
+<div class="probe" id="pVh" style="height:100vh"></div>
+<div class="probe" id="pDvh"></div>
+<div class="probe" id="pSvh"></div>
+<div class="probe" id="pLvh"></div>
+<div class="probe_safe" id="pSafe"></div>
+
+<div class="mini" id="mini">
+  <div class="mini_body" id="miniBody">…</div>
+  <button type="button" id="miniRecord">기록</button>
+  <button type="button" class="secondary" id="miniFold">접기</button>
+</div>
+
+<div class="wrap">
+  <h1>Safari viewport 측정</h1>
+  <p><span class="mode" id="modeLabel">viewport-fit: …</span></p>
+  <p class="mode_links">모드 바꾸기: <a id="linkCover" href="?safe=cover">cover 로 열기</a> · <a id="linkAuto" href="?safe=auto">default(auto) 로 열기</a> — 화면 맨 위 <strong style="color:#ef4444">빨간 띠</strong> = viewport 위 끝, 맨 아래 <strong style="color:#2563eb">파란 띠</strong> = viewport 아래 끝</p>
+  <p class="muted">Device Preview 의 Safari 브라우저 UI 높이를 실기기 값으로 확인하기 위한 독립 페이지입니다. 각 상태에서 "현재 값 기록" 을 누르고, 끝나면 "결과 복사" 로 전달해 주세요.</p>
+
+  <div class="card">
+    <div class="form">
+      <label>기기명<input id="fDevice" placeholder="예: iPhone 17 Pro" autocomplete="off"></label>
+      <label>OS 버전<input id="fOs" placeholder="예: iOS 26.1" autocomplete="off"></label>
+      <label>Safari 레이아웃
+        <select id="fLayout">
+          <option>Compact</option>
+          <option>Bottom</option>
+          <option>Top</option>
+          <option>기타</option>
+        </select>
+      </label>
+      <label>상태 메모(이번 기록)
+        <select id="fState">
+          <option>처음 진입</option>
+          <option>UI 펼침</option>
+          <option>UI 축소(스크롤 후)</option>
+          <option>다시 위로</option>
+          <option>기타</option>
+        </select>
+      </label>
+      <label class="full">메모<textarea id="fMemo" placeholder="예: 다크 모드, 탭 2개 열림 등"></textarea></label>
+    </div>
+    <div class="buttons">
+      <button type="button" id="btnRecord">현재 값 기록</button>
+      <button type="button" class="secondary" id="btnCopy">결과 복사</button>
+      <button type="button" class="danger" id="btnClear">기록 지우기</button>
+    </div>
+    <p class="status" id="status" role="status"></p>
+  </div>
+
+  <div class="card">
+    <div class="grid" id="live"></div>
+  </div>
+
+  <div class="card">
+    <h2>측정 체크리스트</h2>
+    <p class="muted">각 상태에서 화면이 멈춘 뒤 "현재 값 기록"(또는 오른쪽 위 작은 패널의 "기록") 을 누르세요. 위의 "Safari 레이아웃" · "상태 메모" 를 먼저 맞춰 두면 기록에 함께 저장됩니다.</p>
+    <p><strong>iPhone 17 Pro · Safari Compact</strong> — 각 상태에서 ① "현재 값 기록" ② 위 빨간 띠와 아래 파란 띠가 함께 보이게 스크린샷</p>
+    <p><strong>[viewport-fit cover]</strong> (<code>?safe=cover</code>)</p>
+    <ul class="checklist">
+      <li>세로 · 처음 진입(페이지 맨 위)</li>
+      <li>세로 · 아래로 스크롤해 Safari UI 가 줄어든 상태</li>
+      <li>가로 · 처음 진입(맨 위로 돌아간 뒤 회전)</li>
+      <li>가로 · 스크롤 상태</li>
+    </ul>
+    <p><strong>[viewport-fit auto]</strong> (<code>?safe=auto</code>) — 위 4개를 똑같이 반복</p>
+    <p class="muted">상태 메모를 상태에 맞게 바꾼 뒤 기록하세요. 모드는 기록에 viewportFit 으로 자동 저장됩니다. 가능하면 Bottom · Top 레이아웃도 같은 순서로 반복.</p>
+    <p><strong>iPad</strong></p>
+    <ul class="checklist">
+      <li>세로 · Safari UI(탭 바/주소) 표시 상태</li>
+      <li>가로 · Safari UI 표시 상태</li>
+      <li>스크롤 후 UI 가 바뀌면 그 상태도 기록</li>
+    </ul>
+    <p><strong>iPhone SE</strong></p>
+    <ul class="checklist">
+      <li>세로 · 처음 진입 / 스크롤 후</li>
+      <li>가로 · 처음 진입 / 스크롤 후</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>기록 (<span id="count">0</span>개)</h2>
+    <div class="log" id="log">아직 기록이 없습니다.</div>
+  </div>
+
+  <p class="muted">아래는 스크롤 확인용 눈금입니다(100px 간격). 아래로 스크롤해 Safari UI 가 줄어드는지 확인하세요.</p>
+  <div class="ruler" id="ruler"></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var STORE='safariMeasureSnapshots';
+  var $=function(id){return document.getElementById(id);};
+  var FIT=window.__VIEWPORT_FIT__||'cover';
+  var snaps=[];
+  try{snaps=JSON.parse(localStorage.getItem(STORE)||'[]')||[];}catch(e){snaps=[];}
+
+  /* 현재 viewport-fit 모드 표시와 모드 전환 링크(같은 경로) */
+  $('modeLabel').textContent=FIT==='cover'?'viewport-fit: cover':'viewport-fit: default(auto)';
+  $('linkCover').href=location.pathname+'?safe=cover';
+  $('linkAuto').href=location.pathname+'?safe=auto';
+  /* 지원하는 단위만 probe 에 적용, 아니면 unsupported */
+  var units={dvh:'pDvh',svh:'pSvh',lvh:'pLvh'};
+  var supported={vh:true};
+  Object.keys(units).forEach(function(u){
+    var ok=window.CSS&&CSS.supports&&CSS.supports('height','100'+u);
+    supported[u]=!!ok;
+    if(ok)$(units[u]).style.height='100'+u;
+  });
+
+  /* 눈금(스크롤용 긴 페이지) */
+  var ruler=$('ruler'),html='';
+  for(var i=1;i<=50;i++)html+='<div>'+(i*100)+'px</div>';
+  ruler.innerHTML=html;
+
+  function r2(v){return (typeof v==='number'&&isFinite(v))?Math.round(v*100)/100:v;}
+  function px(v){var n=parseFloat(v);return isFinite(n)?r2(n):'unsupported';}
+  function orientationName(){
+    var t=(screen.orientation&&screen.orientation.type)||'';
+    var byMedia=window.matchMedia('(orientation: landscape)').matches?'landscape':'portrait';
+    return t?(byMedia+' ('+t+')'):byMedia;
+  }
+
+  function collect(){
+    var vv=window.visualViewport;
+    var cs=getComputedStyle($('pSafe'));
+    var h=function(id){return r2($(id).getBoundingClientRect().height);};
+    return {
+      viewportFit:FIT,
+      orientation:orientationName(),
+      viewport:{
+        innerWidth:r2(window.innerWidth),innerHeight:r2(window.innerHeight),
+        clientWidth:r2(document.documentElement.clientWidth),clientHeight:r2(document.documentElement.clientHeight)
+      },
+      visualViewport:vv?{
+        width:r2(vv.width),height:r2(vv.height),offsetTop:r2(vv.offsetTop),offsetLeft:r2(vv.offsetLeft),
+        pageTop:r2(vv.pageTop),pageLeft:r2(vv.pageLeft),scale:r2(vv.scale)
+      }:'unsupported',
+      screen:{width:screen.width,height:screen.height,availWidth:screen.availWidth,availHeight:screen.availHeight},
+      devicePixelRatio:r2(window.devicePixelRatio),
+      scrollY:r2(window.scrollY),
+      units:{
+        '100vh':h('pVh'),
+        '100dvh':supported.dvh?h('pDvh'):'unsupported',
+        '100svh':supported.svh?h('pSvh'):'unsupported',
+        '100lvh':supported.lvh?h('pLvh'):'unsupported'
+      },
+      safeArea:{top:px(cs.paddingTop),right:px(cs.paddingRight),bottom:px(cs.paddingBottom),left:px(cs.paddingLeft)}
+    };
+  }
+
+  function info(){
+    return {device:$('fDevice').value,os:$('fOs').value,layout:$('fLayout').value,state:$('fState').value,memo:$('fMemo').value,userAgent:navigator.userAgent};
+  }
+
+  function kv(label,val){return '<div class="kv"><span>'+label+'</span><span class="num">'+val+'</span></div>';}
+  function render(){
+    var d=collect(),vv=d.visualViewport,o='';
+    o+='<div class="group-title">상태</div>'+kv('viewport-fit',d.viewportFit)+kv('orientation',d.orientation)+kv('devicePixelRatio',d.devicePixelRatio)+kv('scrollY',d.scrollY);
+    o+='<div class="group-title">window / documentElement</div>';
+    o+=kv('innerWidth',d.viewport.innerWidth)+kv('innerHeight',d.viewport.innerHeight)+kv('clientWidth',d.viewport.clientWidth)+kv('clientHeight',d.viewport.clientHeight);
+    o+='<div class="group-title">visualViewport</div>';
+    if(vv==='unsupported')o+=kv('visualViewport','unsupported');
+    else o+=kv('width',vv.width)+kv('height',vv.height)+kv('offsetTop',vv.offsetTop)+kv('offsetLeft',vv.offsetLeft)+kv('pageTop',vv.pageTop)+kv('pageLeft',vv.pageLeft)+kv('scale',vv.scale);
+    o+='<div class="group-title">CSS 단위 (실제 px)</div>';
+    Object.keys(d.units).forEach(function(k){o+=kv(k,d.units[k]);});
+    o+='<div class="group-title">safe-area (env)</div>';
+    o+=kv('top',d.safeArea.top)+kv('right',d.safeArea.right)+kv('bottom',d.safeArea.bottom)+kv('left',d.safeArea.left);
+    o+='<div class="group-title">screen</div>';
+    o+=kv('width',d.screen.width)+kv('height',d.screen.height)+kv('availWidth',d.screen.availWidth)+kv('availHeight',d.screen.availHeight);
+    $('live').innerHTML=o;
+    var vvh=vv==='unsupported'?'-':vv.height;
+    $('miniBody').innerHTML=d.viewportFit+' · '+(d.orientation.indexOf('landscape')===0?'가로':'세로')+' · y '+d.scrollY+'<br>inner '+d.viewport.innerWidth+'×'+d.viewport.innerHeight+'<br>vv h '+vvh+'<br>svh '+d.units['100svh']+' · lvh '+d.units['100lvh']+'<br>dvh '+d.units['100dvh']+'<br>safe '+d.safeArea.top+'/'+d.safeArea.bottom;
+  }
+
+  var pending=false;
+  function schedule(){if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;render();});}
+
+  function save(){try{localStorage.setItem(STORE,JSON.stringify(snaps));}catch(e){}}
+  function renderLog(){
+    $('count').textContent=snaps.length;
+    $('log').textContent=snaps.length?JSON.stringify(snaps,null,1):'아직 기록이 없습니다.';
+  }
+  function setStatus(t){$('status').textContent=t;clearTimeout(setStatus.t);setStatus.t=setTimeout(function(){$('status').textContent='';},4000);}
+
+  function record(){
+    var now=new Date();
+    var snap=Object.assign({index:snaps.length+1,time:now.toISOString(),localTime:now.toLocaleString()},info(),collect());
+    snaps.push(snap);save();renderLog();
+    setStatus(snap.index+'번 기록: '+snap.viewportFit+' · '+snap.orientation+' · '+snap.layout+' · '+snap.state);
+  }
+
+  function copy(){
+    var text=JSON.stringify({page:'safari-measure',count:snaps.length,snapshots:snaps},null,2);
+    var done=function(){setStatus('결과를 클립보드에 복사했습니다 ('+snaps.length+'개).');};
+    var fallback=function(){
+      var ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.top='0';ta.style.left='0';ta.style.opacity='0';
+      document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,text.length);
+      var ok=false;try{ok=document.execCommand('copy');}catch(e){ok=false;}
+      document.body.removeChild(ta);
+      if(ok)done();else{$('log').textContent=text;setStatus('자동 복사가 막혀 기록 영역에 전체 결과를 표시했습니다. 길게 눌러 직접 복사해 주세요.');}
+    };
+    if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(done,fallback);else fallback();
+  }
+
+  function clearAll(){if(!snaps.length)return;if(!confirm('기록 '+snaps.length+'개를 모두 지울까요?'))return;snaps=[];save();renderLog();setStatus('기록을 지웠습니다.');}
+
+  /* 입력값 기억(페이지를 다시 열어도 유지) */
+  ['fDevice','fOs','fLayout','fState','fMemo'].forEach(function(id){
+    var el=$(id),key='safariMeasure_'+id;
+    try{var v=localStorage.getItem(key);if(v!==null)el.value=v;}catch(e){}
+    el.addEventListener('change',function(){try{localStorage.setItem(key,el.value);}catch(e){}});
+  });
+
+  $('btnRecord').addEventListener('click',record);
+  $('miniRecord').addEventListener('click',record);
+  $('btnCopy').addEventListener('click',copy);
+  $('btnClear').addEventListener('click',clearAll);
+  $('miniFold').addEventListener('click',function(){var m=$('mini');m.classList.toggle('is_folded');this.textContent=m.classList.contains('is_folded')?'펼치기':'접기';});
+
+  window.addEventListener('resize',schedule);
+  window.addEventListener('scroll',schedule,{passive:true});
+  window.addEventListener('orientationchange',function(){setTimeout(render,300);});
+  if(window.visualViewport){visualViewport.addEventListener('resize',schedule);visualViewport.addEventListener('scroll',schedule);}
+
+  render();renderLog();
+})();
+</script>
+</body>
+</html>
