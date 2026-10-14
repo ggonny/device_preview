@@ -49,6 +49,9 @@
     neutral:{family:'neutral',top:14,right:14,bottom:14,left:14,ring:4,radius:{ratio:.09},screenRadius:{ratio:.05},platform:'any',obstruction:'없음',
       cutout:{type:'none'},safeArea:{top:0,right:0,bottom:0,left:0},homeIndicator:false,
       source:{body:'approximation: 범용 프리셋(실기기 아님)',bezel:'approximation',radius:'approximation',screenRadius:'approximation',cutout:'n/a',controls:'n/a',statusBar:'n/a'}},
+    'neutral-tablet':{family:'neutral',top:14,right:14,bottom:14,left:14,ring:4,radius:32,screenRadius:18,platform:'any',obstruction:'없음',
+      cutout:{type:'none'},safeArea:{top:0,right:0,bottom:0,left:0},homeIndicator:false,
+      source:{body:'approximation: 범용 프리셋(실기기 아님)',bezel:'approximation',radius:'approximation(2026-10-14): Breakpoint 테스트 768 tablet 전용 — 범용 neutral 의 ratio .09(768 기준 69) 는 태블릿보다 큰 스마트폰처럼 보여 32 로 줄임. 화면 18 과 동심(바디 − 화면 = 14 = frame), glassRadius 미지정 → 바디 − 링 = 28 · 실기기 아님(iPad Air 67.5 / 18 · Tab S11 50 / 16 는 베젤이 훨씬 두꺼운 실기기 값이라 그대로 준용하지 않음)',screenRadius:'approximation(2026-10-14): 18 — 이전 ratio .05(768 기준 38.4)',cutout:'n/a',controls:'n/a',statusBar:'n/a'}},
 
     /* iPhone 12/13/14 (390×844): 바디 146.7×71.5mm(Apple), 활성영역 64.6×139.8mm(6.06" 2532×1170) → 6.04px/mm */
     'iphone-notch':{family:'iphone-modern',top:21,right:21,bottom:21,left:21,ring:8,radius:66,screenRadius:47,platform:'ios',obstruction:'상단 노치',
@@ -417,7 +420,7 @@
       frame:'neutral',browser:'none',dpr:3,states:[{id:'default',label:'기본',width:360,height:800,diagonal:6.1,physicalWidth:1080,physicalHeight:2400}]},
     /* 768px Tablet 경계 768×1024 — 실기기가 아닌 breakpoint 프리셋(767 ↔ 768px 전환 점검). 외형은 neutral 프레임(가림·컷아웃 없음), 가로 1024×768 은 회전으로 처리. 예전 iPad 9.7형 [레거시] 프리셋(ipad-home) 은 2026-09-22 제거(저장값은 deviceAliases 로 이 프리셋에 매핑). */
     'tablet-generic-768':{name:'768px Tablet 경계',group:'base',subtitle:'767 ↔ 768px breakpoint 전환 점검',note:'768 × 1024 가상 CSS 화면(실기기 아님) · 기본은 브라우저 UI 없이 iframe 뷰포트 = 768 × 1024 (회전 1024 × 768) · 767 ↔ 768px breakpoint 전환 점검',source:'approximation: 범용 프리셋(실기기 아님) — 768 × 1024 CSS · DPR 2 · 9.7형 상당 대각선은 실기기 배율 참고용',
-      frame:'neutral',browser:'none',dpr:2,states:[{id:'default',label:'기본',width:768,height:1024,diagonal:9.7,physicalWidth:1536,physicalHeight:2048}]},
+      frame:'neutral-tablet',browser:'none',dpr:2,states:[{id:'default',label:'기본',width:768,height:1024,diagonal:9.7,physicalWidth:1536,physicalHeight:2048}]},
     /* 대표 모델 = iPhone SE (3세대, 2022). 2세대(2020) 와 바디·4.7" 1334×750·CSS 375×667·홈 버튼 구조가 같아 외형/뷰포트 테스트 목적에서는 중복이라 별도 프리셋을 두지 않는다(공식 이미지·상태바 검증 자료가 2022년 SE 기준). */
     'iphone-se':{name:'iPhone SE (3세대)',group:'phone',subtitle:'홈 버튼형 · 2022',note:'홈 버튼·상하단 베젤을 포함한 iPhone SE (3세대) 프레임 — 2세대와 외형·해상도 동일',source:'official: iPhone SE (3세대, 2022) 4.7" 1334 × 750 326ppi, DPR 2 · 바디 138.4 × 67.3mm (Apple tech specs 111866) · 2세대(2020) 도 동일 수치라 대표 모델로 3세대만 등록',
       frame:'iphone-se',browser:'ios-safari',dpr:2,states:[{id:'default',label:'기본',width:375,height:667,diagonal:4.7,physicalWidth:750,physicalHeight:1334}]},
