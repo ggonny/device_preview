@@ -6,39 +6,18 @@
   <meta name="description" content="사이트를 여러 모바일·폴더블 CSS 뷰포트에서 확인하는 반응형 퍼블리싱 테스트 도구">
   <meta name="theme-color" content="#111827">
   <title>반응형 테스트랩</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111827'/%3E%3Crect x='17' y='10' width='30' height='44' rx='7' fill='none' stroke='%236ee7f9' stroke-width='4'/%3E%3Cpath d='M25 17h14M28 47h8' stroke='%236ee7f9' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <a class="skip_link" href="#previewMain">미리보기 영역으로 건너뛰기</a>
   <div class="app_shell">
-    <header class="app_header">
-      <div class="brand_wrap">
-        <span class="brand_mark" aria-hidden="true"><span></span></span>
-        <div>
-          <h1>반응형 테스트랩</h1>
-          <p>CSS 뷰포트 기준 퍼블리싱 점검</p>
-        </div>
-      </div>
-      <form class="site_form" id="siteForm" novalidate>
-        <label class="sr_only" for="siteUrl">테스트할 사이트 주소</label>
-        <span class="url_icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        </span>
-        <input type="url" id="siteUrl" placeholder="https://example.com" autocomplete="url" spellcheck="false" aria-describedby="urlHelp urlError">
-        <button type="submit" class="btn_primary">사이트 열기</button>
-      </form>
-      <p class="sr_only" id="urlHelp">주소에 프로토콜이 없으면 HTTPS로 연결합니다.</p>
-      <p class="form_error" id="urlError" role="alert" hidden></p>
-    </header>
-
     <div class="workspace">
       <aside class="device_panel" aria-labelledby="deviceTitle">
+        <!-- 좌측 패널 머리 = 제품명(이전 상단 header 의 브랜드). 패널 이름 "테스트 기기" 는 aside 의 접근성 이름으로만 유지 -->
         <div class="panel_head">
-          <div>
-            <h2 id="deviceTitle">테스트 기기</h2>
-            <p>반응형 점검용 CSS 뷰포트</p>
-          </div>
+          <h1 class="brand_name">Device Preview</h1>
+          <h2 class="sr_only" id="deviceTitle">테스트 기기</h2>
           <span class="device_count" id="deviceCount">0</span>
         </div>
         <!-- 보기 모드: 단일 보기(버튼 목록) / 다중 비교(체크박스 목록, 최대 4개) -->
@@ -53,6 +32,19 @@
       </aside>
 
       <main class="preview_main" id="previewMain">
+        <!-- 작업 영역 첫 줄 = 사이트 주소(이전 상단 header 의 URL 폼). 오류 문구는 이 줄 아래에 뜬다 -->
+        <div class="site_bar">
+          <form class="site_form" id="siteForm" novalidate>
+            <label class="sr_only" for="siteUrl">테스트할 사이트 주소</label>
+            <span class="url_icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </span>
+            <input type="url" id="siteUrl" placeholder="https://example.com" autocomplete="url" spellcheck="false" aria-describedby="urlHelp urlError">
+            <button type="submit" class="btn_primary">사이트 열기</button>
+          </form>
+          <p class="sr_only" id="urlHelp">주소에 프로토콜이 없으면 HTTPS로 연결합니다.</p>
+          <p class="form_error" id="urlError" role="alert" hidden></p>
+        </div>
         <!-- 실행 환경 경고: 부모 문서의 classic 스크롤바 폭이 0 이 아닐 때만 JS 가 hidden 해제(정상 overlay 환경에서는 공간 없음) -->
         <p class="env_notice" id="envNotice" role="status" hidden>
           <span id="envNoticeText"></span>
@@ -73,7 +65,9 @@
             <div class="state_list" id="stateList"><span class="state_single">단일 화면</span></div>
           </fieldset>
 
-          <div class="size_controls">
+          <!-- 그룹 제목(.ctrl_title) 은 시각 표시용 — 그룹 이름은 role="group" 의 aria-label 이 전달하므로 aria-hidden 으로 중복 낭독을 막는다 -->
+          <div class="size_controls" role="group" aria-label="화면">
+            <span class="ctrl_title" aria-hidden="true">화면</span>
             <div class="size_field">
               <label for="viewportWidth">화면 너비</label>
               <input type="number" id="viewportWidth" min="240" max="2560" step="1" value="390" inputmode="numeric">
@@ -89,26 +83,39 @@
           </div>
 
           <!-- 브라우저 UI: 1행 브라우저 선택 · 주소창 위치, 2행 주소창 · 툴바 · UI 겹침 (grid-area 로 배치, DOM 순서는 탭 순서) -->
-          <div class="browser_controls" role="group" aria-label="브라우저 UI 표시">
+          <div class="browser_controls" role="group" aria-label="브라우저">
+            <span class="ctrl_title" aria-hidden="true">브라우저</span>
             <label class="sr_only" for="browserSelect">브라우저 종류</label>
             <select class="browser_select" id="browserSelect"></select>
-            <label class="switch_control switch_address">
-              <input type="checkbox" id="addressBarToggle" checked>
-              <span>주소창</span>
-            </label>
-            <fieldset class="position_controls" id="urlPositionControls">
-              <legend class="sr_only">주소창 위치 (세로 모드)</legend>
-              <label><input type="radio" name="urlPosition" value="top"><span>상단</span></label>
-              <label><input type="radio" name="urlPosition" value="bottom" checked><span>하단</span></label>
-            </fieldset>
-            <label class="switch_control switch_toolbar">
-              <input type="checkbox" id="bottomBarToggle" checked>
-              <span>툴바</span>
-            </label>
-            <label class="switch_control switch_overlay" title="브라우저 UI를 콘텐츠 위에 겹쳐 100vh·하단 고정 요소 가림을 확인합니다">
-              <input type="checkbox" id="uiOverlayToggle" aria-describedby="overlayHelp">
-              <span>UI 겹침</span>
-            </label>
+            <!-- Safari(macOS) 버전: MacBook 에서 데스크톱 Safari 를 고른 경우에만 표시. "Safari 호환성 검사" 의 기준 버전이며, 미리보기 렌더링 엔진(Chrome) 은 바뀌지 않는다 -->
+            <div class="safari_version" id="safariVersionRow" hidden>
+              <label class="seg_label" for="safariVersion">Safari 버전</label>
+              <select class="safari_version_select" id="safariVersion" title="Safari 호환성 검사 기준 버전 — CSS 지원 데이터(MDN) 를 이 버전으로 비교합니다. 미리보기 렌더링은 Chrome 그대로입니다"></select>
+            </div>
+            <!-- 브라우저 설정 버튼: MacBook + Safari(macOS) 에서만 보인다(CSS). 아래 .browser_settings 를 popover 로 연다 -->
+            <button type="button" class="browser_settings_btn" id="browserSettingsBtn" aria-expanded="false" aria-controls="browserSettings">
+              <svg aria-hidden="true"><use href="#icon-sliders"></use></svg><span>설정</span>
+            </button>
+            <!-- 주소창 · 위치 · 툴바 · UI 겹침. 평소에는 display: contents 라 그룹 그리드에 그대로 배치되고, MacBook + Safari 에서만 같은 요소가 popover 로 보인다(컨트롤 복제 없음) -->
+            <div class="browser_settings" id="browserSettings" role="group" aria-label="브라우저 설정">
+              <label class="switch_control switch_address">
+                <input type="checkbox" id="addressBarToggle" checked>
+                <span>주소창</span>
+              </label>
+              <fieldset class="position_controls" id="urlPositionControls">
+                <legend class="sr_only">주소창 위치 (세로 모드)</legend>
+                <label><input type="radio" name="urlPosition" value="top"><span>상단</span></label>
+                <label><input type="radio" name="urlPosition" value="bottom" checked><span>하단</span></label>
+              </fieldset>
+              <label class="switch_control switch_toolbar">
+                <input type="checkbox" id="bottomBarToggle" checked>
+                <span>툴바</span>
+              </label>
+              <label class="switch_control switch_overlay" title="브라우저 UI를 콘텐츠 위에 겹쳐 100vh·하단 고정 요소 가림을 확인합니다">
+                <input type="checkbox" id="uiOverlayToggle" aria-describedby="overlayHelp">
+                <span>UI 겹침</span>
+              </label>
+            </div>
             <span class="sr_only" id="overlayHelp">켜면 주소창과 툴바가 사이트 영역을 줄이지 않고 콘텐츠 위에 겹쳐 표시되어 100vh 기준 하단 가림을 확인할 수 있습니다.</span>
             <!-- iOS Safari 실측 viewport 설정: 실측 데이터가 있는 기기(iPhone 18 Pro + Safari) 에서만 표시. iframe 크기 계산에만 쓰이며 대상 사이트의 meta viewport 를 바꾸지 않는다 -->
             <div class="safari_controls" id="safariControls" hidden>
@@ -129,7 +136,8 @@
 
           <!-- 아이콘 규칙: 24×24 viewBox · 전역 svg 스타일(outline, stroke 1.8, currentColor) · aria-hidden, 의미는 버튼 aria-label 이 전달.
                경로는 body 끝의 SVG sprite(<symbol>) 에 한 번만 정의하고 <use> 로 참조 (다중 비교 카드와 공유) -->
-          <div class="tool_actions">
+          <div class="tool_actions" role="group" aria-label="도구">
+            <span class="ctrl_title" aria-hidden="true">도구</span>
             <button type="button" class="icon_btn" id="rotateBtn" aria-label="가로·세로 회전" aria-pressed="false" title="가로·세로 회전">
               <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rotate"/></svg>
             </button>
@@ -140,9 +148,21 @@
             <button type="button" class="icon_btn" id="occlusionBtn" aria-label="가림 검사" aria-pressed="false" title="가림 검사 — 위험 영역 표시 · fixed / sticky 요소 겹침 자동 검사(같은 출처 페이지만)">
               <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-occlusion"/></svg>
             </button>
+            <!-- Safari 호환성 검사(2026-10-15, 가림 검사와 별개): 같은 출처 페이지의 CSS 를 선택한 Safari 버전의 지원 데이터(MDN browser-compat-data) 와 비교. 데스크톱 Safari(MacBook) 단일 보기에서만 사용 -->
+            <button type="button" class="icon_btn compat_btn" id="compatBtn" aria-label="Safari 호환성 검사" aria-pressed="false" title="Safari 호환성 검사 — MacBook 에서 Safari 를 고르면 사용할 수 있습니다" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-compat"/></svg>
+            </button>
             <button type="button" class="icon_btn" id="refreshBtn" aria-label="미리보기 새로고침" title="미리보기 새로고침" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-refresh"/></svg>
             </button>
+            <a class="icon_btn is_disabled" id="openLink" href="#" target="_blank" rel="noopener noreferrer" aria-label="사이트를 새 창에서 열기" title="사이트를 새 창에서 열기" aria-disabled="true" tabindex="-1">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-external"/></svg>
+            </a>
+          </div>
+
+          <!-- 보기 그룹: 표시 배율(도구 그룹 다음 → 탭 순서 도구 → 보기) -->
+          <div class="view_controls" role="group" aria-label="보기">
+            <span class="ctrl_title" aria-hidden="true">보기</span>
             <!-- 표시 배율: 기기 프레임 전체의 시각적 배율(transform: scale) 만 바꾼다. iframe CSS 뷰포트·미디어 쿼리·DPR 은 변하지 않는다.
                  100% = 기기 CSS 1px 을 PC 브라우저 CSS 1px 로 1:1 표시(물리 크기 아님). '실기기' 만 공개 화면 크기(inch) 기준 물리 근사 배율 -->
             <fieldset class="scale_controls" aria-describedby="scaleHelp">
@@ -158,9 +178,11 @@
               <button type="button" class="scale_mode" id="scaleDeviceBtn" aria-pressed="false" title="공개 화면 크기(inch)로 계산한 실기기 물리 크기 근사 (모니터·Windows 배율에 따라 오차)">실기기</button>
             </fieldset>
             <p class="sr_only" id="scaleHelp">100%는 기기 CSS 픽셀을 PC 브라우저 CSS 픽셀과 1:1로 표시하는 배율입니다. 실제 기기의 물리 크기가 아니며, iframe 뷰포트와 미디어 쿼리 결과는 배율과 무관합니다. 수동 배율은 창 크기가 바뀌어도 유지됩니다.</p>
-            <a class="icon_btn is_disabled" id="openLink" href="#" target="_blank" rel="noopener noreferrer" aria-label="사이트를 새 창에서 열기" title="사이트를 새 창에서 열기" aria-disabled="true" tabindex="-1">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-external"/></svg>
-            </a>
+            <!-- 기기만 보기: 주변 UI 를 숨기고 미리보기 스테이지만 창 전체에 둔다(배율 모드는 그대로). 전용 보기에서는 같은 버튼이 CSS 로 화면 우측 상단에 고정되어 "전체 UI 보기" 로 쓰인다 -->
+            <button type="button" class="icon_btn device_only_btn" id="deviceOnlyBtn" aria-pressed="false" title="기기만 보기 — 주변 UI 를 숨기고 미리보기를 창 전체로">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-device-only"/></svg>
+              <span class="device_only_label">기기만 보기</span>
+            </button>
           </div>
           <p class="size_error" id="sizeError" role="alert" hidden></p>
         </section>
@@ -209,6 +231,16 @@
               <textarea class="occlusion_copy_text" id="occlusionCopyText" readonly rows="10" aria-label="가림 검사 리포트"></textarea>
               <button type="button" class="occlusion_recheck" id="occlusionCopyClose">닫기</button>
             </div>
+            <!-- Safari 호환성 검사 결과 한 줄 · 결과 목록(가림 검사와 같은 모양, 별도 기능) -->
+            <span class="occlusion_status compat_status" id="compatStatus" hidden>
+              <span class="occlusion_text" id="compatText"></span>
+              <button type="button" class="occlusion_recheck" id="compatListBtn" aria-expanded="false" aria-controls="compatList" hidden>결과 보기</button>
+              <button type="button" class="occlusion_recheck" id="compatRecheck">다시 검사</button>
+            </span>
+            <div class="occlusion_list compat_list" id="compatList" role="region" aria-label="Safari 호환성 검사 결과" hidden>
+              <p class="compat_note" id="compatNote"></p>
+              <ol class="compat_items" id="compatItems"></ol>
+            </div>
             <span id="presetNote">일반형 iPhone 반응형 점검값</span>
           </div>
         </section>
@@ -241,8 +273,11 @@
     <!-- 새로고침: 단일 시계 방향 화살표 -->
     <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-8.5-8.5c2.4 0 4.6.98 6.2 2.6L20.5 8.4"/><path d="M20.5 3.5v4.9h-4.9"/></symbol>
     <!-- 새 창: 사각형 + 우상향 화살표 -->
+    <symbol id="icon-compat" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="m9.5 12.5 2 2 3.5-4.5"/></symbol>
+    <symbol id="icon-device-only" viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M15 4h5v5"/><path d="M20 15v5h-5"/><path d="M9 20H4v-5"/><rect x="9" y="8" width="6" height="8" rx="1.2"/></symbol>
     <symbol id="icon-external" viewBox="0 0 24 24"><path d="M14.5 3.5h6v6"/><path d="M10.5 13.5l10-10"/><path d="M20.5 13.5v5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h5"/></symbol>
     <!-- 제거: X -->
+    <symbol id="icon-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
     <symbol id="icon-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   </svg>
 

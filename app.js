@@ -254,7 +254,21 @@
         radius:'photo-measured(같은 렌더): 바디 코너 우상 43.2 · 우하 42.8 · 좌하 43.2 CSS(오차 0.14~0.33; 좌상은 키에 가까워 제외) → 43(이전 47)',screenRadius:'photo-measured(같은 렌더): 화면 코너 18.2~19.6(오차 0.21~0.23) → 19(이전 21)',
         cutout:'photo-measured: 상단 중앙 완만한 노치 깊이 12.5px=2.8mm → 13px · 폭 59px=13.2mm → 62px (반타원 근사, shape wave) · Samsung 각주 "actual viewable area is less due to the rounded corners and the camera hole"',
         controls:'photo-measured(2026-10-07 재측정, 같은 렌더): 카메라 노치 위 베젤 안 가운데, 렌즈 중심이 바디 가장자리에서 22.7px = 23.9 CSS → 선언 inset 23(셸 border 안쪽 좌표 — 바디 외곽 기준 최종 표시 24; 2026-10-08 보정, 그 전 선언 24 는 표시 25 · 이전 25) · Ø 약 10.5 → 10 유지 · 키(가로 상단 변 → 세로 오른쪽 변): 223.8 부터 90.5 → start 223 · 길이 91(볼륨, 이전 221/94) / 364.8 부터 55.8 → start 364 · 길이 56(전원, 이전 363/60) · 두 키 돌출 2.65 CSS — 공통 기본 3 과 0.35 차이라 protrusion 미지정 · 노치(cutout) 는 깊이 12.8~13.7 로 현재 13 과 맞고, 폭은 경계 기준선에 따라 57~62 로 달라 근거 부족 → 13 / 62 유지 · USB-C 짧은 변 중앙(측면 렌더 548666728), 폭 9mm→42px approximation',
-        statusBar:'approximation: One UI 8 태블릿 상태바 24dp(Android 표준, 노치 깊이 13 을 덮음) · 하단 제스처 바 24 (3버튼 내비 48dp 일 수 있음) — 높이 값은 android-tablet-* browserProfiles 에서 관리'}}
+        statusBar:'approximation: One UI 8 태블릿 상태바 24dp(Android 표준, 노치 깊이 13 을 덮음) · 하단 제스처 바 24 (3버튼 내비 48dp 일 수 있음) — 높이 값은 android-tablet-* browserProfiles 에서 관리'}},
+    /* MacBook(2026-10-15, family macbook · platform macos). 화면 = macOS 기본 "Looks like" 배율 해상도(CSS px, DPR 2).
+     * 공식(official): 원본 해상도 · ppi · 대각선 · 본체 폭/깊이(apple.com/macbook-air/specs · /macbook-pro/specs, 2026-10-15 확인).
+     * 좌우 베젤 = (본체 폭 − 대각선 · 해상도 비로 계산한 화면 폭) ÷ 2 → CSS 환산(derived) − 셸 border 1. 위 · 아래 베젤은 공식 자료로 나눌 수 없어 좌우와 같게 둔다(approximation — 덮개 아래 힌지 부분은 그리지 않음).
+     * 메뉴 막대 37pt = 노치 모델 기본 배율의 메뉴 막대(Bjango "Designing macOS menu bar extras", approximation — Air 13 은 같은 값 가정). 웹 viewport 는 메뉴 막대 아래 창 안이라 노치 · safe-area 영향 없음(safe-area 0, 노치 미표시).
+     * 측면 키 없음(styles.css 가 family macbook 의 기본 키를 그리지 않음), 회전 안 함(devices 의 rotatable:false) */
+    'macbook-air-13':{family:'macbook',top:35.7,right:35.7,bottom:35.7,left:35.7,ring:2,radius:18,screenRadius:0,platform:'macos',obstruction:'없음(노치는 메뉴 막대 영역)',
+      cutout:{type:'none'},safeArea:{top:0,right:0,bottom:0,left:0},safeAreaLandscape:{top:0,right:0,bottom:0,left:0},statusBarHeight:37,statusBarHeightLandscape:37,homeIndicator:false,
+      source:{body:'official: 30.41 × 21.5 × 1.13cm, 13.6형 2560 × 1664 @224ppi (apple.com/macbook-air/specs, M5)',bezel:'좌우 derived: 화면 폭 289.6mm(13.6형 · 2560:1664) → (304.1 − 289.6) ÷ 2 = 7.2mm × 5.08 CSS/mm = 36.7 − 셸 border 1 · 위/아래 approximation(좌우와 같게)',ring:'approximation',radius:'approximation',screenRadius:'approximation(각진 화면으로 둠)',cutout:'n/a — 노치는 메뉴 막대 안이라 그리지 않음',controls:'n/a',statusBar:'approximation: 메뉴 막대 37pt(노치 모델, Bjango)'}},
+    'macbook-pro-14':{family:'macbook',top:24.2,right:24.2,bottom:24.2,left:24.2,ring:2,radius:18,screenRadius:0,platform:'macos',obstruction:'없음(노치는 메뉴 막대 영역)',
+      cutout:{type:'none'},safeArea:{top:0,right:0,bottom:0,left:0},safeAreaLandscape:{top:0,right:0,bottom:0,left:0},statusBarHeight:37,statusBarHeightLandscape:37,homeIndicator:false,
+      source:{body:'official: 31.26 × 22.12 × 1.55cm, 14.2형 3024 × 1964 @254ppi (apple.com/macbook-pro/specs, M5)',bezel:'좌우 derived: 화면 폭 302.5mm → (312.6 − 302.5) ÷ 2 = 5.05mm × 5.0 CSS/mm = 25.2 − 셸 border 1 · 위/아래 approximation(좌우와 같게)',ring:'approximation',radius:'approximation',screenRadius:'approximation(각진 화면으로 둠)',cutout:'n/a — 노치는 메뉴 막대 안이라 그리지 않음',controls:'n/a',statusBar:'approximation: 메뉴 막대 37pt(노치 모델 기본 배율, Bjango)'}},
+    'macbook-pro-16':{family:'macbook',top:24.3,right:24.3,bottom:24.3,left:24.3,ring:2,radius:18,screenRadius:0,platform:'macos',obstruction:'없음(노치는 메뉴 막대 영역)',
+      cutout:{type:'none'},safeArea:{top:0,right:0,bottom:0,left:0},safeAreaLandscape:{top:0,right:0,bottom:0,left:0},statusBarHeight:37,statusBarHeightLandscape:37,homeIndicator:false,
+      source:{body:'official: 35.57 × 24.81 × 1.68cm, 16.2형 3456 × 2234 @254ppi (apple.com/macbook-pro/specs, M5 Pro/Max)',bezel:'좌우 derived: 화면 폭 345.6mm → (355.7 − 345.6) ÷ 2 = 5.05mm × 5.0 CSS/mm = 25.3 − 셸 border 1 · 위/아래 approximation(좌우와 같게)',ring:'approximation',radius:'approximation',screenRadius:'approximation(각진 화면으로 둠)',cutout:'n/a — 노치는 메뉴 막대 안이라 그리지 않음',controls:'n/a',statusBar:'approximation: 메뉴 막대 37pt(노치 모델 기본 배율, Bjango)'}}
   };
   Object.keys(frameProfiles).forEach(key=>{frameProfiles[key].id=key;});
 
@@ -281,7 +295,9 @@
      * RTL(S25 · Flip8) 저해상도 캡처의 Wi-Fi 묶음(15.6 × 10.2, 송수신 화살표 포함) 과 일치. 실기기 이미지의 "6E"·↓↑ 활동 표시는 상태에 따라 바뀌어 그리지 않는다. 기기별 좌우 여백·세로 중심만 frameProfiles 가 덮어쓴다.
      * 색·시계(2026-10-07): 전경색 #4a4a4a — Fold8 커버·펼침 캡처의 시계·신호·알약·LTE 획 코어가 모두 #4a4a4a(밝기 74), S25·Flip8 RTL 알약 코어 #4c4c4c/#4a4a4a, 가는 획 최저값 72~78 로 일치(배경 #f8f8f9; Samsung 공식 One UI 7 렌더는 홈 화면 흰 아이콘이라 비교 제외).
      * 시계: 비례 숫자("1" 다음 숫자까지 중심 간격 S25 6.62 · Flip8 6.8 vs 다른 숫자 약 9.1 — 3개 캡처 공통) · 글꼴 14.5(Fold8 숫자 잉크 높이 10.4 ↔ Arial 14.5 = 10.36, 이전 14 = 10.0) · 자간 +.6(Fold8 글자 사이 1.97 vs Arial 자연 간격 1.3) · 글꼴은 Windows 대체 Arial 유지(Segoe UI 는 "5" 가 실기기보다 1.2 좁아 더 멀다) · 굵기 500 유지(Arial 은 400 으로 표시; 콜론 점 실기기 1.95 = Arial 400 1.6 과 700 2.2 사이). */
-    generic:{platform:'generic',time:'12:30',icons:['wifi','battery'],cellularStyle:'wedge',batteryLevel:.82,padding:{left:16,right:14},fontSize:14,iconSize:12,iconGap:5}
+    generic:{platform:'generic',time:'12:30',icons:['wifi','battery'],cellularStyle:'wedge',batteryLevel:.82,padding:{left:16,right:14},fontSize:14,iconSize:12,iconGap:5},
+    /* macOS 메뉴 막대(2026-10-15): 높이(프레임 statusBarHeight) 만 표현 — 메뉴 · 시계 · 상태 아이콘은 근거 없이 그리지 않는다 */
+    macos:{platform:'macos',time:'',icons:[],padding:{left:16,right:16},fontSize:13,iconSize:12,iconGap:6,fixedSize:true}
   };
   /* iPhone Duo(iOS 27) 코너 상태 클러스터. Apple 뉴스룸(official): "The status bar includes a circular, flexible system that nestles into the corner of the screen,
    * showing relevant information like Wi-Fi, cellular strength, battery, and more." · HIG "Designing for iPhone Duo"(official): 카메라 쪽 세로 축에 위→아래로
@@ -397,7 +413,14 @@
     'duo-safari':{label:'Safari (iPhone Duo)',platform:'ios',urlBarPosition:'bottom',layout:'side',exclusive:true,standardFallback:'ios-safari',
       portrait:{statusBar:0,urlBar:0,toolbar:0,homeIndicator:0},
       landscape:{statusBar:0,urlBar:0,toolbar:0,homeIndicator:0},
-      side:{circle:44,capsule:44,pitch:47,gap:13,clusterGap:22,bottomMargin:21,top:['back'],topCapsule:['info','share','search'],bottomCapsule:['compass','compose','select','window']}}
+      side:{circle:44,capsule:44,pitch:47,gap:13,clusterGap:22,bottomMargin:21,top:['back'],topCapsule:['info','share','search'],bottomCapsule:['compass','compose','select','window']}},
+    /* 데스크톱 Safari(macOS, 2026-10-15) — 모바일 Safari 와 별개 프로필. 창을 화면 크기로(메뉴 막대 아래) 연 상태 · 탭 1개(탭 막대 숨김) · Dock 자동 숨김을 가정한다.
+     * 상단 툴바 52 는 approximation(Apple 공식 수치 · 신뢰할 실측 없음 — 실제 Mac 에서 safari-measure.html 로 innerHeight 를 재서 확인할 것). 툴바 · 홈 밴드 0.
+     * MacBook 은 회전하지 않으므로 화면 형상(가로) 기준 landscape 값만 쓰이며 주소창은 항상 상단 */
+    'mac-safari':{label:'Safari (macOS)',platform:'macos',urlBarPosition:'top',
+      portrait:{statusBar:null,urlBar:52,toolbar:0,homeIndicator:0},
+      landscape:{statusBar:null,urlBar:52,toolbar:0,homeIndicator:0},
+      source:'approximation: 툴바 52(창 툴바 한 줄, 탭 막대 숨김) · Dock 자동 숨김 가정 · 메뉴 막대는 프레임 statusBarHeight'}
   };
   const urlBarPositions=['top','bottom'];
   /* 이전 데이터 호환: 예전 browser 키 → 새 프로필 */
@@ -410,7 +433,8 @@
     {id:'base',label:'Breakpoint 테스트',kind:'generic',hint:'실기기 아님'},
     {id:'phone',label:'주요 스마트폰'},
     {id:'fold',label:'폴더블'},
-    {id:'tablet',label:'태블릿'}
+    {id:'tablet',label:'태블릿'},
+    {id:'desktop',label:'노트북'}
   ];
   /* localStorage 에 남은 예전 기기 id → 현재 id. 매핑이 없는 제거된 id(pixel · 2026-10-08 의 mobile-320 / mobile-390 / mobile-430) 는 복원하지 않고 기본 기기(DEFAULT_DEVICE_ID) 로 시작한다 */
   const deviceAliases={'z-flip':'z-flip8','tablet-1024':'tablet-generic-768','tablet-768':'tablet-generic-768'};   /* 'iPad 9.7형 가로'(2026-09-21)·'iPad 9.7형 [레거시]'(2026-09-22) 프리셋 → 768px Tablet 경계(Breakpoint 테스트, 이전 이름 Tablet 기본). 제거된 'pixel' 저장값은 기본 기기로 복귀 */
@@ -485,6 +509,14 @@
       frame:'galaxy-tab-s11',browser:'android-tablet-chrome',dpr:2,states:[{id:'default',label:'기본',width:800,height:1280,diagonal:10.95,physicalWidth:1600,physicalHeight:2560}]},
     'galaxy-tab-s11-ultra':{name:'Galaxy Tab S11 Ultra',group:'tablet',subtitle:'14.6형 · wave 노치',note:'Galaxy Tab S11 Ultra 924 × 1480 CSS 화면 · 긴 변 상단 wave 노치·카메라 · Android 상태바 24 · 제스처 바 24',source:'official: 2960 × 1848 · 369.9mm(14.6형, 둥근 모서리 367.2mm) · 바디 326.3 × 208.5 × 5.1mm · 베젤 5.2mm (Samsung 뉴스룸 2025-09-04, samsung.com/uk) · CSS 924 × 1480 @2 는 동일 패널 전작 Tab S9/S10 Ultra 레퍼런스 준용(derived, 실기기 미검증)',
       frame:'galaxy-tab-s11-ultra',browser:'android-tablet-chrome',dpr:2,states:[{id:'default',label:'기본',width:924,height:1480,diagonal:14.56,physicalWidth:1848,physicalHeight:2960}]},
+    /* MacBook(2026-10-15): CSS 화면 = macOS 기본 "Looks like" 배율 해상도(derived — Apple 사양 페이지에서 배율 목록이 빠져 언론 · 커뮤니티 자료로 확인: 9to5Mac 2021 "3024 × 1964 … presented as 1512 × 982@2x", MacRumors 포럼 16형 "Default: Looks like 1728 × 1117"; Air 13 1470 × 956 은 같은 방식의 기본값).
+     * 사용자가 디스플레이 배율을 바꾸면 CSS 화면이 달라진다 — 다른 배율은 직접 크기 입력으로 확인. DPR 2 · 원본 해상도는 official. 회전 없음 */
+    'macbook-air-13':{name:'MacBook Air 13',group:'desktop',subtitle:'M5 · 13.6형',rotatable:false,note:'CSS 1470 × 956 · DPR 2',noteDetail:'기본 macOS 배율 · 메뉴 막대 37 · Safari 툴바 52 · Dock 자동 숨김 가정 (근사값 — 실제 Mac 측정 전)',source:'official: 2560 × 1664 @224ppi · 13.6형 · 30.41 × 21.5cm / derived: 기본 Looks like 1470 × 956 / approximation: 메뉴 막대 37 · Safari 툴바 52',
+      frame:'macbook-air-13',browser:'mac-safari',dpr:2,states:[{id:'default',label:'기본',width:1470,height:956,diagonal:13.6,physicalWidth:2560,physicalHeight:1664}]},
+    'macbook-pro-14':{name:'MacBook Pro 14',group:'desktop',subtitle:'M5 · 14.2형',rotatable:false,note:'CSS 1512 × 982 · DPR 2',noteDetail:'기본 macOS 배율 · 메뉴 막대 37 · Safari 툴바 52 · Dock 자동 숨김 가정 (근사값 — 실제 Mac 측정 전)',source:'official: 3024 × 1964 @254ppi · 14.2형 · 31.26 × 22.12cm / derived: 기본 Looks like 1512 × 982 / approximation: 메뉴 막대 37 · Safari 툴바 52',
+      frame:'macbook-pro-14',browser:'mac-safari',dpr:2,states:[{id:'default',label:'기본',width:1512,height:982,diagonal:14.2,physicalWidth:3024,physicalHeight:1964}]},
+    'macbook-pro-16':{name:'MacBook Pro 16',group:'desktop',subtitle:'M5 Pro · 16.2형',rotatable:false,note:'CSS 1728 × 1117 · DPR 2',noteDetail:'기본 macOS 배율 · 메뉴 막대 37 · Safari 툴바 52 · Dock 자동 숨김 가정 (근사값 — 실제 Mac 측정 전)',source:'official: 3456 × 2234 @254ppi · 16.2형 · 35.57 × 24.81cm / derived: 기본 Looks like 1728 × 1117 / approximation: 메뉴 막대 37 · Safari 툴바 52',
+      frame:'macbook-pro-16',browser:'mac-safari',dpr:2,states:[{id:'default',label:'기본',width:1728,height:1117,diagonal:16.2,physicalWidth:3456,physicalHeight:2234}]}
   };
 
   /* ==================================================================
@@ -545,6 +577,9 @@
    * safariLayout: 설정 › Safari › 탭 레이아웃(compact | top) · viewportFit: 대상 사이트의 meta viewport-fit(auto = 지정 없음 | cover) — iframe 안 meta 를 바꾸지 않는 프리뷰 계산 설정 */
   const SAFARI_LAYOUTS=['compact','top'],VIEWPORT_FITS=['auto','cover'];
   let safariLayout='compact';
+  /* Safari(macOS) 버전 · 호환성 검사(2026-10-15): 선택 버전은 저장(viewportLabDisplay.safariVersion), 검사 켬 상태는 저장하지 않는다 */
+  let safariVersion=null;
+  let compatEnabled=false,compatResult=null,safariDataPromise=null;
   let viewportFit='auto';
   let currentUrl='';
 
@@ -1633,6 +1668,7 @@
     if(currentUrl&&view.dom.siteFrame.getAttribute('src')===currentUrl){view.loaded=true;}
     if(view.compare)attachScrollSync(view);
     if(view===primaryView){view.occlusionSlow=false;scheduleOcclusionCheck(view,OCCLUSION_LOAD_DELAY);}   /* 새 문서: 큰 페이지 판정 초기화 */
+    if(view===primaryView&&compatEnabled)setTimeout(runCompatCheck,80);   /* Safari 호환성 검사: 새 문서면 다시 검사 */
     updateLoadStatus();
   }
 
@@ -2468,6 +2504,7 @@
       const views=Array.from(compareViews.values());
       elements.currentDevice.textContent='다중 비교';
       elements.currentMeta.textContent=views.length?views.map(item=>{const viewport=getSiteViewport(item);return getDeviceName(item)+' '+viewport.width+'×'+viewport.height;}).join(' · '):'왼쪽 목록에서 기기를 선택해 주세요 (최대 '+MAX_COMPARE+'개)';
+      elements.presetNote.title='';
       elements.presetNote.textContent='비교 기기 '+views.length+' / '+MAX_COMPARE+' · 공통 제어는 모든 기기에 적용됩니다';
       elements.rotateBtn.setAttribute('aria-pressed',views.length&&views.every(item=>item.rotated)?'true':'false');
     }else{
@@ -2477,10 +2514,12 @@
       const physical=getPhysicalResolution(view);
       const siteLabel=siteViewport.width+' × '+siteViewport.height+(siteViewport.overlay?' (가시 '+siteViewport.visibleHeight+')':'');
       elements.currentDevice.textContent=getDeviceName(view);
-      elements.currentMeta.textContent='화면 '+view.currentWidth+' × '+view.currentHeight+' · 사이트 '+siteLabel+(getDpr(view)?' · DPR '+getDpr(view):'')+' · '+getOrientationLabel(view);
+      elements.currentMeta.textContent='사이트 '+siteLabel+(getDpr(view)?' · DPR '+getDpr(view):'')+' · '+getOrientationLabel(view);
+      elements.presetNote.title=device&&device.noteDetail||'';   /* 상세 근거(근사값 조건) 는 tooltip 으로만 — footer 는 짧은 값(2026-10-16, 현재 MacBook) */
       elements.presetNote.textContent=(physical?'물리 '+physical.width+' × '+physical.height+' · ':'')+(state&&state.note?state.note:device?device.note:'직접 입력한 CSS 화면 · 기기 가림 없음');
       elements.rotateBtn.setAttribute('aria-pressed',view.rotated?'true':'false');
     }
+    elements.rotateBtn.disabled=compare?Array.from(compareViews.values()).every(isRotationLocked)&&compareViews.size>0:isRotationLocked(view);
     elements.viewportWidth.value=primaryView.currentWidth;
     elements.viewportHeight.value=primaryView.currentHeight;
     [elements.viewportWidth,elements.viewportHeight,elements.applySize].forEach(el=>{el.disabled=compare;el.title=compare?'직접 크기 입력은 단일 보기에서 사용합니다.':'';});
@@ -2490,6 +2529,7 @@
     syncUrlPositionControls();
     syncScaleControls();
     updateCompareBar();
+    syncSafariDesktop();
   }
 
   /* 단일 보기 갱신 (기존 진입점 유지) */
@@ -2531,7 +2571,380 @@
     return true;
   }
 
+  /* ------------------------------------------------------------------
+   * Safari(macOS) 버전 · CSS 호환성 검사(2026-10-15) — 가림 검사와 별개 기능
+   *
+   * 미리보기는 Chrome(Blink) iframe 이라 Safari 렌더링을 재현하지 않는다. 이 검사는 같은 출처 페이지가 쓰는 CSS 를
+   * 선택한 Safari 버전의 지원 데이터(MDN browser-compat-data 에서 Safari macOS 부분만 뽑은 safari-css-data.js, 처음 쓸 때만 불러옴) 와 비교한다.
+   * CSS.supports() 는 실행 중인 Chrome 의 지원 여부라 쓰지 않는다.
+   *
+   * 검사 범위: 읽을 수 있는 스타일시트의 스타일 규칙(중첩 · @media · @supports · @layer · @container 안 포함) · @keyframes 선언 · style 속성,
+   *   속성 이름 · 값 키워드 · 값 함수 · 길이 단위 · @규칙 이름 · -webkit- 접두어. 선택자 · @media 기능 · 문맥별 하위 기능(flex 안 gap 등) 은 판정하지 않는다.
+   * 한계: Chrome 이 해석하지 못한 선언(다른 브라우저 전용 문법 · Chrome 미지원 -webkit- 속성) 은 CSSOM 에 남지 않아 보이지 않는다.
+   *   그래서 "접두어 필요" 항목은 같은 시트 원문에 접두어 선언이 있는지만 추가로 확인하고(있으면 확인 필요로 낮춤) 원문을 따로 해석하지는 않는다.
+   * 개인정보: 요소 이름은 tag / id / class(가림 검사와 같은 요약), 값 안의 문자열 · url() 은 지운다. 페이지 본문 · 입력값은 읽지 않는다.
+   * ------------------------------------------------------------------ */
+  const SAFARI_DESKTOP_ID='mac-safari';
+  const COMPAT_ORDER={no:0,prefix:1,partial:2,check:3,nodata:4};
+  const COMPAT_LABELS={no:'미지원',prefix:'접두어 필요',partial:'부분 지원',check:'확인 필요',nodata:'데이터 없음'};
+  const COMPAT_AT_RULES={CSSContainerRule:'container',CSSLayerBlockRule:'layer',CSSLayerStatementRule:'layer',CSSScopeRule:'scope',CSSStartingStyleRule:'starting-style',CSSPropertyRule:'property',CSSFontPaletteValuesRule:'font-palette-values',CSSCounterStyleRule:'counter-style',CSSFontFeatureValuesRule:'font-feature-values',CSSViewTransitionRule:'view-transition',CSSPositionTryRule:'position-try',CSSFunctionRule:'function'};
+  const COMPAT_MAX_ITEMS=300,COMPAT_MAX_RULES=30000,COMPAT_MAX_INLINE=3000;
+  let compatDom=null;
+
+  function getCompatDom(){
+    if(!compatDom)compatDom={row:document.getElementById('safariVersionRow'),select:document.getElementById('safariVersion'),btn:document.getElementById('compatBtn'),status:document.getElementById('compatStatus'),text:document.getElementById('compatText'),listBtn:document.getElementById('compatListBtn'),recheck:document.getElementById('compatRecheck'),list:document.getElementById('compatList'),note:document.getElementById('compatNote'),items:document.getElementById('compatItems')};
+    return compatDom;
+  }
+
+  function loadSafariCssData(){
+    if(window.DevicePreviewSafariCss)return Promise.resolve(window.DevicePreviewSafariCss);
+    if(!safariDataPromise)safariDataPromise=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='safari-css-data.js';
+      script.onload=()=>window.DevicePreviewSafariCss?resolve(window.DevicePreviewSafariCss):reject(new Error('데이터가 비어 있습니다'));
+      script.onerror=()=>{safariDataPromise=null;reject(new Error('safari-css-data.js 를 불러오지 못했습니다'));};
+      document.head.appendChild(script);
+    });
+    return safariDataPromise;
+  }
+
+  function isDesktopSafariView(view){return Boolean(view&&view.frameProfile)&&resolveBrowserId(view)===SAFARI_DESKTOP_ID;}
+
+  /* 버전 행 · 검사 버튼: 단일 보기 + 데스크톱 Safari 일 때만 */
+  function syncSafariDesktop(){
+    const dom=getCompatDom();
+    if(!dom.row)return;
+    const available=viewMode==='single'&&isDesktopSafariView(getControlView());
+    dom.row.hidden=!available;
+    elements.browserControls.dataset.macSafari=available?'true':'false';
+    if(!available)setBrowserSettingsOpen(false);
+    dom.btn.disabled=!available;
+    dom.btn.title=available?'Safari 호환성 검사 — 선택한 Safari 버전의 CSS 지원 데이터(MDN) 로 같은 출처 페이지의 CSS 를 확인합니다. 실제 Safari 렌더링이 아닙니다':'Safari 호환성 검사 — MacBook 에서 Safari 를 고른 단일 보기에서 사용할 수 있습니다';
+    if(available&&!dom.select.options.length)loadSafariCssData().then(fillSafariVersions).catch(()=>{});
+    updateCompatStatus();
+  }
+
+  /* 브라우저 설정 popover(MacBook + Safari): 주소창 · 위치 · 툴바 · UI 겹침의 기존 컨트롤을 그대로 담은 .browser_settings 를 열고 닫기만 한다.
+   * 다른 기기에서는 버튼이 숨겨지고 .browser_settings 가 display: contents 라 이 상태와 무관하다. Esc · 바깥 클릭 · 포커스가 밖으로 나가면 닫힘 */
+  function setBrowserSettingsOpen(open,returnFocus){
+    const btn=document.getElementById('browserSettingsBtn'),panel=document.getElementById('browserSettings');
+    if(!btn||!panel)return;
+    btn.setAttribute('aria-expanded',open?'true':'false');
+    panel.classList.toggle('is_open',open);
+    if(returnFocus)btn.focus();
+  }
+  function bindBrowserSettings(){
+    const btn=document.getElementById('browserSettingsBtn'),panel=document.getElementById('browserSettings');
+    const isOpen=()=>btn.getAttribute('aria-expanded')==='true';
+    btn.addEventListener('click',()=>setBrowserSettingsOpen(!isOpen()));
+    [btn,panel].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&isOpen()){event.preventDefault();setBrowserSettingsOpen(false,true);}}));
+    panel.addEventListener('focusout',event=>{if(isOpen()&&event.relatedTarget&&!panel.contains(event.relatedTarget)&&event.relatedTarget!==btn)setBrowserSettingsOpen(false);});
+    document.addEventListener('pointerdown',event=>{if(isOpen()&&!panel.contains(event.target)&&!btn.contains(event.target))setBrowserSettingsOpen(false);});
+  }
+
+  function fillSafariVersions(data){
+    const dom=getCompatDom();
+    if(!data.versions.includes(safariVersion))safariVersion=data.current;
+    const fragment=document.createDocumentFragment();
+    data.versions.slice().reverse().forEach(version=>{
+      const option=document.createElement('option');
+      option.value=version;
+      option.textContent='Safari '+version+(version===data.current?' (현재)':'');
+      option.selected=version===safariVersion;
+      fragment.appendChild(option);
+    });
+    dom.select.replaceChildren(fragment);
+    updateCompatStatus();
+  }
+
+  /* 버전 비교: '17.4' → [17,4], '≤15' → [15,0] */
+  function parseSafariVersion(value){
+    if(typeof value!=='string')return null;
+    const match=value.replace('≤','').match(/^(\d+)(?:\.(\d+))?/);
+    return match?[Number(match[1]),Number(match[2]||0)]:null;
+  }
+  function compareSafariVersion(a,b){return a[0]-b[0]||a[1]-b[1];}
+  function formatSafariVersion(v){return v[1]?v[0]+'.'+v[1]:String(v[0]);}
+
+  /* 지원 문장 하나의 선택 버전 판정: yes | no | range(≤ 로만 기록) | unknown-version(true) | nodata */
+  function safariStatementAt(statement,version){
+    const added=statement.a;
+    if(added===null||added===undefined)return 'nodata';
+    if(added===false||added==='preview'||statement.f)return 'no';
+    if(typeof statement.r==='string'){const removed=parseSafariVersion(statement.r);if(removed&&compareSafariVersion(version,removed)>=0)return 'no';}
+    if(added===true)return 'unknown-version';
+    const since=parseSafariVersion(added);
+    if(!since)return 'nodata';
+    if(compareSafariVersion(version,since)>=0)return 'yes';
+    return String(added).startsWith('≤')?'range':'no';
+  }
+
+  /* 기능 하나(지원 문장 배열) 의 판정 — 데이터가 없으면 지원/미지원으로 추측하지 않는다 */
+  function judgeSafariFeature(statements,version){
+    if(!statements||!statements.length)return{state:'nodata'};
+    const plain=statements.filter(s=>!s.p&&!s.n),prefixed=statements.filter(s=>s.p||s.n);
+    let hasData=false,range=false,unknownVersion=false;
+    for(const statement of plain){
+      const at=safariStatementAt(statement,version);
+      if(at!=='nodata')hasData=true;
+      if(at==='yes')return statement.x?{state:'partial'}:{state:'ok'};
+      if(at==='range')range=true;
+      if(at==='unknown-version')unknownVersion=true;
+    }
+    for(const statement of prefixed){
+      const at=safariStatementAt(statement,version);
+      if(at!=='nodata')hasData=true;
+      if(at==='yes')return{state:'prefix',prefix:statement.p||'',altName:statement.n||'',since:parseSafariVersion(statement.a)};
+    }
+    if(range)return{state:'check',why:'range'};
+    if(unknownVersion)return{state:'check',why:'unknown-version'};
+    if(!hasData)return{state:'nodata'};
+    const later=plain.map(s=>parseSafariVersion(s.a)).filter(v=>v&&compareSafariVersion(v,version)>0).sort(compareSafariVersion)[0];
+    return{state:'no',since:later||null};
+  }
+
+  /* 속성 이름 판정: 그대로 있으면 그 항목, -webkit- 등 접두어 이름이면 접두어 없는 항목의 같은 접두어 문장 */
+  function judgeSafariProperty(data,prop,version){
+    if(data.props[prop])return judgeSafariFeature(data.props[prop],version);
+    const match=prop.match(/^-(webkit|moz|ms|o)-(.+)$/);
+    if(match&&data.props[match[2]]){
+      const own=data.props[match[2]].filter(s=>s.p==='-'+match[1]+'-'||s.n===prop).map(s=>({a:s.a,r:s.r,x:s.x,f:s.f}));
+      return judgeSafariFeature(own,version);
+    }
+    return{state:'nodata'};
+  }
+
+  /* 선언 cssText → [속성, 값] (괄호 · 따옴표 안의 ; 는 나누지 않음) */
+  function splitDeclarations(cssText){
+    const out=[];let depth=0,quote='',start=0;
+    for(let i=0;i<=cssText.length;i++){
+      const ch=cssText[i];
+      if(quote){if(ch==='\\')i++;else if(ch===quote)quote='';continue;}
+      if(ch==='"'||ch==="'"){quote=ch;continue;}
+      if(ch==='(')depth++;else if(ch===')')depth=Math.max(0,depth-1);
+      else if((ch===';'&&depth===0)||i===cssText.length){
+        const part=cssText.slice(start,i).trim();start=i+1;
+        const colon=part.indexOf(':');
+        if(colon>0)out.push([part.slice(0,colon).trim().toLowerCase(),part.slice(colon+1).replace(/!important\s*$/i,'').trim()]);
+      }
+    }
+    return out;
+  }
+
+  /* 결과에 남기는 값: 문자열 · url() 내용을 지우고 짧게(페이지 텍스트 · 경로가 리포트에 들어가지 않게) */
+  function sanitizeCssValue(value){
+    const clean=value.replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g,'"…"').replace(/url\([^)]*\)/gi,'url(…)');
+    return clean.length>90?clean.slice(0,89)+'…':clean;
+  }
+
+  /* 값에서 판정할 수 있는 조각: 함수 이름 · 키워드 · 길이 단위 */
+  function safariValueFeatures(data,prop,value){
+    const base=prop.replace(/^-(webkit|moz|ms|o)-/,'');
+    const text=value.replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g,' ').replace(/url\([^)]*\)/gi,' ');
+    const found=[];const seen=new Set();
+    const push=(kind,name,statements)=>{const key=kind+name;if(!statements||seen.has(key))return;seen.add(key);found.push({kind,name,statements});};
+    text.replace(/(-?[a-z][a-z0-9-]*)\(/gi,(m,name)=>{push('함수',name.toLowerCase()+'()',data.funcs[name.toLowerCase()]);return m;});
+    text.replace(/(?:^|[^a-z0-9.-])-?(?:\d+\.?\d*|\.\d+)([a-z]+)\b/gi,(m,unit)=>{push('단위',unit.toLowerCase(),data.units[unit.toLowerCase()]);return m;});
+    text.replace(/(^|[\s,/(])(-?[a-z][a-z0-9-]*)(?=$|[\s,/)])/gi,(m,lead,word)=>{push('값',word.toLowerCase(),data.props[base+'|'+word.toLowerCase()]);return m;});
+    return found;
+  }
+
+  function compatReason(result,subject){
+    const where=subject?subject+' — ':'';
+    if(result.state==='no')return where+(result.since?'Safari '+formatSafariVersion(result.since)+'부터 지원':'Safari 에서 지원하지 않음');
+    if(result.state==='prefix')return where+(result.altName?result.altName+' 이름으로만 지원':(result.prefix||'-webkit-')+' 접두어로만 지원')+(result.since?'('+formatSafariVersion(result.since)+'부터)':'');
+    if(result.state==='partial')return where+'부분 지원 — 동작 차이를 실제 Safari 에서 확인';
+    if(result.state==='check')return where+(result.why==='range'?'지원 시작 버전이 범위(≤)로만 기록됨':result.why==='raw-prefix'?'시트에 '+result.rawName+' 선언이 있음 — 같은 규칙에 있는지 확인':'지원 시작 버전 기록 없음');
+    return where+'Safari 지원 데이터 없음 — 판정하지 않음';
+  }
+
+  async function scanSafariCompat(doc,data,versionText){
+    const version=parseSafariVersion(versionText);
+    const items=[];const keys=new Set();const prefixSheets=new Map();
+    const stats={sheets:0,unreadable:0,rules:0,inline:0,truncated:false};
+    const add=item=>{
+      const key=item.where+'\u0001'+item.prop+'\u0001'+item.value;
+      if(keys.has(key))return;keys.add(key);
+      if(items.length>=COMPAT_MAX_ITEMS){stats.truncated=true;return;}
+      items.push(item);
+    };
+    const checkDeclarations=(style,where,ctx,sheet,fullSelector)=>{
+      if(!style||!style.cssText)return;
+      splitDeclarations(style.cssText).forEach(([prop,value])=>{
+        if(prop.startsWith('--'))return;
+        let worst=null;
+        const propResult=judgeSafariProperty(data,prop,version);
+        if(propResult.state!=='ok')worst=Object.assign({subject:''},propResult);
+        if(propResult.state!=='no'&&propResult.state!=='nodata'){
+          safariValueFeatures(data,prop,value).forEach(feature=>{
+            const result=judgeSafariFeature(feature.statements,version);
+            if(result.state==='ok')return;
+            if(!worst||COMPAT_ORDER[result.state]<COMPAT_ORDER[worst.state])worst=Object.assign({subject:feature.kind+' '+feature.name},result);
+          });
+        }
+        if(!worst)return;
+        const item={where,prop,value:sanitizeCssValue(value),state:worst.state,result:worst,subject:worst.subject,ctx,sheet,selector:fullSelector||''};
+        if(worst.state==='prefix'&&!worst.subject&&sheet&&sheet.node){item.rawName=(worst.altName||(worst.prefix||'-webkit-')+prop);if(!prefixSheets.has(sheet.node))prefixSheets.set(sheet.node,[]);prefixSheets.get(sheet.node).push(item);}
+        add(item);
+      });
+    };
+    const walk=(list,ctx,sheet)=>{
+      for(const rule of Array.from(list||[])){
+        if(++stats.rules>COMPAT_MAX_RULES){stats.truncated=true;return;}
+        const type=rule.constructor&&rule.constructor.name||'';
+        if(typeof rule.selectorText==='string'&&rule.style&&type!=='CSSPageRule'){
+          checkDeclarations(rule.style,rule.selectorText.length>80?rule.selectorText.slice(0,79)+'…':rule.selectorText,ctx,sheet,rule.selectorText);
+          if(rule.cssRules&&rule.cssRules.length)walk(rule.cssRules,ctx,sheet);
+          continue;
+        }
+        if(type==='CSSImportRule'){try{if(rule.styleSheet)walkSheet(rule.styleSheet,ctx);}catch(error){stats.unreadable++;}continue;}
+        const atName=COMPAT_AT_RULES[type];
+        if(atName){
+          const result=judgeSafariFeature(data.at[atName],version);
+          if(result.state!=='ok')add({where:'@'+atName,prop:'@'+atName,value:'',state:result.state,result,subject:'',ctx,sheet});
+        }
+        if(type==='CSSKeyframesRule'){Array.from(rule.cssRules).forEach(frame=>checkDeclarations(frame.style,'@keyframes '+rule.name+' '+frame.keyText,ctx,sheet));continue;}
+        if(type==='CSSFontFaceRule'||type==='CSSPropertyRule'||type==='CSSPageRule'||type==='CSSCounterStyleRule'||type==='CSSFontPaletteValuesRule')continue;   /* 서술자(descriptor) 는 판정하지 않음 */
+        if(rule.cssRules)walk(rule.cssRules,type==='CSSSupportsRule'?ctx.concat('@supports'):ctx,sheet);
+      }
+    };
+    const walkSheet=(sheet,ctx)=>{
+      let rules;
+      try{rules=sheet.cssRules;}catch(error){stats.unreadable++;return;}
+      stats.sheets++;
+      const href=sheet.href;
+      const label=href?(()=>{try{return new URL(href).pathname.split('/').pop()||'(스타일시트)';}catch(error){return '(스타일시트)';}})():'<style>';
+      walk(rules,ctx,{label,node:sheet.ownerNode||null,href});
+    };
+    Array.from(doc.styleSheets).forEach(sheet=>walkSheet(sheet,[]));
+    /* style 속성(요소 이름은 tag / id / class 요약만) */
+    const inline=doc.querySelectorAll('[style]');
+    Array.from(inline).slice(0,COMPAT_MAX_INLINE).forEach(el=>{stats.inline++;checkDeclarations(el.style,describeOcclusionElement(el)+' (style 속성)',[],{label:'style 속성',node:null});});
+    if(inline.length>COMPAT_MAX_INLINE)stats.truncated=true;
+    /* 접두어 필요 항목: Chrome 이 해석하지 못한 -webkit- 선언은 CSSOM 에 남지 않는다. 같은 시트 원문에서 같은 선택자 블록을 찾아
+     *   그 블록에 접두어 선언이 있으면 Safari 에서는 문제없으므로 결과에서 뺀다 · 블록을 못 찾고 시트 어딘가에만 있으면 확인 필요로 낮춘다(원문을 해석하지는 않음) */
+    const compact=text=>text.toLowerCase().replace(/\/\*[\s\S]*?\*\//g,'').replace(/\s+/g,' ').replace(/\s*([{};:,>+~])\s*/g,'$1').trim();
+    const resolved=new Set();
+    for(const [node,list] of prefixSheets){
+      let text='';
+      try{
+        if(node.tagName==='STYLE')text=node.textContent||'';
+        else if(node.tagName==='LINK'&&node.href)text=await (await fetch(node.href,{cache:'force-cache',credentials:'same-origin'})).text();
+      }catch(error){text='';}
+      if(!text)continue;
+      const raw=compact(text);
+      list.forEach(item=>{
+        const name=item.rawName.toLowerCase()+':';
+        if(!raw.includes(name))return;
+        const selector=compact(item.selector||'');
+        let found=false,inBlock=false,from=0;
+        while(selector&&(from=raw.indexOf(selector+'{',from))>=0){
+          const prev=raw[from-1];
+          if(from===0||prev==='}'||prev===';'||prev==='{'||prev===','){found=true;const end=raw.indexOf('}',from);if(raw.slice(from,end<0?undefined:end).includes(name))inBlock=true;}
+          from+=selector.length+1;
+        }
+        if(inBlock)resolved.add(item);
+        else if(!found){item.state='check';item.result=Object.assign({},item.result,{state:'check',why:'raw-prefix',rawName:item.rawName});}
+      });
+    }
+    if(resolved.size)for(let i=items.length-1;i>=0;i--)if(resolved.has(items[i]))items.splice(i,1);
+    items.sort((a,b)=>COMPAT_ORDER[a.state]-COMPAT_ORDER[b.state]);
+    const counts={no:0,prefix:0,partial:0,check:0,nodata:0};
+    items.forEach(item=>{counts[item.state]++;});
+    return{status:'ok',version:versionText,items,counts,stats,source:data.source};
+  }
+
+  function runCompatCheck(){
+    if(!compatEnabled)return;
+    const view=primaryView;
+    const versionAtStart=safariVersion;
+    if(!currentUrl){compatResult={status:'no-url'};updateCompatStatus();return;}
+    const access=getScrollAccess(view);
+    if(!access.accessible){compatResult={status:access.reason};updateCompatStatus();return;}
+    compatResult={status:'running'};updateCompatStatus();
+    loadSafariCssData().then(data=>{
+      if(!getCompatDom().select.options.length)fillSafariVersions(data);
+      return scanSafariCompat(access.win.document,data,safariVersion||data.current);
+    }).then(result=>{if(compatEnabled&&versionAtStart===safariVersion){compatResult=result;updateCompatStatus();}})
+      .catch(error=>{compatResult={status:'error',message:error&&error.message||''};updateCompatStatus();});
+  }
+
+  function updateCompatStatus(){
+    const dom=getCompatDom();
+    if(!dom.status)return;
+    const available=!dom.btn.disabled;
+    const on=compatEnabled&&available;
+    dom.btn.setAttribute('aria-pressed',on?'true':'false');
+    dom.status.hidden=!on;
+    if(!on){setCompatListOpen(false);return;}
+    const versionLabel='Safari '+(safariVersion||'');
+    const state=compatResult;
+    let text,ok=false;
+    if(!state||state.status==='no-url')text=versionLabel+' 호환성 · 검사할 페이지 없음';
+    else if(state.status==='running')text=versionLabel+' 호환성 · 검사 중';
+    else if(state.status==='not-loaded')text=versionLabel+' 호환성 · 불러오는 중';
+    else if(state.status==='cross-origin')text=versionLabel+' 호환성 · 자동 검사 불가 · 다른 출처(CSS 를 읽을 수 없음)';
+    else if(state.status==='file-origin')text=versionLabel+' 호환성 · 자동 검사 불가 · file:// 로 열린 도구';
+    else if(state.status==='error')text=versionLabel+' 호환성 · 지원 데이터를 불러오지 못했습니다';
+    else{
+      ok=true;
+      const total=state.items.length;
+      text=total?'Safari '+state.version+' 기준 확인 필요 '+total+(state.stats.truncated?'+':'')+' ('+Object.keys(COMPAT_LABELS).filter(k=>state.counts[k]).map(k=>COMPAT_LABELS[k]+' '+state.counts[k]).join(' · ')+')':'Safari '+state.version+' 기준 확인 가능한 CSS 호환성 문제 없음';
+    }
+    dom.text.textContent=text;
+    dom.status.title='CSS 지원 데이터(MDN browser-compat-data) 기준이며 실제 Safari 렌더링과 차이가 있을 수 있습니다. 미리보기는 Chrome 엔진입니다.';
+    dom.listBtn.hidden=!ok;
+    dom.recheck.hidden=!state||state.status==='no-url'||state.status==='running';
+    renderCompatList(ok?state:null);
+  }
+
+  function renderCompatList(state){
+    const dom=getCompatDom();
+    if(!state){dom.items.replaceChildren();setCompatListOpen(false);return;}
+    const s=state.stats;
+    dom.note.textContent='Safari '+state.version+' (macOS) 의 CSS 지원 데이터('+state.source.package+' '+state.source.version+') 와 비교한 결과입니다. 실제 Safari 렌더링이 아니며 미리보기는 Chrome 엔진입니다. '+
+      '스타일시트 '+s.sheets+'개 · 규칙 '+s.rules+'개 · style 속성 '+s.inline+'개를 검사했습니다'+(s.unreadable?' · 읽을 수 없는 스타일시트 '+s.unreadable+'개(다른 출처)':'')+(s.truncated?' · 많아서 일부만 표시':'')+
+      '. Chrome 이 해석하지 못한 선언과 선택자 · @media 기능은 검사하지 않습니다.';
+    const fragment=document.createDocumentFragment();
+    if(!state.items.length){const li=document.createElement('li');li.textContent='선택한 Safari 버전 기준으로 확인 가능한 CSS 호환성 문제가 발견되지 않았습니다.';fragment.appendChild(li);}
+    state.items.forEach(item=>{
+      const li=document.createElement('li');
+      const badge=document.createElement('span');badge.className='compat_state';badge.dataset.state=item.state;badge.textContent=COMPAT_LABELS[item.state];
+      const where=document.createElement('code');where.className='compat_where';where.textContent=item.where;
+      const decl=document.createElement('code');decl.className='compat_decl';decl.textContent=item.value?item.prop+': '+item.value:item.prop;
+      const reason=document.createElement('span');reason.className='compat_reason';
+      reason.textContent=compatReason(item.result,item.subject)+(item.ctx&&item.ctx.includes('@supports')?' · @supports 안':'')+(item.sheet&&item.sheet.label?' · '+item.sheet.label:'');
+      li.append(badge,where,decl,reason);
+      fragment.appendChild(li);
+    });
+    dom.items.replaceChildren(fragment);
+  }
+
+  function setCompatListOpen(open,focusButton){
+    const dom=getCompatDom();
+    if(!dom.list)return;
+    const show=Boolean(open)&&!dom.listBtn.hidden;
+    dom.list.hidden=!show;
+    dom.listBtn.setAttribute('aria-expanded',show?'true':'false');
+    if(show&&!elements.occlusionList.hidden)setOcclusionListOpen(false);
+    if(!show&&focusButton)dom.listBtn.focus();
+  }
+
+  function bindCompatControls(){
+    const dom=getCompatDom();
+    dom.btn.addEventListener('click',()=>{compatEnabled=!compatEnabled;compatResult=null;updateCompatStatus();if(compatEnabled)runCompatCheck();});
+    dom.recheck.addEventListener('click',runCompatCheck);
+    dom.listBtn.addEventListener('click',()=>setCompatListOpen(dom.list.hidden));
+    dom.select.addEventListener('change',()=>{safariVersion=dom.select.value;saveDisplayPreference();compatResult=null;updateCompatStatus();runCompatCheck();});
+    [dom.list,dom.listBtn].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&!dom.list.hidden){event.preventDefault();setCompatListOpen(false,true);}}));
+    elements.occlusionListBtn.addEventListener('click',()=>setCompatListOpen(false));   /* 두 목록이 겹치지 않게 */
+  }
+
+  /* 회전하지 않는 기기(MacBook — devices[*].rotatable:false) */
+  function isRotationLocked(view){const device=getDevice(view);return Boolean(device&&device.rotatable===false);}
+
   function toggleRotation(view){
+    if(isRotationLocked(view))return;
     const previousWidth=view.currentWidth;
     view.currentWidth=view.currentHeight;
     view.currentHeight=previousWidth;
@@ -2677,6 +3090,7 @@
     view.dom.rotate.setAttribute('aria-label',name+' 가로·세로 회전');
     view.dom.rotate.title=name+' 가로·세로 회전';
     view.dom.rotate.setAttribute('aria-pressed',view.rotated?'true':'false');
+    view.dom.rotate.disabled=isRotationLocked(view);
     view.dom.refresh.setAttribute('aria-label',name+' 새로고침');
     view.dom.refresh.title=name+' 새로고침';
     view.dom.refresh.disabled=!currentUrl;
@@ -2824,7 +3238,7 @@
 
   function saveDisplayPreference(){
     try{
-      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,manualScale,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser,safariLayout,viewportFit,occlusionCheck:occlusionEnabled}));
+      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,manualScale,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser,safariLayout,viewportFit,occlusionCheck:occlusionEnabled,safariVersion}));
     }catch(error){}
   }
 
@@ -2851,6 +3265,7 @@
       if(saved&&SAFARI_LAYOUTS.includes(saved.safariLayout))safariLayout=saved.safariLayout;
       if(saved&&VIEWPORT_FITS.includes(saved.viewportFit))viewportFit=saved.viewportFit;
       if(saved&&typeof saved.occlusionCheck==='boolean')occlusionEnabled=saved.occlusionCheck;
+      if(saved&&typeof saved.safariVersion==='string'&&/^\d+(\.\d+)?$/.test(saved.safariVersion))safariVersion=saved.safariVersion;
       if(saved&&saved.browserByPlatform&&typeof saved.browserByPlatform==='object'){
         Object.keys(saved.browserByPlatform).forEach(platform=>{
           const id=saved.browserByPlatform[platform];
@@ -3070,6 +3485,21 @@
   });
   elements.scaleFitBtn.addEventListener('click',()=>setScaleMode('fit'));
   elements.scaleDeviceBtn.addEventListener('click',()=>setScaleMode('device'));
+  /* 기기만 보기(2026-10-15): body 상태 class 하나로 주변 UI 를 숨긴다(CSS). 배율 모드는 바꾸지 않고, 스테이지 크기 변화에 맞춰 기존 updateAllScales() 만 다시 부른다.
+   * 같은 버튼이 전용 보기에서는 우측 상단 "전체 UI 보기" 로 쓰인다. Esc 로도 나온다. 상태는 저장하지 않는다(새로 열면 일반 화면) */
+  const deviceOnlyBtn=document.getElementById('deviceOnlyBtn');
+  const deviceOnlyLabel=deviceOnlyBtn.querySelector('.device_only_label');
+  function setDeviceOnly(on){
+    document.body.classList.toggle('is_device_only',on);
+    deviceOnlyBtn.setAttribute('aria-pressed',on?'true':'false');
+    deviceOnlyLabel.textContent=on?'전체 UI 보기':'기기만 보기';
+    deviceOnlyBtn.title=on?'전체 UI 보기 — 숨긴 UI 를 다시 표시 (Esc)':'기기만 보기 — 주변 UI 를 숨기고 미리보기를 창 전체로';
+    updateAllScales();
+  }
+  deviceOnlyBtn.addEventListener('click',()=>setDeviceOnly(!document.body.classList.contains('is_device_only')));
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.defaultPrevented&&document.body.classList.contains('is_device_only')){event.preventDefault();setDeviceOnly(false);deviceOnlyBtn.focus();}});
+  bindCompatControls();
+  bindBrowserSettings();
   elements.syncScroll.addEventListener('change',()=>{syncOptions.scroll=elements.syncScroll.checked;if(syncOptions.scroll)realignScrollSync();updateSyncAvailability();saveComparePreference();announce('스크롤 동기화를 '+(syncOptions.scroll?'켰습니다.':'껐습니다.'));});
   elements.syncRotate.addEventListener('change',()=>{syncOptions.rotate=elements.syncRotate.checked;saveComparePreference();});
   elements.syncRefresh.addEventListener('change',()=>{syncOptions.refresh=elements.syncRefresh.checked;saveComparePreference();});

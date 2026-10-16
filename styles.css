@@ -7,9 +7,9 @@
 
 /* ---------- 1. 기본 ---------- */
 :root {
-  --bg-color: #e8edf4;
+  --bg-color: #f5f7fa;
   --panel-color: #fff;
-  --stage-color: #cfd7e3;
+  --stage-color: #e9eef5;
   --text-color: #111827;
   --sub-color: #667085;
   --muted-color: #5f6b80;   /* 작은 보조 텍스트(12px 이하) 최소 대비 4.5:1 */
@@ -73,80 +73,65 @@ svg {
 :focus-visible { outline: 3px solid var(--focus-color); outline-offset: 3px; }
 .app_shell { min-height: 100vh; display: flex; flex-direction: column; }
 
-/* ---------- 2. 헤더 ---------- */
-.app_header {
-  position: relative;
-  z-index: 20;
-  display: grid;
-  grid-template-columns: auto minmax(320px, 760px);
-  align-items: center;
-  gap: 28px;
-  min-height: 88px;
-  padding: 16px 28px;
-  color: #fff;
-  background: #111827;
-  border-bottom: 1px solid rgba(255, 255, 255, .1);
-  box-shadow: 0 4px 16px rgba(15, 23, 42, .16);
-}
-.brand_wrap { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
-.brand_wrap h1 { margin: 0; font-size: 20px; line-height: 1.25; letter-spacing: -.03em; }
-.brand_wrap p { margin: 3px 0 0; color: #aeb9c9; font-size: 13px; }
-.brand_mark {
-  width: 36px;
-  height: 46px;
-  padding: 7px;
-  display: block;
-  border: 2px solid var(--cyan-color);
-  border-radius: 9px;
-  transform: rotate(-4deg);
-}
-.brand_mark span {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: 1px solid rgba(103, 232, 249, .7);
-  border-radius: 3px;
-  background: linear-gradient(145deg, rgba(103, 232, 249, .2), transparent);
-}
+/* ---------- 2. 사이트 주소 · 제품명 ----------
+ * 2026-10-15(헤더 3차): 전체 폭 header 를 없앴다. 제품명 "Device Preview" 는 좌측 패널 머리(.panel_head .brand_name),
+ * 사이트 주소 입력은 우측 작업 영역 첫 줄(.site_bar) 이다. 두 줄은 같은 높이(36) · 같은 세로 위치(위 18) 에 놓여 앱 셸의 첫 줄을 이룬다.
+ * 영역 구분은 배경 톤(좌측 패널 · 작업 영역) · 간격 · 정렬로만 하고, 테두리는 입력칸 · 버튼 자체에만 쓴다. 파란색은 "사이트 열기" 에만. */
+.site_bar { position: relative; margin: 0 0 12px; }
 .site_form {
   position: relative;
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 6px 6px 6px 16px;
-  background: #fff;
-  border: 1px solid transparent;
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .2);
 }
-.site_form:focus-within { border-color: var(--cyan-color); box-shadow: 0 0 0 3px rgba(103, 232, 249, .22); }
 .site_form input {
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
-  height: 40px;
-  padding: 0;
-  color: #111827;
-  background: transparent;
-  border: 0;
+  height: 36px;
+  padding: 0 12px 0 36px;
+  color: var(--text-color);
+  background: #fff;
+  border: 1px solid #cdd5df;
+  border-radius: 8px;
   outline: 0;
+  font-size: 14px;
 }
+.site_form input:hover { border-color: #bcc5d1; }
+.site_form input:focus { border-color: var(--point-color); box-shadow: 0 0 0 3px rgba(19, 110, 241, .14); }
 .site_form input::placeholder { color: #6b7688; }
-.url_icon { width: 20px; height: 20px; color: #667085; }
+.url_icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  color: #8a95a8;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 .btn_primary {
-  min-height: 42px;
-  padding: 0 19px;
+  grid-column: 2;
+  grid-row: 1;
+  height: 36px;
+  padding: 0 16px;
   color: #fff;
   background: var(--point-color);
   border: 0;
   border-radius: 8px;
+  font-size: 14px;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
 }
 .btn_primary:hover { background: var(--point-dark); }
+.btn_primary:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
 .form_error {
   position: absolute;
-  right: 28px;
+  right: 0;   /* = URL 입력 오른쪽 끝(.site_bar 기준) */
   top: calc(100% + 6px);
   margin: 0;
   padding: 8px 12px;
@@ -159,125 +144,321 @@ svg {
 
 /* ---------- 3. 기기 패널 ---------- */
 .workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: 284px minmax(0, 1fr); }
+/* 2026-10-14 리디자인 2단계: 패널은 옅은 중성색 + 오른쪽 border(그림자 없음), 머리와 목록은 border 대신 여백으로 구분.
+ * 항목은 카드가 아니라 목록 행 — 선택된 항목만 연한 primary 배경 + 왼쪽 3px 선, 키보드 포커스는 안쪽 outline 으로 따로 표시 */
 .device_panel {
   position: relative;
   z-index: 10;
   min-width: 0;
-  background: #f8fafc;
+  background: #fafbfc;
   border-right: 1px solid var(--line-color);
-  box-shadow: 5px 0 18px rgba(15, 23, 42, .05);
 }
 .panel_head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 24px 22px 18px;
-  border-bottom: 1px solid var(--line-color);
+  padding: 18px 18px 10px;   /* 위 18 = .preview_main 위 여백 → 제품명 줄과 사이트 주소 줄이 같은 높이에 놓인다 */
 }
-.panel_head h2 { margin: 0; font-size: 18px; line-height: 1.3; letter-spacing: -.02em; }
-.panel_head p { margin: 4px 0 0; color: var(--sub-color); font-size: 13px; }
+.brand_name { margin: 0; font-size: 15px; font-weight: 700; line-height: 36px; letter-spacing: -.01em; white-space: nowrap; }
 .device_count {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 30px;
-  height: 24px;
-  padding: 0 8px;
-  color: #344054;
-  background: #e9eef5;
+  min-width: 26px;
+  height: 20px;
+  padding: 0 7px;
+  color: #475467;
+  background: #eef1f5;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .device_nav {
-  max-height: calc(100vh - 212px);   /* 헤더 88 + 패널 헤드 ~80 + 보기 모드 스위치 ~44 */
-  padding: 4px 12px 28px;
+  max-height: calc(100vh - 108px);   /* 패널 머리 64(위 18 + 제품명 36 + 아래 10) + 보기 모드 스위치 44(36 + 아래 여백 8) — 2026-10-15 헤더 3차: 상단 header 없음 */
+  padding: 0 10px 24px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #aab4c3 transparent;
 }
-.device_group { padding-top: 18px; }
-.device_group h3 { margin: 0 10px 8px; color: var(--muted-color); font-size: 12px; font-weight: 700; letter-spacing: .08em; }
-/* 기준 폭(범용) 그룹: 실기기가 아님을 제목 옆 안내와 점선 구분선으로 표시 (기존 목록 UI 유지) */
+.device_group { padding-top: 20px; }
+.device_group:first-child { padding-top: 12px; }
+.device_group h3 { margin: 0 12px 6px; color: var(--sub-color); font-size: 12px; font-weight: 600; line-height: 1.4; letter-spacing: 0; }
+/* Breakpoint 테스트(범용) 그룹: 실기기가 아님을 제목 옆 안내와 옅은 점선 구분선으로 표시 */
 .device_group h3 .group_hint { margin-left: 6px; color: #7f8aa0; font-size: 11px; font-weight: 500; letter-spacing: 0; }
-.device_group[data-kind="generic"] .device_list { padding-bottom: 10px; border-bottom: 1px dashed #d5dae2; }
+.device_group[data-kind="generic"] .device_list { padding-bottom: 12px; border-bottom: 1px dashed var(--line-color); }
 .device_group[data-kind="generic"] .device_btn strong { font-weight: 560; }
-.device_list { display: grid; gap: 4px; }
+.device_list { display: grid; gap: 2px; }
+/* 행 2줄: [기기명 · 해상도] / [설명]. .device_text 를 display:contents 로 풀어 DOM 은 그대로 두고 grid 영역만 나눈다 */
 .device_btn {
   width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
+  grid-template-areas:
+    "name size"
+    "sub  sub";
+  align-items: baseline;
+  gap: 2px 10px;
+  padding: 9px 10px 9px 12px;
   color: #344054;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: 9px;
+  border: 0;
+  border-radius: 6px;
   text-align: left;
   cursor: pointer;
 }
-.device_btn .device_text { min-width: 0; display: grid; gap: 1px; }
-.device_btn strong { overflow: hidden; font-size: 14px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.device_btn small { overflow: hidden; color: #66718a; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.device_btn .device_size { color: #55637a; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.device_btn:hover { background: #eef3f9; }
-.device_btn.is_current {
-  color: #0b4fb6;
-  background: #e8f1ff;
-  border-color: #a9c9fa;
-  box-shadow: inset 3px 0 0 var(--point-color);
-}
-.device_btn.is_current small, .device_btn.is_current .device_size { color: #396eac; }
+.device_btn .device_text { display: contents; }
+.device_btn strong { grid-area: name; min-width: 0; overflow: hidden; color: var(--text-color); font-size: 14px; font-weight: 600; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.device_btn small { grid-area: sub; min-width: 0; overflow: hidden; color: var(--sub-color); font-size: 12px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.device_btn .device_size { grid-area: size; color: var(--muted-color); font-size: 12px; line-height: 1.35; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* 상태 단계(2026-10-15): 카드가 아니라 목록 행 — 선 · 테두리 없이 배경 톤만. hover(가장 약한 중성) < 다중 비교 체크 행(아주 옅은 tint) < 단일 보기 현재 행(옅은 blue-gray tint + 기기명 primary).
+ * 선택 규칙이 hover 뒤에 있어 선택 행 위 hover 는 선택 배경을 유지한다. 키보드 포커스는 별도 outline */
+.device_btn:hover { background: #f5f6f8; }
+.device_btn.is_current { background: #eef2f7; }
+.device_btn.is_current strong { color: var(--point-dark); }
+.device_btn.is_current small { color: var(--muted-color); }   /* 선택 배경 위 12px 설명 대비 4.5:1 이상(--sub-color 는 4.43) — 해상도와 같은 중립 회색 */
+.device_btn:focus-visible { outline: 2px solid var(--focus-color); outline-offset: -2px; }
 
 /* ---------- 4. 컨트롤 패널 ----------
- * 역할별 5개 영역을 grid-area 로 고정한다. 기기가 바뀌어도 위치·순서는 그대로다.
+ * 역할별 6개 영역을 grid-area 로 고정한다. 기기가 바뀌어도 위치·순서는 그대로다(2026-10-14 리디자인 3단계: 5 → 6영역, 도구와 보기 분리).
  *   device  : 기기명 · 화면/사이트 크기 · DPR · 방향   (남는 폭을 흡수)
  *   fold    : 접힘/펼침 상태 (단일 화면 기기는 안내 텍스트로 자리 유지, 폭 --fold-col 예약)
- *   size    : 화면 너비 · 높이 · 적용
- *   browser : 브라우저 선택 · 주소창 · 주소창 위치 · 툴바 · UI 겹침 (2행 블록)
- *   tools   : 회전 · safe-area · 새로고침 · 새 창 / 배율 (2행 블록)
- * 폭이 부족하면 순서를 바꾸지 않고 2행(device fold size / browser tools) → 1열로 내려간다. */
+ *   size    : 화면 — 너비 · 높이 · 적용
+ *   browser : 브라우저 — 브라우저 선택 · 주소창 위치 / 주소창 · 툴바 · UI 겹침 (/ Safari 실측 설정)
+ *   tools   : 도구 — 회전 · safe-area · 가림 검사 · 새로고침 · 새 창
+ *   view    : 보기 — 배율 [−] [%] [+] [화면 맞춤 | 실기기]
+ * 그룹은 border 대신 간격과 작은 제목(.ctrl_title, aria-hidden — 이름은 role="group" aria-label) 으로 구분한다.
+ * 높이 기준: 아이콘 · 일반 버튼 · select · 세그먼트 36, 숫자 입력 38.
+ * 폭이 부족하면 순서를 바꾸지 않고 2행(device fold size / browser tools view) → 4행 → 1열로 내려간다. */
 .preview_main { min-width: 0; display: flex; flex-direction: column; padding: 18px 20px 20px; }
 .control_panel {
   --fold-col: 200px;
+  --ctrl-line: #cdd5df;   /* 입력 · 버튼 테두리(흰 바탕 위에서 경계가 보이는 진하기) — 패널 외곽선은 --line-color */
   position: relative;
   display: grid;
-  grid-template-columns: minmax(170px, 1fr) minmax(var(--fold-col), auto) auto auto auto;
-  grid-template-areas: "device fold size browser tools";
-  align-items: center;
-  gap: 10px 14px;
-  min-height: 68px;
-  padding: 10px 14px;
+  grid-template-columns: minmax(200px, 1fr) minmax(var(--fold-col), auto) auto auto auto auto;
+  grid-template-areas: "device fold size browser tools view";
+  align-items: start;
+  gap: 14px 24px;
+  padding: 12px 18px 14px;
   background: var(--panel-color);
   border: 1px solid var(--line-color);
   border-radius: 12px 12px 0 0;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, .05);
+}
+.ctrl_title, .fold_controls legend {
+  display: block;
+  margin: 0 0 6px;
+  padding: 0;
+  color: var(--sub-color);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
 }
 .current_device {
   grid-area: device;
+  align-self: center;
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-right: 14px;
-  border-right: 1px solid var(--line-color);
 }
-.current_device div { min-width: 0; display: grid; }
-.current_device strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
-.current_device span:last-child { color: var(--sub-color); font-size: 13px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.current_device div { min-width: 0; display: grid; gap: 2px; }
+.current_device strong { overflow: hidden; font-size: 16px; font-weight: 700; line-height: 1.35; letter-spacing: -.01em; text-overflow: ellipsis; white-space: nowrap; }
+.current_device span:last-child { color: var(--sub-color); font-size: 12px; line-height: 1.45; font-variant-numeric: tabular-nums; text-wrap: balance; word-break: keep-all;}   /* 6영역 한 줄(창 1860 이상) 에서 기기 열이 좁으면 두 줄로 고르게 나뉜다 */
 .state_dot {
-  width: 9px;
-  height: 9px;
+  width: 7px;
+  height: 7px;
   flex: 0 0 auto;
-  background: #1fc06f;
-  border: 2px solid #d6f7e5;
+  background: #1fb468;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px #27a864;
+  box-shadow: 0 0 0 3px #dcf5e7;
 }
+/* 화면 상태: 기존 legend("화면 상태") 를 그대로 시각 제목으로 보여 준다(fieldset 접근성 구조 유지) */
 .fold_controls { grid-area: fold; min-width: 0; margin: 0; padding: 0; border: 0; }
-.fold_controls legend {
+.fold_controls legend { float: left; width: 100%; }
+.state_list {
+  clear: both;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  max-width: 100%;
+  height: 36px;
+  padding: 2px;
+  background: #fff;
+  border: 1px solid var(--ctrl-line);
+  border-radius: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.fold_controls.is_single .state_list { background: transparent; border: 1px dashed var(--line-color); }
+.state_single { padding: 0 10px; color: #8a95a8; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.state_btn {
+  height: 30px;
+  padding: 0 10px;
+  color: var(--sub-color);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.state_btn:hover { color: #344054; background: #f3f5f8; }
+.state_btn.is_current { color: var(--point-dark); background: #eff6ff; }
+.state_btn:focus-visible { outline: 2px solid var(--focus-color); outline-offset: -2px; }
+/* 화면: [너비] × [높이] [적용] */
+.size_controls { grid-area: size; display: grid; grid-template-columns: auto auto auto auto; align-items: center; column-gap: 6px; }
+.size_controls .ctrl_title { grid-column: 1 / -1; }
+.size_field {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  width: 84px;
+  height: 38px;
+  padding: 13px 8px 0;
+  background: #fff;
+  border: 1px solid var(--ctrl-line);
+  border-radius: 8px;
+}
+.size_field:focus-within { border-color: var(--point-color); box-shadow: 0 0 0 3px rgba(19, 110, 241, .14); }
+.size_field label { position: absolute; left: 8px; top: 3px; color: var(--muted-color); font-size: 10px; line-height: 1.2; }
+.size_field input {
+  width: 100%;
+  min-width: 0;
+  height: 22px;
+  padding: 0;
+  color: var(--text-color);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.size_field span { color: #8a95a8; font-size: 11px; }
+.size_cross { color: #98a2b3; font-size: 12px; }
+.btn_apply {
+  height: 36px;
+  margin-left: 2px;
+  padding: 0 12px;
+  color: #344054;
+  background: #fff;
+  border: 1px solid var(--ctrl-line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn_apply:hover { background: #f3f5f8; }
+.btn_apply:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
+
+/* 브라우저: 제목 / [브라우저 선택][주소창 위치] / [주소창][툴바][UI 겹침] (/ Safari 실측 설정). 외곽 상자 없이 내용으로 묶는다. DOM 순서(탭 순서) 는 그대로 두고 grid-area 로만 배치 */
+.browser_controls {
+  grid-area: browser;
+  justify-self: start;   /* 2행 · 4행에서 넓은 열을 채우며 토글 사이가 벌어지지 않게 내용 폭으로 */
+  display: grid;
+  grid-template-columns: auto auto auto;
+  grid-template-areas:
+    "title   title   title"
+    "select  select  position"
+    "address toolbar overlay";
+  align-items: center;
+  gap: 8px 14px;
+  white-space: nowrap;
+}
+.browser_controls .ctrl_title { grid-area: title; margin-bottom: -2px; }   /* 행 간격 8 에서 2 를 빼 다른 그룹과 같은 제목 ↔ 컨트롤 간격 6 */
+.browser_select {
+  grid-area: select;
+  width: 160px;          /* 고정 폭: 브라우저 이름 길이에 따라 열 폭이 흔들리지 않게 */
+  min-width: 0;
+  max-width: 100%;
+  height: 36px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 28px 0 10px;
+  color: #344054;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475467' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center / 14px;
+  border: 1px solid var(--ctrl-line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  appearance: none;
+  cursor: pointer;
+}
+.browser_select:hover:not(:disabled) { background-color: #f8fafc; }
+.browser_select:disabled { color: #98a2b3; background-color: #f8fafc; cursor: not-allowed; }
+.browser_select:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
+.switch_address { grid-area: address; }
+.switch_toolbar { grid-area: toolbar; }
+.switch_overlay { grid-area: overlay; }
+/* iOS Safari 실측 viewport 설정 행(Safari 탭 레이아웃 · viewport-fit) — 실측 데이터 기기에서만 4행으로 추가(숨김일 때는 행·간격 자체가 없음) */
+.browser_controls[data-safari="true"] {
+  grid-template-areas:
+    "title   title   title"
+    "select  select  position"
+    "address toolbar overlay"
+    "safari  safari  safari";
+}
+/* MacBook + Safari(macOS) 단일 보기(2026-10-16, progressive disclosure): 기존 JS 가 붙이는 data-mac-safari 만으로 바꾼다.
+ * 브라우저 그룹 = [Safari (macOS)] [Safari 버전] [설정] 한 줄. 주소창 · 위치 · 툴바 · UI 겹침은 같은 요소(.browser_settings) 를
+ * 설정 버튼 아래 작은 popover 로 띄운다 — 컨트롤을 복제하지 않고 위치만 바꾸며, 닫혀 있으면 공간을 차지하지 않는다(absolute) */
+.browser_settings { display: contents; }   /* 다른 기기: 안의 컨트롤이 그대로 브라우저 그룹 그리드에 배치 */
+.browser_settings_btn { display: none; }
+.browser_controls[data-mac-safari="true"] {
+  position: relative;
+  grid-template-columns: auto auto auto;
+  grid-template-areas:
+    "title   title   title"
+    "select  version settings";
+}
+.browser_controls[data-mac-safari="true"] .browser_settings_btn {
+  grid-area: settings;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px 0 10px;
+  color: #344054;
+  background: #fff;
+  border: 1px solid var(--ctrl-line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.browser_settings_btn svg { width: 16px; height: 16px; }
+.browser_settings_btn:hover { background: #f3f5f8; }
+.browser_settings_btn[aria-expanded="true"] { color: var(--point-dark); background: #eff6ff; border-color: #b9cff5; }
+.browser_settings_btn:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
+.browser_controls[data-mac-safari="true"] .browser_settings {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  right: 0;
+  display: none;
+  width: max-content;
+  grid-template-columns: auto;
+  justify-items: start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--line-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .08);
+}
+.browser_controls[data-mac-safari="true"] .browser_settings.is_open { display: grid; }
+.browser_controls[data-mac-safari="true"] .browser_settings > * { grid-area: auto; }
+/* 데스크톱 Safari 는 주소창이 항상 위라 주소창 위치(상단 / 하단) 는 popover 에서 숨긴다 — 라디오 · 상태 · 잠금 로직은 그대로(모바일 Safari 는 영향 없음) */
+.browser_controls[data-mac-safari="true"] .browser_settings .position_controls { display: none; }
+.safari_version { grid-area: version; display: flex; align-items: center; gap: 4px 8px; }
+.safari_version[hidden] { display: none; }
+.safari_version .seg_label {   /* 보이는 라벨 없이 접근성 이름만(선택값 "Safari 27" 이 의미를 전달) */
   position: absolute;
   width: 1px;
   height: 1px;
@@ -285,128 +466,25 @@ svg {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
 }
-.state_list {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  width: max-content;
-  max-width: 100%;
-  min-height: 40px;
-  padding: 3px;
-  background: #eef2f7;
-  border-radius: 9px;
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-.fold_controls.is_single .state_list { background: transparent; border: 1px dashed #d8dee8; }
-.state_single { padding: 0 10px; color: #8a95a8; font-size: 12px; font-weight: 650; white-space: nowrap; }
-.state_btn {
-  min-height: 34px;
-  padding: 0 9px;
-  color: #667085;
-  background: transparent;
-  border: 0;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 650;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.state_btn:hover { color: #344054; }
-.state_btn.is_current { color: #164f9e; background: #fff; box-shadow: 0 2px 7px rgba(15, 23, 42, .12); }
-.size_controls { grid-area: size; display: flex; align-items: flex-end; gap: 6px; }
-.size_field {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  width: 88px;
-  height: 42px;
-  padding: 14px 8px 0;
-  background: #f8fafc;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
-}
-.size_field:focus-within { border-color: var(--point-color); box-shadow: 0 0 0 2px rgba(19, 110, 241, .14); }
-.size_field label { position: absolute; left: 8px; top: 3px; color: var(--muted-color); font-size: 11px; line-height: 1.2; }
-.size_field input {
-  width: 100%;
-  min-width: 0;
-  height: 25px;
-  padding: 0;
-  color: #1d2939;
-  background: transparent;
-  border: 0;
-  outline: 0;
-  font-size: 14px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-.size_field span { color: #66718a; font-size: 11px; }
-.size_cross { align-self: center; margin-top: 2px; color: #66718a; font-size: 13px; }
-.btn_apply {
-  height: 42px;
-  padding: 0 11px;
+.safari_version_select {
+  width: 160px;
+  height: 36px;
+  padding: 0 28px 0 10px;
   color: #344054;
-  background: #fff;
-  border: 1px solid #bcc5d1;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475467' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center / 14px;
+  border: 1px solid var(--ctrl-line);
   border-radius: 8px;
   font-size: 13px;
-  font-weight: 650;
-  cursor: pointer;
-}
-.btn_apply:hover { background: #f2f5f8; }
-
-/* 브라우저 UI 블록: 1행 [브라우저 선택][주소창 위치], 2행 [주소창][툴바][UI 겹침]. DOM 순서(탭 순서) 는 그대로 두고 grid-area 로만 배치 */
-.browser_controls {
-  grid-area: browser;
-  display: grid;
-  grid-template-columns: auto auto auto;
-  grid-template-areas:
-    "select  select  position"
-    "address toolbar overlay";
-  align-items: center;
-  gap: 7px 10px;
-  padding: 6px 10px;
-  background: #f8fafc;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
-  white-space: nowrap;
-}
-.browser_select {
-  grid-area: select;
-  width: 150px;          /* 고정 폭: 브라우저 이름 길이에 따라 열 폭이 흔들리지 않게 */
-  min-width: 0;
-  max-width: 100%;
-  height: 28px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 24px 0 8px;
-  color: #344054;
-  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475467' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 6px center / 14px;
-  border: 1px solid #cdd5df;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
   appearance: none;
   cursor: pointer;
 }
-.browser_select:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 1px; }
-.switch_address { grid-area: address; }
-.switch_toolbar { grid-area: toolbar; }
-.switch_overlay { grid-area: overlay; }
-/* iOS Safari 실측 viewport 설정 행(Safari 탭 레이아웃 · viewport-fit) — 실측 데이터 기기에서만 3행으로 추가(숨김일 때는 행·간격 자체가 없음) */
-.browser_controls[data-safari="true"] {
-  grid-template-areas:
-    "select  select  position"
-    "address toolbar overlay"
-    "safari  safari  safari";
-}
-.safari_controls { grid-area: safari; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.safari_version_select:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
+.safari_controls { grid-area: safari; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .safari_controls[hidden] { display: none; }
 .safari_controls .position_controls { grid-area: auto; justify-self: auto; }
-.seg_label { padding: 0 4px 0 6px; color: #66718a; font-size: 11px; font-weight: 650; }
-.switch_control { display: inline-flex; align-items: center; gap: 5px; color: #475467; font-size: 12px; font-weight: 650; cursor: pointer; }
+.seg_label { padding: 0 4px 0 8px; color: var(--sub-color); font-size: 11px; font-weight: 600; }
+.switch_control { display: inline-flex; align-items: center; gap: 6px; color: #475467; font-size: 12px; font-weight: 600; cursor: pointer; }
 .switch_control input {
   position: relative;
   width: 30px;
@@ -437,18 +515,18 @@ svg {
 .switch_control input:checked::before { transform: translateX(12px); }
 .switch_control input:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 2px; }
 
-/* 도구 블록: 1행 아이콘 4개(회전·safe-area·새로고침·새 창), 2행 배율. 배율 fieldset 만 2행에 고정하고 나머지는 자동 배치 */
+/* 도구: 제목 / 아이콘 5개(회전 · safe-area · 가림 검사 · 새로고침 · 새 창) */
 .tool_actions {
   grid-area: tools;
-  justify-self: end;
   display: grid;
-  grid-template-columns: repeat(5, minmax(36px, 1fr));   /* 1행 아이콘 5개(회전 · safe-area · 가림 검사 · 새로고침 · 새 창) — 2026-10-12 가림 검사 버튼 추가로 4 → 5, 2행 배율 컨트롤은 전체 폭 */
+  grid-template-columns: repeat(5, 36px);   /* 회전 · safe-area · 가림 검사 · 새로고침 · 새 창 (MacBook + Safari 에서는 아래 규칙으로 Safari 호환성 검사가 더해져 6열) */
   gap: 6px;
-  padding-left: 14px;
-  border-left: 1px solid var(--line-color);
 }
-.tool_actions .icon_btn { width: auto; min-width: 36px; height: 36px; padding: 7px; }
-.tool_actions .scale_controls { grid-column: 1 / -1; grid-row: 2; height: 36px; }
+/* Safari 호환성 검사 버튼(2026-10-16): MacBook + Safari(macOS) 단일 보기일 때만 보인다 — 기존 JS 가 그 조건에서만 브라우저 그룹에 붙이는 data-mac-safari 를 따른다(JS 변경 없음). 다른 기기의 도구 그룹은 5열 그대로 */
+.control_panel:not(:has(.browser_controls[data-mac-safari="true"])) .compat_btn { display: none; }
+.control_panel:has(.browser_controls[data-mac-safari="true"]) .tool_actions { grid-template-columns: repeat(6, 36px); }
+.tool_actions .ctrl_title { grid-column: 1 / -1; margin-bottom: 0; }   /* gap 6 이 제목 ↔ 아이콘 간격 */
+/* 기본 아이콘 버튼(다중 비교 카드의 .is_small 도 사용 — 이번 단계에서 값 그대로) */
 .icon_btn {
   width: 42px;
   height: 42px;
@@ -469,6 +547,27 @@ svg {
 .icon_btn[aria-pressed="true"] { color: #0b4fb6; background: #e8f1ff; border-color: #a9c9fa; }
 .icon_btn:disabled, .icon_btn.is_disabled { color: #b8c0cc; background: #f5f7f9; border-color: #e0e5eb; cursor: not-allowed; }
 .icon_btn.is_disabled { pointer-events: none; }
+/* 컨트롤 패널 아이콘(새 창 링크 포함 같은 모양): 36 · 흰/중성 · hover 중립 · 눌림만 primary light */
+.control_panel .icon_btn { width: 36px; height: 36px; padding: 7px; border-color: var(--ctrl-line); }
+.control_panel .icon_btn:hover:not(:disabled):not(.is_disabled) { color: var(--text-color); background: #f3f5f8; border-color: #bcc5d1; }
+.control_panel .icon_btn[aria-pressed="true"],
+.control_panel .icon_btn[aria-pressed="true"]:hover:not(:disabled) { color: var(--point-dark); background: #eff6ff; border-color: #b9cff5; }
+.control_panel .icon_btn:disabled, .control_panel .icon_btn.is_disabled { color: #b8c0cc; background: #f8fafc; border-color: #e6eaf0; }
+.control_panel .icon_btn:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
+
+/* 보기: 제목 / 배율 */
+.view_controls { grid-area: view; display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; }
+.view_controls .ctrl_title { flex: 0 0 100%; }
+/* 기기만 보기 토글: 일반 상태는 아이콘 버튼(글자는 접근성 이름), 눌린 상태 표현은 .control_panel .icon_btn[aria-pressed] 공통 규칙 */
+.device_only_btn { gap: 6px; }
+.device_only_label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
 
 /* 세그먼트 라디오(배율·주소창 위치) 공통 */
 .scale_controls, .position_controls, .mode_controls {
@@ -505,40 +604,46 @@ svg {
 .scale_controls input:focus-visible + span, .position_controls input:focus-visible + span, .mode_controls input:focus-visible + span { outline: 3px solid var(--focus-color); outline-offset: 1px; }
 .scale_controls input:disabled + span, .position_controls input:disabled + span, .mode_controls input:disabled + span { color: #aeb7c4; cursor: not-allowed; }
 .scale_controls input:disabled:checked + span, .position_controls input:disabled:checked + span { color: #8a95a8; background: #f4f6f9; box-shadow: none; }
-/* 표시 배율 컨트롤: [−] [% 입력] [+] [화면 맞춤] [실기기]. 입력 폭 고정(열 폭 흔들림 방지) */
-.scale_controls { gap: 2px; }
+/* 표시 배율 컨트롤: [−] [% 입력] [+] [화면 맞춤 | 실기기]. 입력 폭 고정(열 폭 흔들림 방지).
+ * 공통 세그먼트 상자(.scale_controls) 를 풀어 −/+ 는 아이콘 버튼, % 는 평소 테두리 없는 값, 두 배율 모드는 붙은 버튼 한 쌍으로 */
+.scale_controls { gap: 6px; }
+.control_panel .scale_controls { height: 36px; padding: 0; background: none; border: 0; border-radius: 0; }
 .scale_btn, .scale_mode {
-  height: 28px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 8px;
-  color: #55637a;
-  background: none;
-  border: 0;
-  border-radius: 6px;
+  padding: 0 12px;
+  color: #475467;
+  background: #fff;
+  border: 1px solid #cdd5df;
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
 }
-.scale_btn { width: 26px; padding: 0; font-size: 15px; font-weight: 600; line-height: 1; }
-.scale_btn:hover, .scale_mode:hover { color: #1357ae; }
-.scale_btn:disabled, .scale_mode:disabled { color: #aeb7c4; cursor: not-allowed; }
-.scale_mode[aria-pressed="true"] { color: #1357ae; background: #fff; box-shadow: 0 1px 4px rgba(15, 23, 42, .14); }
-.scale_btn:focus-visible, .scale_mode:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 1px; }
+.scale_btn { width: 36px; padding: 0; border-radius: 8px; font-size: 16px; line-height: 1; }
+.scale_mode { position: relative; border-radius: 0; }
+.scale_btn + .scale_mode { margin-left: 4px; border-radius: 8px 0 0 8px; }
+.scale_mode + .scale_mode { margin-left: -7px; border-radius: 0 8px 8px 0; }   /* gap 6 + 테두리 1 겹침 → 붙은 버튼 한 쌍 */
+.scale_btn:hover:not(:disabled), .scale_mode:hover:not(:disabled) { color: var(--text-color); background: #f3f5f8; }
+.scale_btn:disabled, .scale_mode:disabled { color: #b8c0cc; background: #f8fafc; border-color: #e6eaf0; cursor: not-allowed; }
+.scale_mode[aria-pressed="true"],
+.scale_mode[aria-pressed="true"]:hover:not(:disabled) { z-index: 1; color: var(--point-dark); background: #eff6ff; border-color: #b9cff5; }
+.scale_btn:focus-visible, .scale_mode:focus-visible { z-index: 2; outline: 2px solid var(--focus-color); outline-offset: 2px; }
 .scale_field {
   position: relative;
-  flex: 0 0 58px;
-  width: 58px;
-  height: 28px;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 36px;
   display: flex;
   align-items: center;
-  background: #fff;
-  border: 1px solid #cdd5df;
-  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
 }
-.scale_field:focus-within { border-color: var(--point-color); box-shadow: 0 0 0 2px rgba(19, 110, 241, .14); }
+.scale_field:hover { border-color: var(--line-color); }
+.scale_field:focus-within { background: #fff; border-color: var(--point-color); box-shadow: 0 0 0 3px rgba(19, 110, 241, .14); }
 .scale_field input {
   position: static;   /* .scale_controls input(세그먼트 라디오 숨김 규칙) 의 absolute·clip 을 되돌린다 */
   clip: auto;
@@ -546,19 +651,26 @@ svg {
   overflow: visible;
   width: 100%;
   height: 100%;
-  padding: 0 16px 0 6px;
-  color: #1f2937;
+  padding: 0 17px 0 2px;
+  color: var(--text-color);
   background: transparent;
   border: 0;
   outline: 0;
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
-.scale_controls .scale_field .scale_unit { position: absolute; right: 6px; top: 50%; height: auto; display: block; padding: 0; color: #8a95a8; font-size: 11px; font-weight: 500; transform: translateY(-50%); pointer-events: none; }   /* 세그먼트 라벨 span 규칙(padding·height) 을 되돌린다 */
-.position_controls { grid-area: position; justify-self: end; height: 28px; padding: 2px; }
-.position_controls label span { height: 22px; padding: 0 8px; font-size: 11px; }
+.scale_controls .scale_field .scale_unit { position: absolute; right: 5px; top: 50%; height: auto; display: block; padding: 0; color: #8a95a8; font-size: 12px; font-weight: 500; transform: translateY(-50%); pointer-events: none; }   /* 세그먼트 라벨 span 규칙(padding·height) 을 되돌린다 */
+/* 주소창 위치 · Safari 설정 세그먼트(컨트롤 패널 전용): 36 · 흰 바탕 한 겹 테두리 · 선택만 primary light */
+.position_controls { grid-area: position; justify-self: end; }
+.control_panel .position_controls { height: 36px; gap: 2px; padding: 2px; background: #fff; border-color: var(--ctrl-line); }
+.control_panel .position_controls label span { height: 30px; padding: 0 10px; color: var(--sub-color); font-size: 12px; font-weight: 600; }
+.control_panel .position_controls label:hover input:not(:checked):not(:disabled) + span { color: #344054; background: #f3f5f8; }
+.control_panel .position_controls input:checked + span { color: var(--point-dark); background: #eff6ff; box-shadow: none; }
+.control_panel .position_controls input:focus-visible + span { outline: 2px solid var(--focus-color); outline-offset: -2px; }
+.control_panel .position_controls input:disabled + span { color: #b8c0cc; }
+.control_panel .position_controls input:disabled:checked + span { color: #8a95a8; background: #f4f6f9; }
 .size_error {
   position: absolute;
   right: 14px;
@@ -572,49 +684,53 @@ svg {
   font-size: 13px;
 }
 
-/* ---------- 5. 미리보기 ---------- */
+/* ---------- 5. 미리보기 ----------
+ * 2026-10-14 리디자인 4단계: 컨트롤 패널과 한 작업 영역으로 이어지는 조용한 canvas. 외곽선 1px · 그림자 없음.
+ * 높이: 스테이지는 내용(기기 크기)이 아니라 창에 남은 높이를 쓴다(flex-basis 0). 이전에는 내용 높이로 커져서,
+ * 화면 맞춤 상한(app.js getFitArea 의 "창 아래 56px" 가정) 과 실제 스테이지 아래 높이(footer · 안내 · 여백) 차이만큼 페이지가 길어졌다.
+ * 기기가 스테이지보다 크면(100% · 실기기 배율) 페이지 대신 스테이지 안에서 스크롤된다. 980 이하(좌측 목록이 위로 올라가 페이지가 원래 스크롤되는 배치) 는 이전처럼 내용 높이. */
 .preview_area {
   position: relative;
   min-height: 0;
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   background: var(--stage-color);
-  border: 1px solid #c1cad7;
+  border: 1px solid var(--line-color);
   border-top: 0;
   border-radius: 0 0 12px 12px;
   overflow: hidden;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, .1);
 }
+/* 눈금자: canvas 와 같은 바탕의 보조 정보(0 · 25 · 50 · 75 · 100% 위치 표시, aria-hidden) */
 .ruler_top {
-  height: 28px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 18px;
-  color: #6d7786;
-  background: #dde3eb;
-  border-bottom: 1px solid #c1cad7;
+  color: var(--muted-color);
+  border-bottom: 1px solid rgba(100, 116, 139, .14);
   font: 10px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 .ruler_top span { position: relative; }
-.ruler_top span::after { content: ""; position: absolute; left: 50%; top: 15px; width: 1px; height: 7px; background: #9aa6b6; }
+.ruler_top span::after { content: ""; position: absolute; left: 50%; top: calc(100% + 2px); width: 1px; height: 5px; background: #b8c2d0; }
 .preview_stage {
+  --stage-pad: 32px;
   position: relative;
-  min-height: 510px;
-  flex: 1;
+  flex: 1 1 0;
+  min-height: calc(300px + 2 * var(--stage-pad));   /* app.js getFitArea 의 최소 맞춤 높이 300 + 위아래 여백 — 낮은 창에서도 기기를 그릴 최소 높이 */
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 38px;
+  padding: var(--stage-pad);
   overflow: auto;
   scrollbar-gutter: stable;   /* 세로 스크롤바가 생겨도 폭이 변하지 않게 → 맞춤 배율 재계산 진동 방지 */
   background-color: var(--stage-color);
-  background-image:
-    linear-gradient(rgba(255, 255, 255, .45) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, .45) 1px, transparent 1px),
-    linear-gradient(rgba(115, 130, 151, .11) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(115, 130, 151, .11) 1px, transparent 1px);
+  background-image:   /* 20px 작은 칸은 거의 보이지 않게, 100px 큰 칸만 약하게(간격 · 좌표 의미는 그대로) */
+    linear-gradient(rgba(100, 116, 139, .05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 116, 139, .05) 1px, transparent 1px),
+    linear-gradient(rgba(100, 116, 139, .11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 116, 139, .11) 1px, transparent 1px);
   background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
   background-position: -1px -1px;
 }
@@ -689,6 +805,47 @@ svg {
   --glass: #08090c;
 }
 /* Galaxy Tab S 계열(Armor Aluminum, 그레이): 어두운 무광 링, 검은 유리 베젤 */
+/* MacBook 덮개(2026-10-15, 2026-10-16 상판 형상): 알루미늄 테 + 검은 디스플레이 베젤.
+ * 상판 형상은 시각 표현만 — 셸 크기 · frame inset · 화면 · iframe · safe-area · 메뉴 막대 / Safari 위치는 그대로다.
+ * 세 모델 공통 형상이며 아래 px 값은 모두 approximation(모델별 공식 치수 없음):
+ *  - 덮개 아래쪽(힌지 쪽) 코너는 거의 각지게 4px — 위쪽 코너는 프로필 radius 그대로
+ *  - 디스플레이 위쪽 코너만 10px 둥글게(아래쪽은 각짐) — 잘리는 곳은 메뉴 막대 모서리뿐
+ *  - 아래 베젤 맨 아래 7px 에 어두운 힌지 띠(베젤 두께 안에서 그려 높이 증가 없음)
+ *  - 카메라 하우징(노치) 186 × 32 + 카메라 점: 메뉴 막대(37) 안에 그리는 장식 — cutout · safe-area · 가림 검사 대상 아님 */
+.device_shell[data-family="macbook"] {
+  --ring-finish: linear-gradient(145deg, #c9ccd1 0%, #9ea3aa 35%, #7d828a 70%, #b9bdc3 100%);
+  --ring-edge: #6f747b;
+  --ring-highlight: rgba(255, 255, 255, .45);
+  --glass: #0b0c0e;
+  --mac-lid-bottom: 4px;
+  --mac-screen-top: 10px;
+  --mac-hinge: 7px;
+  --mac-notch-width: 186px;
+  --mac-notch-height: 32px;
+  border-radius: var(--body-tl, 18px) var(--body-tr, 18px) var(--mac-lid-bottom) var(--mac-lid-bottom);
+}
+.device_shell[data-family="macbook"]::before {
+  background: linear-gradient(to top, #2a2d32 0, #1a1c20 var(--mac-hinge), var(--glass) var(--mac-hinge));
+  border-radius: max(0px, calc(var(--body-tl, 18px) - var(--ring))) max(0px, calc(var(--body-tr, 18px) - var(--ring))) max(0px, calc(var(--mac-lid-bottom) - var(--ring))) max(0px, calc(var(--mac-lid-bottom) - var(--ring)));
+}
+.device_shell[data-family="macbook"] .screen_wrap {
+  border-radius: var(--mac-screen-top) var(--mac-screen-top) 0 0;
+}
+.device_shell[data-family="macbook"]::after {
+  content: "";
+  position: absolute;
+  z-index: 7;
+  left: calc(var(--frame-left, 0px) + var(--viewport-width) / 2);
+  top: var(--frame-top, 0px);
+  width: var(--mac-notch-width);
+  height: var(--mac-notch-height);
+  transform: translateX(-50%);
+  background:
+    radial-gradient(circle at 50% 46%, #1c2a3a 0 2px, #0d1117 2.6px 3.6px, transparent 4.2px),
+    var(--glass);
+  border-radius: 0 0 9px 9px;
+  pointer-events: none;
+}
 .device_shell[data-family="galaxy-tab"] {
   --ring-finish: linear-gradient(145deg, #6b7078 0%, #3d424a 30%, #23272e 65%, #5c6169 100%);
   --ring-edge: #2c3037;
@@ -772,7 +929,7 @@ svg {
 .device_shell[data-family="fold"] .side_key, .device_shell[data-family="flip"] .side_key { background: linear-gradient(#c6cad0, #7f858c); border-color: #4a4f57; }
 .device_shell[data-family="ipad-modern"] .side_key { background: linear-gradient(#c9ccd1, #7d828a); border-color: #4d525a; }
 .device_shell[data-family="galaxy-tab"] .side_key { background: linear-gradient(#8a8f97, #4a4f57); border-color: #2c3037; }
-.device_shell:not([data-family="neutral"]):not([data-family="ipad-classic"]) .side_key:not(.side_key_extra) { display: block; }
+.device_shell:not([data-family="neutral"]):not([data-family="ipad-classic"]):not([data-family="macbook"]) .side_key:not(.side_key_extra) { display: block; }
 /* 데이터 기반 키(controls.keys → data-keys="custom"): 목록에 있는 키만, JS 가 넣은 변(data-edge)·시작(--key-start)·길이(--key-length) 로 그린다. 가로 변환은 JS(반시계 규칙)
  * 두께(--key-thick) = 보이는 돌출 + 셸 border 1px. 기본 4px(돌출 3), keys 항목에 protrusion 이 있을 때만 JS 가 넣는다 */
 .device_shell[data-keys="custom"] .side_key:not([data-edge]) { display: none; }
@@ -1060,6 +1217,26 @@ svg {
 /* Chrome (iOS) — 사용자 제공 iPhone 17 Pro 실기기 캡처 photo-measured(2026-09-22, 2.341px/pt). 밴드 높이(50/44) 는 browserProfiles['ios-chrome'].
  * 옴니박스: 밴드 50 안에 pill 36 (상 4 / 하 10), 좌우 여백 10, 완전 둥근 평면 회색(테두리·그림자 없음), 글자 14pt 가운데, 선행 페이지 정보 19, 후행 공유 16×18(안쪽 16).
  * 툴바: 44 + 홈 영역 34 에 같은 배경, 버튼 5개 [← → + 탭 …] 36 슬롯을 space-between + 좌우 13.4 로 놓아 중심 31.4 / 116.2 / 201 / 285.8 / 370.6(실측 점 아이콘 362.9 는 글리프 오프셋으로 보고 대칭 배치). */
+/* macOS 메뉴 막대(statusBarProfiles.macos): 내용(메뉴 · 시계 · 아이콘) 은 근거 없이 그리지 않고 높이만 표현 */
+.screen_wrap[data-status-platform="macos"] .band_status { background: #e9ebee; border-bottom: 1px solid #d9dce1; }
+/* 데스크톱 Safari(mac-safari): 창 버튼 3개 + 가운데 주소 필드의 단일 툴바(탭 1개 · 탭 막대 숨김 상태). 높이는 browserProfiles 값(approximation) */
+.screen_wrap[data-browser="mac-safari"] { --band-bg: #f4f4f5; }
+.screen_wrap[data-browser="mac-safari"] .band_url { position: relative; justify-content: center; padding: 0 90px; border-bottom: 1px solid #dcdde0; }
+.screen_wrap[data-browser="mac-safari"] .band_url::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 52px;
+  height: 12px;
+  background:
+    radial-gradient(circle at 6px 6px, #ff5f57 5.5px, transparent 6px),
+    radial-gradient(circle at 26px 6px, #febc2e 5.5px, transparent 6px),
+    radial-gradient(circle at 46px 6px, #28c840 5.5px, transparent 6px);
+  transform: translateY(-50%);
+}
+.screen_wrap[data-browser="mac-safari"] .browser_address { flex: 0 1 560px; max-height: 30px; background: #e6e6e9; border-color: transparent; border-radius: 8px; box-shadow: none; justify-content: center; }
+.screen_wrap[data-browser="mac-safari"] .browser_url { flex: 0 1 auto; }
 .screen_wrap[data-browser="ios-chrome"] { --band-bg: #fff; }
 .screen_wrap[data-browser="ios-chrome"] .band_url { padding: 4px 10px 10px; border-bottom: 1px solid #e3e6ea; }
 .screen_wrap[data-browser="ios-chrome"] .browser_address { height: 36px; max-height: 36px; box-sizing: border-box; gap: 8px; padding: 0 12px; background: #eef0f3; border-color: transparent; box-shadow: none; }
@@ -1427,13 +1604,13 @@ svg {
   padding: 0 8px;
   color: #344054;
   background: #fff;
-  border: 1px solid #bcc5d1;
+  border: 1px solid #cdd5df;
   border-radius: 6px;
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
 }
-.occlusion_recheck:hover { background: #f2f5f8; }
+.occlusion_recheck:hover { background: #f3f5f8; }
 .occlusion_recheck:disabled { color: #8a95a8; background: #f4f6f9; cursor: not-allowed; }
 .occlusion_recheck[hidden] { display: none; }
 /* 겹친 요소 번호(목록 번호와 같음) · 목록에서 고른 요소 강조(굵은 파란 이중 테두리 + 번호, 약 1.8초) */
@@ -1455,6 +1632,17 @@ svg {
 .occlusion_layer .oe_focus .oe_num { background: var(--focus-color); }
 /* 가림 요소 목록: 푸터 위에 뜨는 작은 목록(레이아웃 자리를 차지하지 않음) */
 .preview_footer { position: relative; }
+/* Safari 호환성 검사 결과 목록(가림 검사 목록과 같은 위치 · 모양) */
+.compat_note { margin: 0 0 8px; color: var(--sub-color); font-size: 12px; line-height: 1.5; }
+.compat_items { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.compat_items li { display: grid; gap: 2px; padding: 6px 8px; background: #f8fafc; border-radius: 6px; font-size: 12px; line-height: 1.45; }
+.compat_items code { overflow-wrap: anywhere; color: var(--text-color); font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.compat_items .compat_where { color: #344054; font-weight: 600; }
+.compat_items .compat_reason { color: var(--sub-color); }
+.compat_state { justify-self: start; padding: 0 6px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+.compat_state[data-state="no"] { color: #b42318; background: #fee4e2; }
+.compat_state[data-state="prefix"], .compat_state[data-state="partial"] { color: #93370d; background: #fef0c7; }
+.compat_state[data-state="check"], .compat_state[data-state="nodata"] { color: #344054; background: #eaecf0; }
 .occlusion_list {
   position: absolute;
   right: 14px;
@@ -1503,23 +1691,25 @@ svg {
 
 /* ---------- 9. 푸터·안내 ---------- */
 .preview_footer {
-  min-height: 42px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 8px 14px;
-  color: #536071;
-  background: #f7f9fb;
-  border-top: 1px solid #c5ceda;
+  padding: 6px 14px;
+  color: var(--sub-color);
+  background: #f8fafc;
+  border-top: 1px solid var(--line-color);
   font-size: 12px;
+  line-height: 1.4;
 }
-.load_status { min-width: 0; display: flex; align-items: center; gap: 7px; }
+.load_status { min-width: 0; display: flex; align-items: center; gap: 7px; color: #344054; }
 .load_status span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.status_icon { width: 7px; height: 7px; flex: 0 0 auto; background: #98a2b3; border-radius: 50%; }
+.status_icon { width: 6px; height: 6px; flex: 0 0 auto; background: #98a2b3; border-radius: 50%; }
 .load_status.is_loading .status_icon { background: #e4a11b; animation: statusPulse 1s ease-in-out infinite; }
 .load_status.is_loaded .status_icon { background: #16a667; }
-.preview_footer > span { flex: 0 0 auto; color: #5b6778; text-align: right; }
+.preview_footer > span { flex: 0 0 auto; color: var(--sub-color); text-align: right; }
+.preview_footer > span:last-child { flex: 0 100 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* 기기 설명(presetNote) 이 가장 먼저 줄어든다 — 상태 · 검사 결과 줄이 보이게(2026-10-15) */
 /* 실행 환경 경고(classic 스크롤바 감지 시에만 표시) — 대비 #7a4b00 / #fff8e6 ≈ 7:1 */
 .env_notice {
   display: flex;
@@ -1550,12 +1740,25 @@ svg {
 /* ---------- 11. 다중 비교 ----------
  * 보기 모드 스위치(.mode_controls) · 체크박스형 기기 목록(.device_btn.is_check) · 비교 바(.compare_bar)
  * · 카드 grid(.compare_grid: auto-fit 으로 폭에 따라 1~4열, 순서는 DOM 그대로) · 카드(.compare_item) */
-.mode_controls { height: 36px; margin: 0 16px 4px; padding: 3px; }
+/* 보기 모드 세그먼트(2026-10-14 리디자인 2단계): 흰 바탕 한 겹 border · 선택만 연한 primary 배경 */
+.mode_controls { height: 36px; margin: 0 16px 8px; padding: 2px; gap: 2px; background: #fff; border-color: var(--line-color); }
 .mode_controls label { flex: 1; }
-.mode_controls label span { width: 100%; height: 28px; justify-content: center; }
+.mode_controls label span { width: 100%; height: 30px; justify-content: center; color: var(--sub-color); }
+.mode_controls label:hover input:not(:checked) + span { color: #344054; background: #f3f5f8; }
+.mode_controls input:checked + span { color: var(--point-dark); background: #eff6ff; box-shadow: none; }
 
-.device_btn.is_check { grid-template-columns: auto minmax(0, 1fr) auto; cursor: pointer; }
+/* 체크 행: 체크박스를 두 줄 가운데 열로 두고 기기명 · 해상도 · 설명 정렬은 단일 보기와 같게. 포커스는 행 outline 하나로 */
+.device_btn.is_check {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "check name size"
+    "check sub  sub";
+  column-gap: 10px;
+  cursor: pointer;
+}
 .device_btn.is_check .device_check {
+  grid-area: check;
+  align-self: center;
   width: 16px;
   height: 16px;
   margin: 0;
@@ -1563,7 +1766,11 @@ svg {
   accent-color: var(--point-color);
   cursor: pointer;
 }
-.device_btn.is_check .device_check:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 2px; }
+.device_btn.is_check .device_check:focus-visible { outline: 0; }
+.device_btn.is_check:has(.device_check:focus-visible) { outline: 2px solid var(--focus-color); outline-offset: -2px; }
+/* 다중 비교: 체크박스가 선택을 보여 주므로 체크된 행은 아주 옅은 배경만, 기기명은 중립색 그대로 */
+.device_btn.is_check.is_current { background: #f2f5f9; }
+.device_btn.is_check.is_current strong { color: var(--text-color); }
 .device_btn.is_check .device_check:disabled { cursor: not-allowed; }
 .device_btn.is_disabled { opacity: .55; cursor: not-allowed; }
 .device_btn.is_disabled:hover { background: transparent; }
@@ -1575,18 +1782,18 @@ svg {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px 18px;
-  padding: 7px 14px;
-  color: #536071;
-  background: #e6ebf2;
-  border-bottom: 1px solid #c1cad7;
+  gap: 8px 18px;
+  padding: 6px 14px;
+  color: var(--sub-color);
+  background: #f8fafc;
+  border-bottom: 1px solid var(--line-color);
   font-size: 12px;
 }
 .compare_bar[hidden] { display: none; }
-.compare_count { color: #344054; font-weight: 700; white-space: nowrap; }
+.compare_count { color: var(--text-color); font-weight: 700; white-space: nowrap; }
 .sync_controls { display: flex; align-items: center; gap: 14px; margin: 0; padding: 0; border: 0; }
 .sync_controls .switch_control { white-space: nowrap; }
-.compare_note { flex: 1 1 320px; min-width: 0; margin-left: auto; color: #5b6778; line-height: 1.4; }
+.compare_note { flex: 1 1 320px; min-width: 0; margin-left: auto; color: var(--sub-color); line-height: 1.4; }
 
 .compare_grid {
   display: grid;
@@ -1607,7 +1814,7 @@ svg {
   font-size: 14px;
 }
 .compare_empty[hidden] { display: none; }
-.compare_item { min-width: 0; display: grid; gap: 10px; }
+.compare_item { min-width: 0; display: grid; gap: 8px; }   /* 머리 ↔ 기기 8 + 카드 아래 여백 4 = app.js getFitArea 가 비교 카드에 남기는 12 — 스테이지가 창 높이를 쓰므로(4단계) 합이 맞아야 안쪽 스크롤이 생기지 않는다 */
 .compare_head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1651,59 +1858,154 @@ svg {
 
 /* ---------- 10. 반응형 ---------- */
 /* 컨트롤 패널 2행: 한 줄이 안 들어가는 폭에서 순서는 유지하고 browser·tools 만 아래 줄로 */
-@media (max-width: 1520px) {
+/* 컨트롤 패널 반응형(2026-10-14 리디자인 3단계): 6영역 한 줄은 컨트롤 합계 약 1557px 라 창 1920 이상에서만 둔다(2026-10-15 기기만 보기 버튼으로 1515 → 1557, 경계 1860 → 1920). MacBook + Safari 는 아래 별도 블록(화면 상태 숨김 · 브라우저 설정 popover).
+ * 순서는 그대로(기기 정보 → 화면 → 브라우저 → 도구 → 보기) 줄만 바꾼다. 기능은 숨기거나 자르지 않는다. */
+@media (max-width: 1919px) {
   .control_panel {
-    grid-template-columns: minmax(170px, 1fr) minmax(var(--fold-col), auto) auto;
+    grid-template-columns: minmax(200px, 1fr) minmax(var(--fold-col), auto) auto;
     grid-template-areas:
-      "device  fold    size"
-      "browser browser tools";
+      "device  fold  size"
+      "browser tools view";
   }
-  .browser_controls { justify-self: start; }
+}
+/* 2행에서 아래 줄(브라우저 · 도구 · 보기 ≈ 830px) 이 넘치는 폭에서만 4행 — 980 이하는 좌측 목록이 위로 올라가 패널이 다시 넓어지므로 2행으로 돌아가고, 900 이하에서 다시 4행 */
+@media (min-width: 981px) and (max-width: 1180px), (max-width: 900px) {
+  .control_panel {
+    grid-template-columns: minmax(var(--fold-col), auto) minmax(0, 1fr);
+    grid-template-areas:
+      "device  device"
+      "fold    size"
+      "browser browser"
+      "tools   view";
+  }
+  .size_controls, .view_controls { justify-self: start; }
 }
 @media (max-width: 980px) {
-  .app_header { grid-template-columns: 1fr; gap: 12px; padding: 14px 18px; }
-  .brand_wrap p { display: none; }
   .workspace { grid-template-columns: 1fr; }
   .device_panel { border-right: 0; border-bottom: 1px solid var(--line-color); }
-  .panel_head { padding: 15px 18px 10px; border-bottom: 0; }
+  .panel_head { padding: 10px 18px 6px; }
   .device_nav { max-height: none; padding: 0 16px 14px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; }
   .device_group { display: inline-block; min-width: 230px; padding: 0 12px 0 0; vertical-align: top; white-space: normal; }
+  .device_group, .device_group:first-child { padding-top: 0; }
   .device_group h3 { margin-top: 0; }
-  .device_list { gap: 3px; }
-  .device_btn { padding: 8px 9px; }
+  .device_list { gap: 2px; }
+  .device_btn { padding: 8px 10px; }
   .preview_main { padding: 14px 16px 18px; }
-  .preview_stage { min-height: 520px; }
+  .preview_stage { flex: 0 0 auto; min-height: 520px; }   /* 좌측 목록이 위로 올라가 페이지가 원래 스크롤되는 배치 — 이전처럼 내용 높이 */
 }
 @media (max-width: 700px) {
-  .app_header { padding: 12px; }
-  .brand_wrap { justify-content: center; }
-  .site_form { grid-template-columns: 18px minmax(0, 1fr); padding: 6px 10px; }
-  .btn_primary { grid-column: 1 / -1; width: 100%; }
-  .form_error { left: 12px; right: 12px; }
+  .form_error { left: 0; right: 0; }
   .preview_main { padding: 10px; }
   /* 컨트롤 패널 1열: 영역 순서 그대로 세로 배치 */
   .control_panel {
     grid-template-columns: 1fr;
-    grid-template-areas: "device" "fold" "size" "browser" "tools";
-    gap: 10px;
-    padding: 10px;
+    grid-template-areas: "device" "fold" "size" "browser" "tools" "view";
+    gap: 14px;
+    padding: 12px;
   }
-  .current_device { padding-right: 0; border-right: 0; }
   .state_list { width: 100%; }
-  .size_controls { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; }
+  .size_controls { justify-self: stretch; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; }
   .size_field { width: 100%; }
-  .browser_controls { justify-self: stretch; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "select position" "address toolbar" "overlay overlay"; white-space: normal; }
-  .browser_controls[data-safari="true"] { grid-template-areas: "select position" "address toolbar" "overlay overlay" "safari safari"; }
-  .browser_select { max-width: 100%; }
-  .tool_actions { justify-self: stretch; padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--line-color); }
-  .preview_stage { min-height: 460px; padding: 24px; }
+  .browser_controls { justify-self: stretch; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title title" "select position" "address toolbar" "overlay overlay"; white-space: normal; }
+  .browser_controls[data-safari="true"] { grid-template-areas: "title title" "select position" "address toolbar" "overlay overlay" "safari safari"; }
+  .browser_select { width: 100%; }
+  .preview_stage { --stage-pad: 24px; min-height: 460px; }
   .compare_grid { grid-template-columns: 1fr; gap: 14px; }
   .compare_bar { flex-wrap: wrap; }
   .compare_note { margin-left: 0; white-space: normal; }
   .preview_footer { align-items: flex-start; flex-direction: column; gap: 2px; }
   .preview_footer > span { text-align: left; }
+  .preview_footer > span:last-child { white-space: normal; }
   .test_notice { margin-top: 9px; }
 }
+/* MacBook + Safari(macOS) 단일 보기 컨트롤 패널(2026-10-16): 화면 상태가 고정이라 "화면 상태 / 단일 화면" 그룹을 숨기고(state 데이터 · JS 는 그대로)
+ * 기기 정보 → 화면 → 브라우저 → 도구 → 보기 순서를 유지한 채 줄만 바꾼다. 다른 기기는 위 규칙 그대로(:has 조건이 없으면 적용 안 됨) */
+.control_panel:has(.browser_controls[data-mac-safari="true"]) .fold_controls { display: none; }
+.control_panel:has(.browser_controls[data-mac-safari="true"]) {
+  grid-template-columns: minmax(200px, 1fr) auto auto auto auto;
+  grid-template-areas: "device size browser tools view";
+}
+/* 그룹 폭(기기 정보 최소 200 · 화면 244 · 브라우저 416 · 도구 246 · 보기 343, 간격 24): 한 줄 ≈ 1583 · 두 줄 아래 행 ≈ 1091 · 세 줄(화면 + 브라우저) ≈ 722 */
+@media (max-width: 1919px) {
+  .control_panel:has(.browser_controls[data-mac-safari="true"]) {
+    grid-template-columns: minmax(max-content, 1fr) auto auto;
+    grid-template-areas:
+      "device  device size"
+      "browser tools  view";
+  }
+}
+@media (max-width: 1439px) {
+  .control_panel:has(.browser_controls[data-mac-safari="true"]) {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "device  device"
+      "size    browser"
+      "tools   view";
+  }
+}
+/* 좌측 목록이 옆에 있는 1080 이하 · 목록이 위로 올라간 780 이하: 화면과 브라우저를 따로 줄에(도구 · 보기 간격 14) */
+@media (min-width: 981px) and (max-width: 1080px), (max-width: 780px) {
+  .control_panel:has(.browser_controls[data-mac-safari="true"]) {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "device  device"
+      "size    size"
+      "browser browser"
+      "tools   view";
+    column-gap: 14px;
+  }
+}
+@media (max-width: 700px) {
+  .control_panel:has(.browser_controls[data-mac-safari="true"]) {
+    grid-template-columns: 1fr;
+    grid-template-areas: "device" "size" "browser" "tools" "view";
+  }
+  .browser_controls[data-mac-safari="true"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .browser_controls[data-mac-safari="true"] .browser_select,
+  .browser_controls[data-mac-safari="true"] .safari_version_select { width: 100%; }
+  .browser_controls[data-mac-safari="true"] .safari_version { min-width: 0; }
+}
+/* ---------- 기기만 보기(body.is_device_only, 2026-10-15) ----------
+ * 기기 확인에 필요 없는 UI 를 숨기고 미리보기 스테이지가 창 전체를 쓴다. 배율 계산 · 기기 · 브라우저 · safe-area · 가림 검사 로직은 그대로이며,
+ * 스테이지 크기가 바뀌면 기존 ResizeObserver → updateAllScales() 가 현재 배율 모드(화면 맞춤 · 수동 · 실기기) 를 그대로 다시 적용한다.
+ * 큰 기기는 지금처럼 스테이지 안에서 스크롤된다(body 는 창 높이 그대로).
+ * 컨트롤 패널은 display: contents 로 풀어 보기 그룹의 토글 버튼 하나만 남기고, 그 버튼을 화면 우측 상단에 고정한다(버튼 1개 — 상태 동기화 불필요). */
+.is_device_only .device_panel,
+.is_device_only .site_bar,
+.is_device_only .env_notice,
+.is_device_only .compare_bar,
+.is_device_only .ruler_top,
+.is_device_only .preview_footer,
+.is_device_only .test_notice { display: none; }
+.is_device_only .control_panel,
+.is_device_only .view_controls { display: contents; }
+.is_device_only .control_panel > :not(.view_controls),
+.is_device_only .view_controls > :not(.device_only_btn) { display: none; }
+.is_device_only .workspace { grid-template-columns: minmax(0, 1fr); }
+.is_device_only .preview_main { padding: 0; }
+.is_device_only .preview_area { border: 0; border-radius: 0; }
+.is_device_only .preview_stage {
+  flex: 1 1 0;
+  min-height: 0;
+  padding-top: max(var(--stage-pad), 56px);   /* 우측 상단 고정 버튼(위 12 + 높이 32) 아래에서 기기가 시작 */
+}
+.is_device_only .device_only_btn {
+  position: fixed;
+  top: 12px;
+  right: 24px;   /* 스테이지 세로 스크롤바 자리(scrollbar-gutter) 를 비켜 둔다 */
+  z-index: 60;
+  width: auto;
+  height: 32px;
+  padding: 0 12px 0 10px;
+  color: #344054;
+  background: #fff;
+  border-color: #cdd5df;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .12);   /* 캔버스 위에 떠 있는 요소라 약한 그림자만 */
+}
+.is_device_only .device_only_btn svg { width: 16px; height: 16px; }
+.is_device_only .device_only_label { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;

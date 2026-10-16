@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Device Preview 파비콘: 브라우저 창(윤곽) 위에 겹친 휴대폰(채움) — 16px 에서도 두 도형만 남도록 단순하게 -->
+  <rect width="64" height="64" rx="14" fill="#136ef1"/>
+  <rect x="9" y="13" width="36" height="28" rx="4" fill="none" stroke="#fff" stroke-width="4.5"/>
+  <rect x="33" y="23" width="22" height="32" rx="5" fill="#fff" stroke="#136ef1" stroke-width="4"/>
+</svg>
