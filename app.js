@@ -406,7 +406,8 @@
       landscape:{statusBar:null,urlBar:50,toolbar:0,homeIndicator:0}},
     /* iPhone Duo(iOS 27) Safari. HIG(official): 툴바·탭바·내비게이션이 카메라 쪽 세로 축(측면 열) 에 놓이고, 내부 화면을 세로로 든 경우만 표준 가로 바.
      * layout:'side' 상태에서는 가로 밴드(상태바·URL·툴바·홈) 를 쓰지 않고 .side_controls 를 콘텐츠 위에 띄운다(뉴스룸 Netflix·Slack 이미지처럼 콘텐츠가 전체 화면).
-     *   → 사이트 뷰포트 = 화면 전체. 실제 Safari 의 웹 뷰포트 인셋은 미확인(approximation) 이라 축소/겹침 모드 구분이 없다. safe-area 가이드로 측면 열 영역을 확인할 것.
+     *   → 사이트 뷰포트는 viewport-fit 설정으로 고른다(2026-10-16): auto(기본) = 측면 UI 쪽 safe-area(프레임 safeArea, 외부 92 · 내부 89 approximation) 를 뺀 폭 — 안전 영역 시뮬레이션,
+     *     cover = 화면 전체(측면 UI 가 콘텐츠 위에 겹침, safe-area 미대응 사이트의 가림 테스트). 실제 Duo Safari 의 웹 뷰포트 인셋은 출시 후 실기기 확인 필요. 축소/겹침 모드 구분은 없다.
      *   주소창 표시 스위치 = 상단 그룹(뒤로 원형 + 캡슐 3: 정보·공유·검색), 툴바 스위치 = 하단 캡슐(4). 주소(URL) 필드는 공식 자료에서 확인되지 않아 그리지 않는다.
      * 측면 열 값(photo-measured, 뉴스룸 multitasking 이미지의 Safari 창): 원형 Ø44 · 캡슐 폭 44 · 항목 간격 47 · 원형↔캡슐 13 · 하단 여백 21. 상단 시작 = 클러스터 아래(gap 22: Netflix 이미지 실측) 는 Safari 전체 화면 이미지가 없어 approximation.
      * exclusive: Duo 기기의 기본 브라우저일 때만 목록에 노출. standardFallback: 표준 가로 바 상태에서 쓰는 프로필(밴드만 차용, 상태바 밴드는 0). */
@@ -581,6 +582,10 @@
   let safariVersion=null;
   let compatEnabled=false,compatResult=null,safariDataPromise=null;
   let viewportFit='auto';
+  /* 가상 키보드 영역 시뮬레이션(2026-10-21): 켬 상태는 저장하지 않는다(새로 열면 꺼짐). 모드 · 높이(사용자 조절값, CSS px) 는 viewportLabDisplay 에 저장.
+   * 기본 높이 280 은 기기별 실측이 아닌 하나의 일반 시뮬레이션 값이며, 화면마다 사이트 높이에 맞춰 제한해 적용한다(getKeyboardInset) */
+  const KEYBOARD_MODES=['resize','overlay'],KEYBOARD_DEFAULT=280,KEYBOARD_MIN=80,KEYBOARD_SITE_MIN=120;
+  let keyboardEnabled=false,keyboardMode='resize',keyboardHeight=KEYBOARD_DEFAULT;
   let currentUrl='';
 
   function setError(element,message){element.textContent=message;element.hidden=!message;}
@@ -609,6 +614,7 @@
       browserUrl:shell.querySelector('.browser_url'),hingeLine:shell.querySelector('.hinge_line'),
       statusCluster:shell.querySelector('.status_cluster'),clusterTime:shell.querySelector('.cluster_time'),clusterRing:shell.querySelector('.cluster_ring'),
       dynamicIsland:shell.querySelector('.dynamic_island'),sideControls:shell.querySelector('.side_controls'),occlusionLayer:shell.querySelector('.occlusion_layer'),
+      kbSim:shell.querySelector('.kb_sim'),kbValue:shell.querySelector('.kb_value'),kbHandle:shell.querySelector('.kb_handle'),
       statusTime:shell.querySelector('.status_time'),batteryFill:shell.querySelector('.battery_fill'),statusPercent:shell.querySelector('.status_percent'),statusPill:shell.querySelector('.status_pill'),
       keyVolume:shell.querySelector('.key_volume'),keyVolumeB:shell.querySelector('.key_volume_b'),keyPower:shell.querySelector('.key_power'),keyAction:shell.querySelector('.key_action'),
       statusIcons:{cellular:shell.querySelector('.icon_cellular'),wifi:shell.querySelector('.icon_wifi'),battery:shell.querySelector('.icon_battery')}
@@ -633,6 +639,7 @@
       scale:1,loaded:false,compare:false,ignoreScrollUntil:0
     },extra||{});
     dom.siteFrame.addEventListener('load',()=>onFrameLoad(view));
+    bindKeyboardDrag(view);   /* 가상 키보드 영역 위 손잡이(켰을 때만 보임) */
     return view;
   }
 
@@ -692,8 +699,15 @@
   function getFrameProfile(view){
     const device=getDevice(view);
     const state=getState(view);
-    const profile=frameProfiles[state&&state.frame||device&&device.frame]||frameProfiles.neutral;
+    const profile=frameProfiles[state&&state.frame||device&&device.frame]||getGenericFrame(view);
     return scaleFrameProfile(profile,getDpr(view),getMeasuredInsets(view));
+  }
+
+  /* 직접 설정(custom) 처럼 프레임이 없는 view 의 범용 프레임(2026-10-22): 짧은 변이 768px Tablet 경계 이상이면 neutral-tablet, 미만이면 neutral.
+   * neutral 의 ratio radius 는 큰 화면에서 스마트폰처럼 과하게 둥글어지므로(800×1024 → 바디 72 · 화면 40) 768 프리셋과 같은 프로필을 재사용한다.
+   * 회전해도 프레임이 바뀌지 않도록 회전 전 baseWidth/baseHeight 로 판정 */
+  function getGenericFrame(view){
+    return Math.min(view.baseWidth,view.baseHeight)>=768?frameProfiles['neutral-tablet']:frameProfiles.neutral;
   }
 
   /* state.insets(실측 시스템 인셋: 컷아웃 하단·상태바, 현재 DPR 의 logical dp) 가 있으면 사진 기반 환산값 대신 쓴다. 정수 반올림 */
@@ -766,6 +780,9 @@
     if(profile.exclusive)return false;   /* 특정 기기 전용(예: duo-safari) 은 그 기기의 기본일 때만 */
     /* 폼팩터 전용(formFactor:'tablet' — Android 태블릿 브라우저) 은 기기의 기본 브라우저가 같은 폼팩터일 때만 목록에 */
     const defaultProfile=browserProfiles[getDefaultBrowserId(view)];
+    /* 기기 전용 브라우저가 기본인 기기(iPhone Duo → duo-safari) 는 그 프로필만 쓴다(2026-10-16): 다른 iPhone 에서 고른 browserByPlatform.ios(예: Chrome(iOS)) 가
+     * Duo 에 그대로 적용되지 않게 하고, Duo 전용 UI 근거가 없는 다른 브라우저는 목록에도 넣지 않는다. 저장값(browserByPlatform) 은 건드리지 않아 다른 iPhone 은 그대로 */
+    if(defaultProfile&&defaultProfile.exclusive)return false;
     if(profile.formFactor&&profile.formFactor!==(defaultProfile&&defaultProfile.formFactor))return false;
     if(platform==='any')return true;
     return (profile.platform||'any')===platform;
@@ -849,7 +866,9 @@
     const frameStatus=barsOrientation==='landscape'?view.frameProfile.statusBarHeightLandscape:view.frameProfile.statusBarHeight;
     const status=metrics.statusBar==null?(frameStatus!=null?frameStatus:safe.top):metrics.statusBar;
     const home=view.frameProfile.homeIndicator===false?0:(metrics.homeIndicator==null?safe.bottom:metrics.homeIndicator);
-    const sideInset=metrics.sideInset==='safe-area';
+    /* side 레이아웃(iPhone Duo) 의 viewport-fit(2026-10-16): auto(기본) = 측면 Safari UI 쪽 safe-area 를 iframe 폭에서 뺀다(가로 Safari letterbox 와 같은 방식 —
+     * 기존 frameProfiles.safeArea 값 그대로, 실제 Duo Safari 의 웹 viewport inset 은 미확인이라 "안전 영역 시뮬레이션"). cover = 화면 전체 + 측면 UI 가 콘텐츠 위에 겹침(이전 동작) */
+    const sideInset=metrics.sideInset==='safe-area'||(side&&viewportFit==='auto');
     return{
       profileId,label:profile.label,platform:view.frameProfile.platform||'any',
       status,home,
@@ -959,7 +978,142 @@
     wrap.dataset.uiLayout=bands.side?'side':'bars';
     updateStatusBar(view);
     updateSideControls(view,bands);
+    updateKeyboard(view,viewport);
     return viewport;
+  }
+
+  /* ------------------------------------------------------------------
+   * 가상 키보드 영역 시뮬레이션(2026-10-21)
+   * 실제 OS 키보드 · visualViewport 에뮬레이션이 아니다. 기존 사이트 영역(getSiteViewport — 브라우저 밴드 · Safari 실측 · Duo auto/cover 결과) 은 그대로 두고,
+   * 그 아래쪽에 사용자 조절 높이의 영역을 놓는다: resize = iframe 높이만 줄임(사이트 innerHeight 감소) · overlay = iframe 그대로, 영역만 덮음.
+   * 높이는 모든 기기 공통 CSS px(사용자 조절값) 를 각 화면의 사이트 높이에 맞춰 제한한다 — 회전 · 작은 화면에서는 줄어들고, 저장값은 그대로.
+   * ------------------------------------------------------------------ */
+  function keyboardApplies(view){
+    return keyboardEnabled&&(view.frameProfile&&view.frameProfile.platform)!=='macos';
+  }
+
+  /* 화면별 허용 범위: 위로 사이트가 최소 KEYBOARD_SITE_MIN 은 남도록 → 최대 = 사이트 높이 − 120, 최소 = min(80, 최대) */
+  function getKeyboardLimits(view,viewport){
+    const site=(viewport||getSiteViewport(view)).height;
+    const max=Math.max(0,Math.floor(site-KEYBOARD_SITE_MIN));
+    return{min:Math.min(KEYBOARD_MIN,max),max,site};
+  }
+
+  function getKeyboardInset(view,viewport){
+    if(!keyboardApplies(view))return 0;
+    const limits=getKeyboardLimits(view,viewport);
+    return Math.max(limits.min,Math.min(limits.max,Math.round(keyboardHeight)));
+  }
+
+  function updateKeyboard(view,viewport){
+    const dom=view.dom;
+    if(!dom.kbSim)return;
+    const height=getKeyboardInset(view,viewport);
+    view.keyboardInset=height;
+    if(!height){
+      delete dom.siteView.dataset.keyboard;
+      dom.siteView.style.removeProperty('--kb-h');
+      dom.kbSim.hidden=true;
+      return;
+    }
+    dom.siteView.dataset.keyboard=keyboardMode;
+    dom.siteView.style.setProperty('--kb-h',height+'px');
+    dom.kbValue.textContent=height+'px · '+(keyboardMode==='resize'?'화면 축소':'겹침')+(height!==Math.round(keyboardHeight)?' (이 화면에 맞춰 제한)':'');
+    dom.kbSim.hidden=false;
+  }
+
+  function updateAllKeyboards(){
+    allViews().forEach(view=>{if(view.dom&&view.dom.siteView)updateKeyboard(view);});
+    syncKeyboardControls();
+    updateControls();
+    visibleViews().forEach(view=>scheduleOcclusionCheck(view,OCCLUSION_RENDER_DELAY));
+  }
+
+  function getKeyboardDom(){
+    if(!keyboardDom)keyboardDom={btn:document.getElementById('keyboardBtn'),status:document.getElementById('keyboardStatus'),text:document.getElementById('keyboardText'),
+      settingsBtn:document.getElementById('keyboardSettingsBtn'),panel:document.getElementById('keyboardSettings'),input:document.getElementById('keyboardHeight'),
+      note:document.getElementById('keyboardNote'),modes:Array.from(document.querySelectorAll('input[name="keyboardMode"]'))};
+    return keyboardDom;
+  }
+  let keyboardDom=null;
+
+  /* 버튼 · 푸터 상태 줄 · 설정 패널 표시. 적용 대상(MacBook 이 아닌 화면) 이 없으면 상태 줄을 숨긴다 */
+  function syncKeyboardControls(){
+    const dom=getKeyboardDom();
+    if(!dom.btn)return;
+    dom.btn.setAttribute('aria-pressed',keyboardEnabled?'true':'false');
+    const views=visibleViews().filter(keyboardApplies);
+    const active=keyboardEnabled&&views.length>0;
+    dom.status.hidden=!active;
+    if(!active)setKeyboardSettingsOpen(false);
+    dom.modes.forEach(input=>{input.checked=input.value===keyboardMode;});
+    if(document.activeElement!==dom.input)dom.input.value=String(Math.round(keyboardHeight));
+    if(!active)return;
+    const insets=views.map(view=>view.keyboardInset||0);
+    const limited=insets.some(value=>value!==Math.round(keyboardHeight));
+    const modeLabel=keyboardMode==='resize'?'화면 축소':'겹침';
+    dom.text.textContent='가상 키보드(시뮬레이션) · '+modeLabel+' · '+(viewMode==='compare'?Math.round(keyboardHeight)+'px'+(limited?' (작은 화면은 제한)':''):insets[0]+'px');
+    dom.note.textContent=viewMode==='compare'
+      ? '모든 비교 기기에 같은 CSS px 를 적용하고, 화면마다 사이트가 '+KEYBOARD_SITE_MIN+'px 이상 남도록 제한합니다(현재 '+insets.join(' · ')+'px).'
+      : (limited?'이 화면에서는 '+insets[0]+'px 로 제한해 적용합니다(사이트가 '+KEYBOARD_SITE_MIN+'px 이상 남도록, 저장값 '+Math.round(keyboardHeight)+'px 은 유지). ':'')
+        +'실제 OS 키보드가 아닌 사용자 조절값입니다. 키보드 영역 위 손잡이를 끌어서도 바꿀 수 있습니다.';
+  }
+
+  function setKeyboardEnabled(enabled){
+    keyboardEnabled=Boolean(enabled);
+    updateAllKeyboards();
+    announce(keyboardEnabled?'가상 키보드 영역 시뮬레이션을 켰습니다. 설정은 화면 아래 상태 줄에 있습니다.':'가상 키보드 영역 시뮬레이션을 껐습니다.');
+  }
+
+  function setKeyboardHeight(value,options){
+    const number=Number(value);
+    if(!Number.isFinite(number))return;
+    keyboardHeight=Math.max(KEYBOARD_MIN,Math.min(900,Math.round(number)));
+    updateAllKeyboards();
+    if(!options||options.save!==false)saveDisplayPreference();
+  }
+
+  function setKeyboardSettingsOpen(open,returnFocus){
+    const dom=getKeyboardDom();
+    if(!dom.panel)return;
+    dom.panel.hidden=!open;
+    dom.settingsBtn.setAttribute('aria-expanded',open?'true':'false');
+    if(open)dom.input.focus();
+    else if(returnFocus)dom.settingsBtn.focus();
+  }
+
+  function bindKeyboardControls(){
+    const dom=getKeyboardDom();
+    if(!dom.btn)return;
+    dom.btn.addEventListener('click',()=>setKeyboardEnabled(!keyboardEnabled));
+    dom.settingsBtn.addEventListener('click',()=>setKeyboardSettingsOpen(dom.panel.hidden));
+    dom.modes.forEach(input=>input.addEventListener('change',()=>{if(input.checked&&KEYBOARD_MODES.includes(input.value)){keyboardMode=input.value;updateAllKeyboards();saveDisplayPreference();}}));
+    dom.input.addEventListener('change',()=>setKeyboardHeight(dom.input.value));
+    dom.input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();setKeyboardHeight(dom.input.value);}});
+    [dom.panel,dom.settingsBtn].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&!dom.panel.hidden){event.preventDefault();setKeyboardSettingsOpen(false,true);}}));
+    dom.panel.addEventListener('focusout',event=>{if(!dom.panel.hidden&&event.relatedTarget&&!dom.panel.contains(event.relatedTarget)&&event.relatedTarget!==dom.settingsBtn)setKeyboardSettingsOpen(false);});
+    document.addEventListener('pointerdown',event=>{if(!dom.panel.hidden&&!dom.panel.contains(event.target)&&!dom.settingsBtn.contains(event.target))setKeyboardSettingsOpen(false);});
+    syncKeyboardControls();
+  }
+
+  /* 키보드 영역 위 손잡이 드래그: 화면에 그려진 배율로 나눠 CSS px 로 환산 → 공통 사용자 조절값을 바꾼다(놓을 때 저장) */
+  function bindKeyboardDrag(view){
+    const handle=view.dom.kbHandle;
+    if(!handle)return;
+    handle.addEventListener('pointerdown',event=>{
+      if(event.button!==0)return;
+      event.preventDefault();
+      const wrap=view.dom.screenWrap;
+      const scale=wrap.getBoundingClientRect().height/wrap.offsetHeight||1;
+      const startY=event.clientY,startHeight=view.keyboardInset||keyboardHeight;
+      const limits=getKeyboardLimits(view);
+      handle.setPointerCapture(event.pointerId);
+      const move=moveEvent=>{const next=startHeight-(moveEvent.clientY-startY)/scale;setKeyboardHeight(Math.max(limits.min,Math.min(limits.max,next)),{save:false});};
+      const end=()=>{handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',end);handle.removeEventListener('pointercancel',end);saveDisplayPreference();};
+      handle.addEventListener('pointermove',move);
+      handle.addEventListener('pointerup',end);
+      handle.addEventListener('pointercancel',end);
+    });
   }
 
   /* 측면 컨트롤 열(browserProfiles[*].side, 브라우저 UI 레이어): 코너 클러스터와 같은 세로 축, 클러스터 아래에서 시작.
@@ -1197,10 +1351,19 @@
     syncSafariControls(views);
   }
 
-  /* Safari 탭 레이아웃 · viewport-fit: 표시 중인 view 중 실측 viewport 데이터가 있는 기기(현재 iPhone 18 Pro + Safari) 가 있을 때만 보인다 */
+  /* Safari(iPhone Duo) 측면 레이아웃 view 인지 — viewport-fit 만 쓰는 상태(Duo 내부 화면 회전 = 표준 바 상태는 제외) */
+  function isSideLayoutView(view){
+    const profileId=resolveBrowserId(view);
+    return getUiLayout(view,browserProfiles[profileId])==='side';
+  }
+
+  /* Safari 탭 레이아웃 · viewport-fit: 표시 중인 view 중 실측 viewport 데이터가 있는 기기(현재 iPhone 18 Pro + Safari) 가 있을 때 보인다.
+   * iPhone Duo 측면 레이아웃만 있으면 viewport-fit 만 보이고 탭 레이아웃(Compact / Top) 은 숨긴다 */
   function syncSafariControls(views){
-    const visible=views.some(hasMeasuredViewport);
+    const measured=views.some(hasMeasuredViewport);
+    const visible=measured||views.some(isSideLayoutView);
     elements.safariControls.hidden=!visible;
+    elements.safariLayoutInputs[0].closest('fieldset').hidden=!measured;
     elements.browserControls.dataset.safari=visible?'true':'false';
     elements.safariLayoutInputs.forEach(input=>{input.checked=input.value===safariLayout;});
     elements.viewportFitInputs.forEach(input=>{input.checked=input.value===viewportFit;});
@@ -1696,15 +1859,24 @@
    *
    * 제약 : 브라우저 Same-Origin Policy 때문에 iframe 문서(scrollTop 읽기·scrollTo) 는
    *        이 도구와 프로토콜·호스트·포트가 모두 같은 페이지에서만 접근할 수 있다.
-   *        외부 도메인(cross-origin) 은 접근 시 SecurityError 가 나므로 리스너를 붙이지 않고,
-   *        스위치를 비활성화해 사용자에게 이유를 보여준다. 우회 코드는 두지 않는다.
-   *        (같은 문제를 Chrome Extension content script 로 풀 수 있는 구조는 사용법.txt 참고)
+   *        외부 도메인(cross-origin) 은 접근 시 SecurityError 가 나므로 여기서는 리스너를 붙이지 않는다.
+   *        다른 출처는 아래 "스크롤 브리지"(Scroll Bridge 확장) 가 응답할 때만 동기화하고, 없으면 스위치를 비활성화해 이유를 보여준다.
+   *        우회 코드는 두지 않는다.
    * ------------------------------------------------------------------ */
   const scrollAccessReasons={
     'same-origin':'같은 출처 · 동기화 가능',
     'cross-origin':'다른 출처 · 브라우저 정책상 스크롤 접근 불가',
     'file-origin':'file:// 로 열린 도구 · 서버(Live Server 등) 로 열어야 동기화 가능',
     'not-loaded':'불러오는 중'
+  };
+  /* 스크롤 동기화 전용 사유(카드 배지 title). 위 scrollAccessReasons 는 가림 검사 · Safari 호환성 검사가 그대로 쓴다 */
+  const syncAccessReasons={
+    'same-origin':'같은 출처 · 동기화 가능',
+    'bridge':'확장 브리지 · 동기화 가능',
+    'cross-origin':'다른 출처 · Scroll Bridge 연결 안 됨 · 확장 설치 및 사이트 접근 권한 확인',
+    'bridge-pending':'Scroll Bridge 확장 확인 중',
+    'file-origin':scrollAccessReasons['file-origin'],
+    'not-loaded':scrollAccessReasons['not-loaded']
   };
 
   /* URL 만으로 미리 판정: 도구가 file:// 이면 항상 불가, http(s) 면 origin 비교 */
@@ -1752,17 +1924,126 @@
     return true;
   }
 
+  /* ------------------------------------------------------------------
+   * 다른 출처 iframe 의 스크롤 브리지(2026-10-16, device-preview-extension/scroll-bridge.js)
+   *
+   * 같은 출처 = 위의 direct 방식 그대로. 다른 출처 iframe 은 문서에 접근하지 않고, Scroll Bridge 확장의 content script 와
+   * postMessage 로 스크롤 비율만 주고받는다(Same-Origin Policy 우회 · proxy · 보안 플래그 없음).
+   *   부모 → iframe : hello {session, view, nonce}  (iframe load 마다, READY 가 올 때까지 몇 번 조용히 다시 보냄)
+   *   iframe → 부모 : ready {ratio} · scroll {ratio}
+   *   부모 → iframe : apply {ratio}
+   * 받는 메시지는 type · session · view · nonce · event.source === 그 카드 iframe 의 contentWindow 를 모두 확인한다.
+   * 확장 설치 여부는 가정하지 않고 실제 READY 응답으로만 판정한다. 응답이 없으면 조용히 "확장 필요" 상태가 된다(콘솔 출력 없음).
+   * ------------------------------------------------------------------ */
+  const BRIDGE_PREFIX='device-preview:scroll-bridge:';
+  const BRIDGE_SESSION=makeBridgeToken();
+  const BRIDGE_RETRY_MS=[0,250,700,1500,3000];
+  let bridgeViewSeq=0;
+
+  function makeBridgeToken(){
+    const bytes=new Uint8Array(12);
+    (window.crypto||{getRandomValues:array=>array.map(()=>Math.floor(Math.random()*256))}).getRandomValues(bytes);
+    return Array.from(bytes,byte=>byte.toString(16).padStart(2,'0')).join('');
+  }
+
+  function postToBridge(view,type,extra){
+    const win=view.dom.siteFrame.contentWindow;
+    const bridge=view.bridge;
+    if(!win||!bridge)return;
+    /* targetOrigin '*': 카드 안에서 링크 · 리디렉트로 문서 출처가 바뀌어도 연결되게. 보내는 값은 무작위 토큰과 스크롤 비율뿐이고,
+     * 받는 쪽(onBridgeMessage) 은 session · view · nonce · event.source 를 모두 확인한다 */
+    try{win.postMessage(Object.assign({type:BRIDGE_PREFIX+type,session:BRIDGE_SESSION,view:bridge.id,nonce:bridge.nonce},extra),'*');}catch(error){}
+  }
+
+  /* iframe load 마다(다른 출처일 때) 새 nonce 로 연결을 다시 시작한다 — 이전 문서의 늦은 메시지는 nonce 가 달라 무시된다 */
+  function startScrollBridge(view){
+    if(!view.bridgeId)view.bridgeId='v'+(++bridgeViewSeq);
+    (view.bridge&&view.bridge.timers||[]).forEach(clearTimeout);
+    view.bridge={id:view.bridgeId,nonce:makeBridgeToken(),state:'pending',timers:[]};
+    view.lastScrollRatio=null;
+    const bridge=view.bridge;
+    bridge.timers=BRIDGE_RETRY_MS.map((delay,index)=>setTimeout(()=>{
+      if(view.bridge!==bridge||bridge.state==='ready')return;
+      if(index===BRIDGE_RETRY_MS.length-1){bridge.state='none';updateSyncAvailability();return;}
+      postToBridge(view,'hello');
+    },delay));
+    /* 마지막 타이머는 판정만 하고 hello 는 그 전까지 보낸다 */
+  }
+
+  function stopScrollBridge(view){
+    if(!view.bridge)return;
+    view.bridge.timers.forEach(clearTimeout);
+    view.bridge=null;
+    view.lastScrollRatio=null;
+  }
+
+  function sanitizeRatio(ratio){
+    const clamp=value=>typeof value==='number'&&Number.isFinite(value)?Math.min(1,Math.max(0,value)):0;
+    return ratio&&typeof ratio==='object'?{x:clamp(ratio.x),y:clamp(ratio.y)}:{x:0,y:0};
+  }
+
+  function onBridgeMessage(event){
+    const data=event.data;
+    if(!data||typeof data!=='object'||typeof data.type!=='string'||!data.type.startsWith(BRIDGE_PREFIX))return;
+    if(data.session!==BRIDGE_SESSION)return;
+    const view=Array.from(compareViews.values()).find(item=>item.bridge&&item.bridge.id===data.view);
+    if(!view||data.nonce!==view.bridge.nonce||event.source!==view.dom.siteFrame.contentWindow)return;
+    const type=data.type.slice(BRIDGE_PREFIX.length);
+    if(type!=='ready'&&type!=='scroll')return;
+    view.lastScrollRatio=sanitizeRatio(data.ratio);   /* 다른 출처는 scrollTop 을 직접 못 읽으므로 마지막 비율을 기억해 둔다 */
+    if(type==='ready'){
+      const first=view.bridge.state!=='ready';
+      view.bridge.state='ready';
+      updateSyncAvailability();
+      /* 새로 추가 · 새로고침된 카드는 이미 스크롤된 다른 카드 위치에 맞춘다(direct 방식의 attachScrollSync 와 같은 동작) */
+      if(first&&syncOptions.scroll&&viewMode==='compare'){
+        const reference=Array.from(compareViews.values()).find(other=>other!==view&&getSyncAccess(other).mode);
+        const ratio=reference&&getViewScrollRatio(reference);
+        if(ratio)applyViewScrollRatio(view,ratio);
+      }
+      return;
+    }
+    if(syncOptions.scroll&&viewMode==='compare')broadcastScroll(view);
+  }
+  window.addEventListener('message',onBridgeMessage);
+
+  /* 동기화 경로 판정: direct(같은 출처 문서 접근) · bridge(확장 READY) · null(불가). 가림 검사 · Safari 호환성 검사는 계속 getScrollAccess 만 쓴다 */
+  function getSyncAccess(view){
+    const access=getScrollAccess(view);
+    if(access.accessible)return{mode:'direct',reason:'same-origin'};
+    if(access.reason!=='cross-origin')return{mode:null,reason:access.reason};
+    const state=view.bridge&&view.bridge.state;
+    if(state==='ready')return{mode:'bridge',reason:'bridge'};
+    return{mode:null,reason:state==='pending'?'bridge-pending':'cross-origin'};
+  }
+
+  function getViewScrollRatio(view){
+    const win=getSameOriginWindow(view);
+    if(win)return getScrollRatio(win);
+    return view.bridge&&view.bridge.state==='ready'?view.lastScrollRatio:null;
+  }
+
+  /* 같은 출처면 기존 applyScrollRatio, 브리지가 연결된 다른 출처면 확장에 비율 전달, 그 밖에는 건너뜀 */
+  function applyViewScrollRatio(view,ratio){
+    if(applyScrollRatio(view,ratio))return true;
+    if(!view.bridge||view.bridge.state!=='ready')return false;
+    view.lastScrollRatio={x:ratio.x,y:ratio.y};
+    postToBridge(view,'apply',{ratio:{x:ratio.x,y:ratio.y}});
+    return true;
+  }
+
   function broadcastScroll(source){
-    const win=getSameOriginWindow(source);
-    if(!win)return;
-    const ratio=getScrollRatio(win);
-    compareViews.forEach(other=>{if(other!==source)applyScrollRatio(other,ratio);});
+    const ratio=getViewScrollRatio(source);
+    if(!ratio)return;
+    compareViews.forEach(other=>{if(other!==source)applyViewScrollRatio(other,ratio);});
   }
 
   /* iframe load 마다 호출. 문서가 새로 생기면(새로고침·URL 변경) 리스너도 사라지므로 문서 기준으로 다시 붙인다 */
   function attachScrollSync(view){
     const access=getScrollAccess(view);
     view.scrollAccess=access.reason;
+    if(access.reason==='cross-origin')startScrollBridge(view);
+    else stopScrollBridge(view);
     updateSyncAvailability();
     if(!access.accessible)return;
     const win=access.win;
@@ -1782,8 +2063,9 @@
     },{passive:true});
     /* 새로 추가·새로고침된 카드는 이미 스크롤된 다른 카드 위치에 맞춘다 */
     if(syncOptions.scroll){
-      const reference=Array.from(compareViews.values()).find(other=>other!==view&&getScrollAccess(other).accessible);
-      if(reference)applyScrollRatio(view,getScrollRatio(getSameOriginWindow(reference)));
+      const reference=Array.from(compareViews.values()).find(other=>other!==view&&getSyncAccess(other).mode);
+      const ratio=reference&&getViewScrollRatio(reference);
+      if(ratio)applyScrollRatio(view,ratio);
     }
   }
 
@@ -2256,7 +2538,7 @@
 
   /* 동기화 스위치를 켤 때: 첫 접근 가능 카드 기준으로 즉시 정렬 */
   function realignScrollSync(){
-    const reference=Array.from(compareViews.values()).find(view=>getScrollAccess(view).accessible);
+    const reference=Array.from(compareViews.values()).find(view=>getSyncAccess(view).mode);
     if(reference)broadcastScroll(reference);
   }
 
@@ -2265,29 +2547,34 @@
     const compare=viewMode==='compare';
     const views=Array.from(compareViews.values());
     const predicted=predictScrollAccess(currentUrl);
-    const accesses=views.map(view=>getScrollAccess(view));
-    const accessibleCount=accesses.filter(access=>access.accessible).length;
+    /* direct(같은 출처) · bridge(Scroll Bridge 확장 READY) 둘 다 "동기화 가능". 확장 확인 중(bridge-pending) 은 불러오는 중과 같이 다룬다 */
+    const accesses=views.map(view=>getSyncAccess(view));
+    const accessibleCount=accesses.filter(access=>access.mode).length;
+    const bridgeCount=accesses.filter(access=>access.mode==='bridge').length;
     const loading=accesses.some(access=>access.reason==='not-loaded');
-    const blocked=compare&&Boolean(currentUrl)&&!loading&&views.length>0&&accessibleCount===0;
+    const checking=accesses.some(access=>access.reason==='bridge-pending');
+    const blocked=compare&&Boolean(currentUrl)&&!loading&&!checking&&views.length>0&&accessibleCount===0;
     elements.syncScroll.disabled=blocked;
     elements.syncScroll.checked=syncOptions.scroll&&!blocked;
     views.forEach((view,index)=>{
       const access=accesses[index];
       const badge=view.dom.badge;
       if(!badge)return;
-      const show=Boolean(currentUrl)&&!access.accessible&&access.reason!=='not-loaded';
+      const show=Boolean(currentUrl)&&!access.mode&&access.reason!=='not-loaded'&&access.reason!=='bridge-pending';
       badge.hidden=!show;
       badge.textContent=show?'동기화 불가':'';
-      badge.title=show?'스크롤 동기화 불가 · '+scrollAccessReasons[access.reason]:'';
+      badge.title=show?'스크롤 동기화 불가 · '+syncAccessReasons[access.reason]:'';
     });
     if(!compare){elements.compareNote.textContent='';return;}
+    const how=bridgeCount===0?'같은 출처':bridgeCount===accessibleCount?'확장 브리지':'같은 출처 + 확장 브리지';
     let note='';
-    if(!currentUrl)note='스크롤 동기화는 이 도구와 같은 출처('+(location.origin==='null'?'file://':location.origin)+')의 페이지를 열었을 때 동작합니다.';
+    if(!currentUrl)note='스크롤 동기화는 이 도구와 같은 출처('+(location.origin==='null'?'file://':location.origin)+')의 페이지에서, 다른 출처 페이지는 Scroll Bridge 확장을 설치하면 동작합니다.';
     else if(predicted==='file-origin')note='도구가 file:// 로 열려 있어 스크롤 동기화를 쓸 수 없습니다. Live Server 등 http 서버로 index.html 을 열고 같은 서버의 페이지를 불러와 주세요.';
     else if(loading)note='불러오는 중…';
-    else if(accessibleCount===0)note='스크롤 동기화 불가: 다른 출처('+safeOrigin(currentUrl)+')의 페이지는 브라우저 보안 정책상 스크롤을 읽거나 옮길 수 없습니다. 같은 출처('+location.origin+') 페이지에서만 동작합니다.';
-    else if(accessibleCount<views.length)note='스크롤 동기화 일부만 가능 ('+accessibleCount+' / '+views.length+') · 다른 출처 카드는 따라오지 않습니다.';
-    else note=syncOptions.scroll?'스크롤 동기화 동작 중 (같은 출처)':'스크롤 동기화 꺼짐';
+    else if(checking&&accessibleCount<views.length)note='스크롤 동기화 확인 중… (Scroll Bridge 확장 응답 대기)';
+    else if(accessibleCount===0)note='스크롤 동기화 불가: 다른 출처('+safeOrigin(currentUrl)+')의 페이지는 Scroll Bridge 연결이 필요합니다 — 연결 안 됨 · 확장 설치 및 사이트 접근 권한 확인(사용법.txt 참고).';
+    else if(accessibleCount<views.length)note='스크롤 동기화 일부만 가능 ('+accessibleCount+' / '+views.length+', '+how+') · 나머지 카드는 따라오지 않습니다.';
+    else note=syncOptions.scroll?'스크롤 동기화 동작 중 ('+how+')':'스크롤 동기화 꺼짐';
     elements.compareNote.textContent=note;
   }
 
@@ -2512,7 +2799,8 @@
       const state=getState(view);
       const siteViewport=getSiteViewport(view);
       const physical=getPhysicalResolution(view);
-      const siteLabel=siteViewport.width+' × '+siteViewport.height+(siteViewport.overlay?' (가시 '+siteViewport.visibleHeight+')':'');
+      const keyboardInset=keyboardApplies(view)?getKeyboardInset(view,siteViewport):0;
+      const siteLabel=siteViewport.width+' × '+(keyboardInset&&keyboardMode==='resize'?(siteViewport.height-keyboardInset)+' (가상 키보드 '+keyboardInset+')':siteViewport.height+(siteViewport.overlay?' (가시 '+siteViewport.visibleHeight+')':'')+(keyboardInset?' (가상 키보드 '+keyboardInset+' 겹침)':''));
       elements.currentDevice.textContent=getDeviceName(view);
       elements.currentMeta.textContent='사이트 '+siteLabel+(getDpr(view)?' · DPR '+getDpr(view):'')+' · '+getOrientationLabel(view);
       elements.presetNote.title=device&&device.noteDetail||'';   /* 상세 근거(근사값 조건) 는 tooltip 으로만 — footer 는 짧은 값(2026-10-16, 현재 MacBook) */
@@ -2530,6 +2818,7 @@
     syncScaleControls();
     updateCompareBar();
     syncSafariDesktop();
+    syncKeyboardControls();
   }
 
   /* 단일 보기 갱신 (기존 진입점 유지) */
@@ -3174,6 +3463,7 @@
     const view=compareViews.get(deviceId);
     if(!view)return false;
     view.dom.item.remove();          /* iframe 도 함께 제거되어 언로드 */
+    stopScrollBridge(view);          /* 다른 출처 카드의 브리지 재시도 타이머 정리 */
     compareViews.delete(deviceId);
     compareViews.forEach(updateScale);
     updateSyncAvailability();
@@ -3238,7 +3528,7 @@
 
   function saveDisplayPreference(){
     try{
-      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,manualScale,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser,safariLayout,viewportFit,occlusionCheck:occlusionEnabled,safariVersion}));
+      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,manualScale,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser,safariLayout,viewportFit,occlusionCheck:occlusionEnabled,safariVersion,keyboardMode,keyboardHeight}));
     }catch(error){}
   }
 
@@ -3265,6 +3555,8 @@
       if(saved&&SAFARI_LAYOUTS.includes(saved.safariLayout))safariLayout=saved.safariLayout;
       if(saved&&VIEWPORT_FITS.includes(saved.viewportFit))viewportFit=saved.viewportFit;
       if(saved&&typeof saved.occlusionCheck==='boolean')occlusionEnabled=saved.occlusionCheck;
+      if(saved&&KEYBOARD_MODES.includes(saved.keyboardMode))keyboardMode=saved.keyboardMode;
+      if(saved&&typeof saved.keyboardHeight==='number'&&Number.isFinite(saved.keyboardHeight))keyboardHeight=Math.max(KEYBOARD_MIN,Math.min(900,Math.round(saved.keyboardHeight)));
       if(saved&&typeof saved.safariVersion==='string'&&/^\d+(\.\d+)?$/.test(saved.safariVersion))safariVersion=saved.safariVersion;
       if(saved&&saved.browserByPlatform&&typeof saved.browserByPlatform==='object'){
         Object.keys(saved.browserByPlatform).forEach(platform=>{
@@ -3500,6 +3792,7 @@
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.defaultPrevented&&document.body.classList.contains('is_device_only')){event.preventDefault();setDeviceOnly(false);deviceOnlyBtn.focus();}});
   bindCompatControls();
   bindBrowserSettings();
+  bindKeyboardControls();
   elements.syncScroll.addEventListener('change',()=>{syncOptions.scroll=elements.syncScroll.checked;if(syncOptions.scroll)realignScrollSync();updateSyncAvailability();saveComparePreference();announce('스크롤 동기화를 '+(syncOptions.scroll?'켰습니다.':'껐습니다.'));});
   elements.syncRotate.addEventListener('change',()=>{syncOptions.rotate=elements.syncRotate.checked;saveComparePreference();});
   elements.syncRefresh.addEventListener('change',()=>{syncOptions.refresh=elements.syncRefresh.checked;saveComparePreference();});

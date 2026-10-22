@@ -140,6 +140,7 @@ svg {
   border-radius: 7px;
   font-size: 14px;
   box-shadow: 0 5px 12px rgba(0, 0, 0, .18);
+  z-index: 10;
 }
 
 /* ---------- 3. 기기 패널 ---------- */
@@ -241,7 +242,7 @@ svg {
   grid-template-columns: minmax(200px, 1fr) minmax(var(--fold-col), auto) auto auto auto auto;
   grid-template-areas: "device fold size browser tools view";
   align-items: start;
-  gap: 14px 24px;
+  gap: 14px 18px;   /* 그룹 사이 18(2026-10-21 24 → 18): 가상 키보드 도구 버튼(+42px) 을 넣고도 이전 행 수를 유지 */
   padding: 12px 18px 14px;
   background: var(--panel-color);
   border: 1px solid var(--line-color);
@@ -369,7 +370,7 @@ svg {
     "select  select  position"
     "address toolbar overlay";
   align-items: center;
-  gap: 8px 14px;
+  gap: 8px 10px;   /* 2026-10-21 14 → 10(같은 이유) */
   white-space: nowrap;
 }
 .browser_controls .ctrl_title { grid-area: title; margin-bottom: -2px; }   /* 행 간격 8 에서 2 를 빼 다른 그룹과 같은 제목 ↔ 컨트롤 간격 6 */
@@ -483,6 +484,7 @@ svg {
 .safari_controls { grid-area: safari; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .safari_controls[hidden] { display: none; }
 .safari_controls .position_controls { grid-area: auto; justify-self: auto; }
+.safari_controls .position_controls[hidden] { display: none; }   /* iPhone Duo 측면 레이아웃: Safari 탭 레이아웃 없이 viewport-fit 만 */
 .seg_label { padding: 0 4px 0 8px; color: var(--sub-color); font-size: 11px; font-weight: 600; }
 .switch_control { display: inline-flex; align-items: center; gap: 6px; color: #475467; font-size: 12px; font-weight: 600; cursor: pointer; }
 .switch_control input {
@@ -519,12 +521,12 @@ svg {
 .tool_actions {
   grid-area: tools;
   display: grid;
-  grid-template-columns: repeat(5, 36px);   /* 회전 · safe-area · 가림 검사 · 새로고침 · 새 창 (MacBook + Safari 에서는 아래 규칙으로 Safari 호환성 검사가 더해져 6열) */
-  gap: 6px;
+  grid-template-columns: repeat(6, 36px);   /* 회전 · safe-area · 가림 검사 · 가상 키보드 · 새로고침 · 새 창 (MacBook + Safari 는 가상 키보드 대신 Safari 호환성 검사 — 둘 다 6열) */
+  gap: 6px 4px;   /* 세로 6 = 제목 ↔ 아이콘, 가로 4 = 아이콘 사이(2026-10-21 6 → 4) */
 }
 /* Safari 호환성 검사 버튼(2026-10-16): MacBook + Safari(macOS) 단일 보기일 때만 보인다 — 기존 JS 가 그 조건에서만 브라우저 그룹에 붙이는 data-mac-safari 를 따른다(JS 변경 없음). 다른 기기의 도구 그룹은 5열 그대로 */
 .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) .compat_btn { display: none; }
-.control_panel:has(.browser_controls[data-mac-safari="true"]) .tool_actions { grid-template-columns: repeat(6, 36px); }
+.control_panel:has(.browser_controls[data-mac-safari="true"]) .keyboard_btn { display: none; }   /* 가상 키보드는 모바일 · 태블릿 · breakpoint 프리셋용 — MacBook 에서는 숨김(2026-10-21) */
 .tool_actions .ctrl_title { grid-column: 1 / -1; margin-bottom: 0; }   /* gap 6 이 제목 ↔ 아이콘 간격 */
 /* 기본 아이콘 버튼(다중 비교 카드의 .is_small 도 사용 — 이번 단계에서 값 그대로) */
 .icon_btn {
@@ -556,7 +558,7 @@ svg {
 .control_panel .icon_btn:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
 
 /* 보기: 제목 / 배율 */
-.view_controls { grid-area: view; display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; }
+.view_controls { grid-area: view; display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; }   /* 2026-10-21 6 → 4 */
 .view_controls .ctrl_title { flex: 0 0 100%; }
 /* 기기만 보기 토글: 일반 상태는 아이콘 버튼(글자는 접근성 이름), 눌린 상태 표현은 .control_panel .icon_btn[aria-pressed] 공통 규칙 */
 .device_only_btn { gap: 6px; }
@@ -606,7 +608,7 @@ svg {
 .scale_controls input:disabled:checked + span, .position_controls input:disabled:checked + span { color: #8a95a8; background: #f4f6f9; box-shadow: none; }
 /* 표시 배율 컨트롤: [−] [% 입력] [+] [화면 맞춤 | 실기기]. 입력 폭 고정(열 폭 흔들림 방지).
  * 공통 세그먼트 상자(.scale_controls) 를 풀어 −/+ 는 아이콘 버튼, % 는 평소 테두리 없는 값, 두 배율 모드는 붙은 버튼 한 쌍으로 */
-.scale_controls { gap: 6px; }
+.scale_controls { gap: 4px; }   /* 2026-10-21 6 → 4 */
 .control_panel .scale_controls { height: 36px; padding: 0; background: none; border: 0; border-radius: 0; }
 .scale_btn, .scale_mode {
   height: 36px;
@@ -1065,6 +1067,52 @@ svg {
   background: #fff;
 }
 .site_view iframe { width: 100%; height: 100%; display: block; background: #fff; border: 0; }
+/* 가상 키보드 영역 시뮬레이션(2026-10-21): 브라우저 · Safari 실측 · Duo 측면 계산이 끝난 사이트 영역(.site_view) 안에서 마지막에 적용한다.
+ * resize = iframe 높이만 키보드 높이만큼 줄임(사이트 window.innerHeight 도 줄어듦) · overlay = iframe 그대로, 영역만 아래를 덮음. 높이는 JS 가 --kb-h(사용자 조절값을 화면에 맞춰 제한) 로 넣는다 */
+.site_view[data-keyboard="resize"] iframe { height: calc(100% - var(--kb-h, 0px)); }
+.kb_sim {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--kb-h, 0px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #475467;
+  background: repeating-linear-gradient(135deg, #d9dde3 0 12px, #d3d8df 12px 24px);
+  border-top: 1px solid #aab2bf;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-align: center;
+  user-select: none;
+}
+.kb_sim[hidden] { display: none; }
+.kb_value { color: #667085; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kb_handle {   /* 위 경계 손잡이: 끌어서 높이 조절(포인터 전용 — 키보드 사용자는 설정 패널의 숫자 입력) */
+  position: absolute;
+  top: -6px;
+  left: 0;
+  right: 0;
+  height: 26px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+.kb_handle::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  width: 44px;
+  height: 5px;
+  background: #8b95a5;
+  border-radius: 3px;
+  transform: translateX(-50%);
+}
 /* 실측 CSS viewport(app.js state.browserViewport — iPhone 18 Pro Safari): iframe 크기·위치는 실측값(--site-*), 브라우저 UI 밴드는 그리드 행에 그대로 그려져 iframe 위에 놓이는 시각 레이어.
  * 절대 배치 그리드 자식은 grid-area 를 컨테이너 전체로 잡아야 화면 좌표 기준이 된다 */
 .screen_wrap[data-viewport-model="measured"] .site_view {
@@ -1659,6 +1707,18 @@ svg {
   box-shadow: 0 8px 24px rgba(15, 23, 42, .18);
 }
 .occlusion_list[hidden] { display: none; }
+/* 가상 키보드 상태 줄 · 설정 패널(가림 검사 결과 줄 · 목록과 같은 자리 · 모양, 2026-10-21) */
+.keyboard_status { color: #344054; }
+.occlusion_list.keyboard_settings { width: max-content; max-width: calc(100% - 28px); display: grid; gap: 10px; padding: 12px 14px; }
+.occlusion_list.keyboard_settings[hidden] { display: none; }
+.keyboard_settings_title { margin: 0; color: var(--text-color); font-size: 13px; font-weight: 700; }
+.keyboard_settings_title span { color: var(--sub-color); font-size: 12px; font-weight: 600; }
+.keyboard_settings .keyboard_mode { grid-area: auto; justify-self: start; height: 36px; padding: 2px; }   /* 공용 .position_controls 의 grid-area: position 해제 */
+.keyboard_settings .keyboard_mode label span { height: 30px; padding: 0 12px; }
+.keyboard_height { display: flex; align-items: center; gap: 8px; color: #344054; font-size: 12px; font-weight: 600; }
+.keyboard_height input { width: 84px; height: 32px; padding: 0 8px; color: var(--text-color); background: #fff; border: 1px solid #cdd5df; border-radius: 6px; font: inherit; font-variant-numeric: tabular-nums; }
+.keyboard_height input:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 1px; }
+.keyboard_note { max-width: 300px; margin: 0; color: var(--sub-color); font-size: 12px; line-height: 1.5; }
 .occlusion_items { margin: 0; padding: 0; list-style: none; }
 .occlusion_items button {
   width: 100%;
