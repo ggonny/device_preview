@@ -544,7 +544,7 @@
     openLink:document.getElementById('openLink'),previewArea:document.getElementById('previewArea'),previewStage:document.getElementById('previewStage'),previewMount:document.getElementById('previewMount'),
     compareBar:document.getElementById('compareBar'),compareCount:document.getElementById('compareCount'),compareNote:document.getElementById('compareNote'),
     compareGrid:document.getElementById('compareGrid'),compareEmpty:document.getElementById('compareEmpty'),
-    syncScroll:document.getElementById('syncScroll'),syncRotate:document.getElementById('syncRotate'),syncRefresh:document.getElementById('syncRefresh'),
+    syncScroll:document.getElementById('syncScroll'),syncRotate:document.getElementById('syncRotate'),syncRefresh:document.getElementById('syncRefresh'),syncNavigate:document.getElementById('syncNavigate'),
     deviceShellTemplate:document.getElementById('deviceShellTemplate'),compareItemTemplate:document.getElementById('compareItemTemplate'),
     frameStatus:document.getElementById('frameStatus'),loadStatus:document.querySelector('.load_status'),presetNote:document.getElementById('presetNote'),viewportStatus:document.getElementById('viewportStatus')
   };
@@ -559,7 +559,7 @@
    * ================================================================== */
   const MAX_COMPARE=4;
   let viewMode='single';      /* single | compare */
-  const syncOptions={scroll:true,rotate:true,refresh:true};
+  const syncOptions={scroll:true,rotate:true,refresh:true,navigate:true};   /* navigate = 페이지 이동 동기화(2026-10-22) */
   const compareViews=new Map();
   let primaryView=null;
 
@@ -919,13 +919,21 @@
     return{width,height,visibleHeight,top,bottom,left:bands.left,right:bands.right,urlTop,urlBottom,overlay,bands};
   }
 
-  function getDisplayUrl(){
-    if(!currentUrl)return'example.com';
+  /* 가상 주소창 표시: 다중 비교 카드는 페이지 이동 감지가 이미 관찰한 그 카드의 실제 URL(view.nav.url) 을 우선 쓴다(2026-10-26) —
+   * 페이지 이동 OFF 로 카드마다 다른 페이지에 있거나 반응형 redirect 로 최종 URL 이 달라도 각자 표시. 관찰값이 없으면 currentUrl */
+  function getDisplayUrl(view){
+    const observed=view&&view.compare&&view.nav&&view.nav.url;
+    const source=observed||currentUrl;
+    if(!source)return'example.com';
     try{
-      const url=new URL(currentUrl);
+      const url=new URL(source);
       const path=url.pathname==='/'?'':url.pathname;
       return(url.host+path).slice(0,64);
-    }catch(error){return currentUrl;}
+    }catch(error){return source;}
+  }
+  /* 주소 텍스트만 갱신(레이아웃 · 밴드 · 배율 재계산 없음) */
+  function updateDisplayUrl(view){
+    if(view.dom.browserUrl)view.dom.browserUrl.textContent=getDisplayUrl(view);
   }
 
   function updateBrowserChrome(view){
@@ -974,7 +982,7 @@
     view.dom.bandUrl.hidden=bands.url===0;
     view.dom.bandToolbar.hidden=bands.toolbar===0;
     view.dom.bandHome.hidden=bands.home===0;
-    view.dom.browserUrl.textContent=getDisplayUrl();
+    view.dom.browserUrl.textContent=getDisplayUrl(view);
     wrap.dataset.uiLayout=bands.side?'side':'bars';
     updateStatusBar(view);
     updateSideControls(view,bands);
@@ -1817,19 +1825,30 @@
       return;
     }
     frame.removeAttribute('srcdoc');
+    beginNavLoad(view);
     frame.src=currentUrl;
   }
 
   function reloadView(view){
     if(!currentUrl||!isViewActive(view))return false;
     view.loaded=false;
+    beginNavLoad(view);
     view.dom.siteFrame.src=currentUrl;
     return true;
   }
 
   function onFrameLoad(view){
-    if(currentUrl&&view.dom.siteFrame.getAttribute('src')===currentUrl){view.loaded=true;}
-    if(view.compare)attachScrollSync(view);
+    /* src 속성이 있으면 사이트 문서(placeholder 는 srcdoc). 페이지 이동 동기화로 카드 안에서 이동하면 src 속성은 처음 URL 그대로라 currentUrl 과 비교하지 않는다(2026-10-22) */
+    if(currentUrl&&view.dom.siteFrame.hasAttribute('src')){view.loaded=true;}
+    if(view.compare){
+      const win=getSameOriginWindow(view);
+      let url='';
+      try{url=win?win.location.href:'';}catch(error){}
+      view.navDocument=isNavigationDocument(view,url);
+      noteNavLoad(view);
+      if(url)observeNav(view,url,{loading:false});
+      attachScrollSync(view);
+    }
     if(view===primaryView){view.occlusionSlow=false;scheduleOcclusionCheck(view,OCCLUSION_LOAD_DELAY);}   /* 새 문서: 큰 페이지 판정 초기화 */
     if(view===primaryView&&compatEnabled)setTimeout(runCompatCheck,80);   /* Safari 호환성 검사: 새 문서면 다시 검사 */
     updateLoadStatus();
@@ -1989,14 +2008,31 @@
     const view=Array.from(compareViews.values()).find(item=>item.bridge&&item.bridge.id===data.view);
     if(!view||data.nonce!==view.bridge.nonce||event.source!==view.dom.siteFrame.contentWindow)return;
     const type=data.type.slice(BRIDGE_PREFIX.length);
-    if(type!=='ready'&&type!=='scroll')return;
+    if(type!=='ready'&&type!=='scroll'&&type!=='location')return;
+    if(type==='location'){if(view.bridge.state==='ready'&&view.bridge.navigate)observeNav(view,data.url,{loading:false});return;}   /* 페이지 이동(2026-10-22): 같은 문서 안 URL 변경 */
+    /* 내부 요소 스크롤(2026-10-22): 문서 위치 캐시(lastScrollRatio) 는 건드리지 않고 대응 요소에만 전달 */
+    if(type==='scroll'&&data.targetType==='element'){
+      const key=sanitizeScrollKey(data.target);
+      if(key&&view.bridge.state==='ready'&&syncOptions.scroll&&viewMode==='compare'){const ratio=sanitizeElementRatio(data.ratio);if(ratio.x!==null||ratio.y!==null)broadcastElementScroll(view,key,ratio);}
+      return;
+    }
+    if(type==='ready'){
+      view.bridge.element=Boolean(data.features&&data.features.element===true);
+      view.bridge.navigate=Boolean(data.features&&data.features.navigate===true);   /* 1.2.0 이상만 페이지 이동 동기화 */
+    }
     view.lastScrollRatio=sanitizeRatio(data.ratio);   /* 다른 출처는 scrollTop 을 직접 못 읽으므로 마지막 비율을 기억해 둔다 */
     if(type==='ready'){
       const first=view.bridge.state!=='ready';
       view.bridge.state='ready';
       updateSyncAvailability();
+      let navDocument=false;
+      if(view.bridge.navigate){
+        navDocument=first&&isNavigationDocument(view,data.url);
+        observeNav(view,data.url,{loading:false});   /* 새 문서의 URL */
+        syncBridgeWatch(view,navWatchActive());
+      }
       /* 새로 추가 · 새로고침된 카드는 이미 스크롤된 다른 카드 위치에 맞춘다(direct 방식의 attachScrollSync 와 같은 동작) */
-      if(first&&syncOptions.scroll&&viewMode==='compare'){
+      if(first&&syncOptions.scroll&&viewMode==='compare'&&!navDocument){
         const reference=Array.from(compareViews.values()).find(other=>other!==view&&getSyncAccess(other).mode);
         const ratio=reference&&getViewScrollRatio(reference);
         if(ratio)applyViewScrollRatio(view,ratio);
@@ -2038,6 +2074,293 @@
     compareViews.forEach(other=>{if(other!==source)applyViewScrollRatio(other,ratio);});
   }
 
+  /* ------------------------------------------------------------------
+   * 내부 overflow 스크롤 영역 동기화(2026-10-22) — 위의 문서(document/window) 동기화는 그대로 두고 덧붙인 경로
+   *
+   * 감지: 문서에 capture 단계 scroll 리스너 하나. 요소 scroll 이벤트는 버블링되지 않아 기존 window 리스너에는 오지 않고,
+   *       문서 자신의 scroll(target = document) 은 여기서 건너뛴다 → 문서 스크롤은 기존 경로만 처리한다.
+   *       전수 조사 · MutationObserver · 목록 캐시 없음. 실제로 스크롤된 요소만, 적용할 때마다 현재 DOM 에서 다시 찾는다.
+   * 식별(scroll key): 고유 id → 고유 tag.class → 제한 구조 path(가장 가까운 고유 id 조상 또는 body 에서 내려가며
+   *       각 단계가 형제 중 하나로만 맞을 때만, 최대 8단계). tag / id / class 만 쓰고 본문 · 속성값 · 입력값은 쓰지 않는다.
+   *       is- / has- 로 시작하는 상태 클래스는 카드마다 다를 수 있어 뺀다. 어느 단계든 하나로 정해지지 않으면 동기화하지 않는다.
+   * 적용: 대응 요소를 찾은 카드에만 비율(scrollTop / (scrollHeight − clientHeight), 가로도 같은 방식) 로 적용.
+   *       못 찾으면 그 카드만 조용히 건너뛴다(문서로 대신 적용하지 않음).
+   * 루프 방지: 요소별 WeakMap(적용 위치 + 150ms) — 문서용 view.lastAppliedScroll 과 섞지 않는다. 요소별 16ms 묶음.
+   * ------------------------------------------------------------------ */
+  const SCROLL_KEY_DEPTH=8;
+  const SCROLL_KEY_CLASSES=4;
+  const SCROLL_KEY_NAME=/^-?[A-Za-z_][\w-]{0,63}$/;
+  const SCROLL_KEY_TAG=/^[a-z][a-z0-9-]{0,31}$/;
+  const SCROLL_KEY_STATE=/^(is|has)[-_]/;
+  const elementApplied=new WeakMap();
+  const elementPending=new WeakSet();
+
+  function scrollKeyStep(el){
+    return{tag:el.localName,cls:Array.from(el.classList).filter(name=>SCROLL_KEY_NAME.test(name)&&!SCROLL_KEY_STATE.test(name)).slice(0,SCROLL_KEY_CLASSES)};
+  }
+  function scrollKeySelector(step){return step.tag+step.cls.map(name=>'.'+CSS.escape(name)).join('');}
+  function uniqueById(doc,id){
+    const list=doc.querySelectorAll('#'+CSS.escape(id));
+    return list.length===1?list[0]:null;
+  }
+  function uniqueChild(parent,step){
+    const selector=scrollKeySelector(step);
+    const list=Array.from(parent.children).filter(child=>child.matches(selector));
+    return list.length===1?list[0]:null;
+  }
+
+  /* 브리지에서 받은 key 도 같은 함수로 검사한다(형식이 맞지 않으면 null) */
+  function sanitizeScrollKey(key){
+    const isName=value=>typeof value==='string'&&SCROLL_KEY_NAME.test(value);
+    const toStep=step=>step&&typeof step==='object'&&typeof step.tag==='string'&&SCROLL_KEY_TAG.test(step.tag)
+      &&Array.isArray(step.cls)&&step.cls.length<=SCROLL_KEY_CLASSES&&step.cls.every(isName)?{tag:step.tag,cls:step.cls.slice()}:null;
+    if(!key||typeof key!=='object')return null;
+    if('id' in key)return isName(key.id)?{id:key.id}:null;
+    if('sel' in key){const step=toStep(key.sel);return step?{sel:step}:null;}
+    if(!Array.isArray(key.path)||key.path.length>SCROLL_KEY_DEPTH||!(key.anchor===null||isName(key.anchor)))return null;
+    const path=key.path.map(toStep);
+    return path.every(Boolean)?{anchor:key.anchor,path}:null;
+  }
+
+  function makeScrollKey(el){
+    const doc=el.ownerDocument;
+    const isUniqueId=node=>node.id&&SCROLL_KEY_NAME.test(node.id)&&uniqueById(doc,node.id)===node;
+    try{
+      if(isUniqueId(el))return{id:el.id};
+      const own=scrollKeyStep(el);
+      const list=doc.querySelectorAll(scrollKeySelector(own));
+      if(list.length===1&&list[0]===el)return sanitizeScrollKey({sel:own});
+      const path=[];
+      let node=el;
+      while(node!==doc.body){
+        const parent=node.parentElement;
+        if(!parent||path.length>=SCROLL_KEY_DEPTH)return null;
+        const step=scrollKeyStep(node);
+        if(uniqueChild(parent,step)!==node)return null;   /* 같은 모양의 형제가 있으면 애매 → 동기화 안 함 */
+        path.unshift(step);
+        node=parent;
+        if(node!==doc.body&&isUniqueId(node))return sanitizeScrollKey({anchor:node.id,path});
+      }
+      return sanitizeScrollKey({anchor:null,path});
+    }catch(error){return null;}
+  }
+
+  function resolveScrollKey(doc,key){
+    try{
+      if(key.id)return uniqueById(doc,key.id);
+      if(key.sel){const list=doc.querySelectorAll(scrollKeySelector(key.sel));return list.length===1?list[0]:null;}
+      let node=key.anchor?uniqueById(doc,key.anchor):doc.body;
+      for(const step of key.path){
+        if(!node)return null;
+        node=uniqueChild(node,step);
+      }
+      return node;
+    }catch(error){return null;}
+  }
+
+  function getElementRatio(el){
+    const maxY=el.scrollHeight-el.clientHeight;
+    const maxX=el.scrollWidth-el.clientWidth;
+    /* 요소는 실제로 스크롤 가능한 축만 보낸다(불가 축 = null) — breakpoint 에 따라 축이 달라도 대상의 다른 축을 0 으로 되돌리지 않게 */
+    return{y:maxY>0?el.scrollTop/maxY:null,x:maxX>0?el.scrollLeft/maxX:null};
+  }
+
+  /* 브리지로 받은 요소 비율: 숫자는 0~1 로 자르고, null(보내지 않은 축) 은 그대로 둔다 */
+  function sanitizeElementRatio(ratio){
+    const axis=value=>typeof value==='number'&&Number.isFinite(value)?Math.min(1,Math.max(0,value)):null;
+    return ratio&&typeof ratio==='object'?{x:axis(ratio.x),y:axis(ratio.y)}:{x:null,y:null};
+  }
+
+  function applyElementRatio(el,ratio){
+    /* 전달되지 않은 축(null) 은 현재 위치 유지 */
+    const top=ratio.y===null?el.scrollTop:Math.round(ratio.y*Math.max(0,el.scrollHeight-el.clientHeight));
+    const left=ratio.x===null?el.scrollLeft:Math.round(ratio.x*Math.max(0,el.scrollWidth-el.clientWidth));
+    if(Math.abs(el.scrollTop-top)<1&&Math.abs(el.scrollLeft-left)<1)return;   /* 이미 그 위치면 scroll 이벤트가 없으므로 기록도 남기지 않는다 */
+    elementApplied.set(el,{top,left,until:performance.now()+150});
+    el.scrollTo(left,top);
+  }
+
+  function broadcastElementScroll(source,key,ratio){
+    compareViews.forEach(other=>{
+      if(other===source)return;
+      const win=getSameOriginWindow(other);
+      if(win){
+        const doc=win.document;
+        const el=resolveScrollKey(doc,key);
+        if(el&&el!==doc.scrollingElement&&el!==doc.documentElement)applyElementRatio(el,ratio);
+        return;
+      }
+      /* 요소 적용은 READY 에서 element 지원을 알린 브리지에만 보낸다(이전 버전 확장이 문서에 잘못 적용하지 않도록) */
+      if(other.bridge&&other.bridge.state==='ready'&&other.bridge.element)postToBridge(other,'apply',{targetType:'element',target:key,ratio:{x:ratio.x,y:ratio.y}});
+    });
+  }
+
+  function onElementScroll(view,event){
+    if(!syncOptions.scroll||viewMode!=='compare')return;
+    const el=event.target;
+    if(!el||el.nodeType!==1)return;   /* 문서 자신의 scroll 은 기존 window 리스너가 처리 */
+    const doc=el.ownerDocument;
+    if(el===doc.scrollingElement||el===doc.documentElement)return;
+    const applied=elementApplied.get(el);
+    if(applied){
+      /* 프로그램 스크롤의 메아리 — 받으면 기록을 지워 바로 뒤의 실제 사용자 스크롤은 150ms 안이어도 놓치지 않게 */
+      if(Math.abs(el.scrollTop-applied.top)<1&&Math.abs(el.scrollLeft-applied.left)<1){elementApplied.delete(el);return;}
+      if(performance.now()<applied.until)return;
+    }
+    if(elementPending.has(el))return;
+    elementPending.add(el);
+    setTimeout(()=>{
+      elementPending.delete(el);
+      if(!el.isConnected)return;
+      const key=makeScrollKey(el);
+      const ratio=getElementRatio(el);
+      if(key&&(ratio.x!==null||ratio.y!==null))broadcastElementScroll(view,key,ratio);
+    },16);
+  }
+
+  /* ------------------------------------------------------------------
+   * 페이지 이동 동기화(2026-10-22, 다중 비교 · syncOptions.navigate)
+   *
+   * 감지: 카드 최상위 문서의 실제 location.href 를 본다(클릭 가로채기 · History API 패치 없음).
+   *   같은 출처 = 부모가 250ms 마다 contentWindow.location.href 를 비교(+ 로드 때 한 번) — pushState / replaceState 는 이벤트가 없어 주기 비교가 필요.
+   *     타이머는 다중 비교 + URL 있음 일 때 하나 돈다(navWatchActive) — 페이지 이동 OFF 여도 카드별 주소 표시를 위해 관찰은 유지하고, 다른 카드 전파만 ON 일 때(navSyncActive).
+   *   다른 출처 = Scroll Bridge(1.2.0, READY features.navigate) 가 자기 문서 URL 을 같은 주기로 보고(location) · 새 문서는 READY 의 url.
+   * 적용: 같은 출처 = target.contentWindow.location.replace(url) · 브리지 = navigate 메시지(확장이 같은 출처 URL 만 replace).
+   *   replace 를 쓰는 이유: iframe 이동은 탭의 공동 세션 기록에 쌓이므로 target 이 기록을 남기면 뒤로/앞으로가 source 가 아닌 target 카드를 되돌린다.
+   *   replace 도 브라우저 기본 이동이라 hash 만 다르면 같은 문서 안 이동이 된다.
+   *   source 는 다시 로드하지 않는다. URL 이 이미 같은 카드 · 다른 사이트(origin) 에 가 있는 카드 · 이동할 수 없는 카드는 건너뛴다.
+   * 루프 · redirect 방지(hold): 프로그램 이동을 받은 target 과 방금 이동을 보낸 source 는 hold 상태가 되어,
+   *   그 카드의 로드가 끝나고 URL 변화가 NAV_QUIET_MS 동안 없을 때까지 관찰한 URL 을 기준값으로만 갱신한다(다시 보내지 않음).
+   *   → 메아리 · redirect · 반응형 redirect(데스크톱 /desktop · 모바일 /mobile) 가 서로를 다시 이동시키지 않는다.
+   *   사용자 이동은 로드가 끝나고 0.7초 뒤부터 다시 감지된다(로드가 오지 않는 경우 대비 최대 NAV_HOLD_MAX_MS).
+   * 다른 origin 으로의 이동은 그 카드만 독립(전파 · currentUrl 갱신 없음).
+   * 동기화된 URL 은 currentUrl · 주소 입력칸 · 새 창 링크에만 반영하고 localStorage(viewportLabUrl) 에는 저장하지 않는다.
+   * ------------------------------------------------------------------ */
+  const NAV_POLL_MS=250;
+  const NAV_QUIET_MS=700;
+  const NAV_HOLD_MAX_MS=15000;
+  let navTimer=0;
+
+  function navState(view){
+    if(!view.nav)view.nav={url:null,hold:false,loading:false,quietAt:0,holdAt:0,moved:false};
+    return view.nav;
+  }
+  function isHttpUrl(url){return typeof url==='string'&&url.length<=8192&&/^https?:\/\//i.test(url);}
+  function urlOrigin(url){try{return new URL(url).origin;}catch(error){return null;}}
+  function stripHash(url){const index=url.indexOf('#');return index<0?url:url.slice(0,index);}
+  function navSyncActive(){return viewMode==='compare'&&syncOptions.navigate&&Boolean(currentUrl);}
+  /* URL 관찰(카드별 주소 표시) 은 페이지 이동 동기화 ON/OFF 와 관계없이 다중 비교 + URL 있음이면 유지 — 동기화 OFF 는 "다른 카드로 전파하지 않음" 만 뜻한다(2026-11-02) */
+  function navWatchActive(){return viewMode==='compare'&&Boolean(currentUrl);}
+
+  /* hold 시작: loading = 로드 이벤트를 기다리는지. moved = 페이지 이동으로 생긴 문서(새 문서의 스크롤 초기 정렬을 하지 않음) */
+  function holdNav(view,loading,moved){
+    const nav=navState(view);
+    const now=performance.now();
+    nav.hold=true;
+    nav.loading=loading;
+    nav.moved=moved;
+    nav.quietAt=now+NAV_QUIET_MS;
+    nav.holdAt=now;
+  }
+  function navHolding(nav){
+    if(!nav.hold)return false;
+    const now=performance.now();
+    if((!nav.loading&&now>=nav.quietAt)||now-nav.holdAt>NAV_HOLD_MAX_MS){nav.hold=false;nav.moved=false;}
+    return nav.hold;
+  }
+
+  /* 사용자 · 전체 로드(loadInto · reloadView): 기준값을 비우고 로드 직후 redirect 를 흡수 */
+  function beginNavLoad(view){
+    holdNav(view,true,false);
+    navState(view).url=null;
+    updateDisplayUrl(view);   /* 새로 부르는 주소(currentUrl) 를 바로 표시 */
+  }
+
+  /* 로드 이벤트(onFrameLoad): hold 중이면 조용한 시간을 다시 잰다 */
+  function noteNavLoad(view){
+    const nav=navState(view);
+    nav.loading=false;
+    if(nav.hold)nav.quietAt=performance.now()+NAV_QUIET_MS;
+  }
+
+  /* 새 문서가 페이지 이동(동기화 · 사용자 이동) 으로 생겼는지 — 그렇다면 기존 스크롤 초기 정렬(다른 카드 위치 맞춤) 을 하지 않는다 */
+  function isNavigationDocument(view,url){
+    if(!navSyncActive()||!view.nav)return false;
+    const nav=view.nav;
+    if(navHolding(nav)&&nav.moved)return true;
+    return Boolean(nav.url&&url&&url!==nav.url);
+  }
+
+  function observeNav(view,url,options){
+    if(!isHttpUrl(url))return;
+    const nav=navState(view);
+    if(url===nav.url)return;
+    const previous=nav.url;
+    nav.url=url;
+    updateDisplayUrl(view);   /* 관찰한 URL 이 바뀌면 그 카드의 가상 주소창만 바로 갱신 */
+    if(navHolding(nav)){nav.quietAt=performance.now()+NAV_QUIET_MS;return;}   /* 메아리 · redirect: 기준값만 갱신 */
+    if(!previous||!navSyncActive())return;                                       /* 기준값 설정 · 동기화 꺼짐 */
+    const origin=urlOrigin(previous);
+    if(!origin||urlOrigin(url)!==origin)return;                                   /* 다른 사이트로 나간 카드는 독립 */
+    broadcastNav(view,url,origin,Boolean(options&&options.loading));
+  }
+
+  function broadcastNav(source,url,origin,loading){
+    holdNav(source,loading,true);   /* source 자신의 로드 직후 redirect 를 다시 보내지 않게 */
+    currentUrl=url;
+    if(document.activeElement!==elements.siteUrl)elements.siteUrl.value=url;
+    elements.openLink.href=url;
+    compareViews.forEach(target=>{if(target!==source)applyNav(target,url,origin);});
+    updateLoadStatus();
+  }
+
+  function applyNav(target,url,origin){
+    const nav=navState(target);
+    if(!isViewActive(target)||!nav.url||nav.url===url||urlOrigin(nav.url)!==origin)return;
+    const sameDocument=url.includes('#')&&stripHash(url)===stripHash(nav.url);   /* hash 만 다르면 문서를 다시 만들지 않는 이동 */
+    const win=getSameOriginWindow(target);
+    const bridge=!win&&target.bridge&&target.bridge.state==='ready'&&target.bridge.navigate;
+    if(!win&&!bridge)return;
+    holdNav(target,!sameDocument,true);
+    if(!sameDocument)target.loaded=false;
+    if(win){try{win.location.replace(url);}catch(error){}}
+    else postToBridge(target,'navigate',{url});
+  }
+
+  function pollNav(){
+    compareViews.forEach(view=>{
+      if(!isViewActive(view))return;
+      const win=getSameOriginWindow(view);
+      if(!win)return;
+      let url='',loading=false;
+      try{url=win.location.href;loading=win.document.readyState!=='complete';}catch(error){return;}
+      observeNav(view,url,{loading});
+    });
+  }
+
+  /* 감시 켜고 끄기: 다중 비교 + URL 있음 일 때(페이지 이동 ON/OFF 무관). 켤 때는 지금 URL 을 기준값으로만 잡는다(꺼져 있던 동안의 이동을 보내지 않음) */
+  function updateNavWatch(){
+    const active=navWatchActive()&&compareViews.size>0;
+    if(active&&!navTimer){
+      compareViews.forEach(view=>{
+        const win=getSameOriginWindow(view);
+        if(win){try{navState(view).url=win.location.href;}catch(error){}}
+        else if(view.bridge&&view.bridge.navigate)navState(view).url=null;   /* 브리지 카드는 watch 응답이 기준값 */
+      });
+      navTimer=setInterval(pollNav,NAV_POLL_MS);
+    }else if(!active&&navTimer){
+      clearInterval(navTimer);
+      navTimer=0;
+    }
+    compareViews.forEach(view=>syncBridgeWatch(view,active));
+  }
+  function syncBridgeWatch(view,active){
+    const bridge=view.bridge;
+    if(!bridge||bridge.state!=='ready'||!bridge.navigate||bridge.watch===active)return;
+    bridge.watch=active;
+    postToBridge(view,'watch',{navigate:active});
+  }
+
   /* iframe load 마다 호출. 문서가 새로 생기면(새로고침·URL 변경) 리스너도 사라지므로 문서 기준으로 다시 붙인다 */
   function attachScrollSync(view){
     const access=getScrollAccess(view);
@@ -2061,8 +2384,10 @@
       /* 프레임당 1회로 묶어서 broadcast (rAF 가 멈추는 환경 대비 16ms 타이머) */
       setTimeout(()=>{pending=false;broadcastScroll(view);},16);
     },{passive:true});
-    /* 새로 추가·새로고침된 카드는 이미 스크롤된 다른 카드 위치에 맞춘다 */
-    if(syncOptions.scroll){
+    /* 내부 overflow 요소 스크롤(2026-10-22): capture 단계라 버블링되지 않는 요소 scroll 도 받는다 */
+    win.document.addEventListener('scroll',event=>onElementScroll(view,event),{capture:true,passive:true});
+    /* 새로 추가·새로고침된 카드는 이미 스크롤된 다른 카드 위치에 맞춘다(페이지 이동으로 생긴 새 문서는 제외 — 이전 페이지 위치를 새 페이지에 옮기지 않음) */
+    if(syncOptions.scroll&&!view.navDocument){
       const reference=Array.from(compareViews.values()).find(other=>other!==view&&getSyncAccess(other).mode);
       const ratio=reference&&getViewScrollRatio(reference);
       if(ratio)applyScrollRatio(view,ratio);
@@ -2565,7 +2890,7 @@
       badge.textContent=show?'동기화 불가':'';
       badge.title=show?'스크롤 동기화 불가 · '+syncAccessReasons[access.reason]:'';
     });
-    if(!compare){elements.compareNote.textContent='';return;}
+    if(!compare){elements.compareNote.textContent='';elements.compareNote.title='';return;}
     const how=bridgeCount===0?'같은 출처':bridgeCount===accessibleCount?'확장 브리지':'같은 출처 + 확장 브리지';
     let note='';
     if(!currentUrl)note='스크롤 동기화는 이 도구와 같은 출처('+(location.origin==='null'?'file://':location.origin)+')의 페이지에서, 다른 출처 페이지는 Scroll Bridge 확장을 설치하면 동작합니다.';
@@ -2575,7 +2900,12 @@
     else if(accessibleCount===0)note='스크롤 동기화 불가: 다른 출처('+safeOrigin(currentUrl)+')의 페이지는 Scroll Bridge 연결이 필요합니다 — 연결 안 됨 · 확장 설치 및 사이트 접근 권한 확인(사용법.txt 참고).';
     else if(accessibleCount<views.length)note='스크롤 동기화 일부만 가능 ('+accessibleCount+' / '+views.length+', '+how+') · 나머지 카드는 따라오지 않습니다.';
     else note=syncOptions.scroll?'스크롤 동기화 동작 중 ('+how+')':'스크롤 동기화 꺼짐';
+    /* 페이지 이동 동기화(2026-10-22): 연결된 브리지가 READY 에 features.navigate 를 알리지 않은 카드가 있으면(구버전 확장) 한 줄 덧붙임.
+     * 같은 출처 카드 · 브리지가 없는 카드는 해당 없음(기존 안내 그대로), 버전 문자열은 비교하지 않는다 */
+    const navOutdated=Boolean(currentUrl)&&syncOptions.navigate&&views.some(view=>view.bridge&&view.bridge.state==='ready'&&!view.bridge.navigate);
+    if(navOutdated)note+=(note?' · ':'')+'페이지 이동: Scroll Bridge 업데이트 필요';
     elements.compareNote.textContent=note;
+    elements.compareNote.title=navOutdated?'페이지 이동 동기화는 Scroll Bridge 1.2.0 이상이 필요합니다.':'';
   }
 
   function safeOrigin(url){try{return new URL(url).origin;}catch(error){return url;}}
@@ -3321,6 +3651,7 @@
     elements.openLink.classList.remove('is_disabled');
     elements.openLink.removeAttribute('aria-disabled');
     elements.openLink.removeAttribute('tabindex');
+    updateNavWatch();
     try{localStorage.setItem('viewportLabUrl',url);}catch(error){}
     return url;
   }
@@ -3342,6 +3673,7 @@
     elements.openLink.classList.add('is_disabled');
     elements.openLink.setAttribute('aria-disabled','true');
     elements.openLink.setAttribute('tabindex','-1');
+    updateNavWatch();
     try{localStorage.removeItem('viewportLabUrl');}catch(error){}
     announce('사이트 주소를 지웠습니다. 기기 프레임은 유지되고 미리보기는 자리표시 페이지로 돌아갑니다.');
   }
@@ -3448,6 +3780,7 @@
     compareViews.set(deviceId,view);
     elements.compareGrid.appendChild(fragment);
     loadInto(view);
+    updateNavWatch();
     renderView(view);
     /* 열 수가 바뀌면 다른 카드의 맞춤 배율도 달라진다 */
     compareViews.forEach(other=>{if(other!==view)updateScale(other);});
@@ -3465,6 +3798,7 @@
     view.dom.item.remove();          /* iframe 도 함께 제거되어 언로드 */
     stopScrollBridge(view);          /* 다른 출처 카드의 브리지 재시도 타이머 정리 */
     compareViews.delete(deviceId);
+    updateNavWatch();
     compareViews.forEach(updateScale);
     updateSyncAvailability();
     updateDeviceButtons();
@@ -3513,6 +3847,7 @@
       if(changed&&settings.announce!==false)announce('단일 보기 모드. '+describeView(primaryView)+'.');
     }
     if(currentUrl)updateLoadStatus();
+    updateNavWatch();
     saveComparePreference();
     return true;
   }
@@ -3605,11 +3940,12 @@
     let saved=null;
     try{saved=JSON.parse(localStorage.getItem('viewportLabCompare')||'null');}catch(error){}
     if(saved&&saved.sync){
-      ['scroll','rotate','refresh'].forEach(key=>{if(typeof saved.sync[key]==='boolean')syncOptions[key]=saved.sync[key];});
+      ['scroll','rotate','refresh','navigate'].forEach(key=>{if(typeof saved.sync[key]==='boolean')syncOptions[key]=saved.sync[key];});   /* navigate 가 없는 예전 저장값은 기본 ON */
     }
     elements.syncScroll.checked=syncOptions.scroll;
     elements.syncRotate.checked=syncOptions.rotate;
     elements.syncRefresh.checked=syncOptions.refresh;
+    elements.syncNavigate.checked=syncOptions.navigate;
     if(saved&&saved.mode==='compare'){
       const items=Array.isArray(saved.items)?saved.items.filter(item=>devices[deviceAliases[item.deviceId]||item.deviceId]).map(item=>Object.assign({},item,{deviceId:deviceAliases[item.deviceId]||item.deviceId})).slice(0,MAX_COMPARE):[];
       setViewMode('compare',{deviceIds:items.map(item=>item.deviceId),items,announce:false});
@@ -3796,6 +4132,7 @@
   elements.syncScroll.addEventListener('change',()=>{syncOptions.scroll=elements.syncScroll.checked;if(syncOptions.scroll)realignScrollSync();updateSyncAvailability();saveComparePreference();announce('스크롤 동기화를 '+(syncOptions.scroll?'켰습니다.':'껐습니다.'));});
   elements.syncRotate.addEventListener('change',()=>{syncOptions.rotate=elements.syncRotate.checked;saveComparePreference();});
   elements.syncRefresh.addEventListener('change',()=>{syncOptions.refresh=elements.syncRefresh.checked;saveComparePreference();});
+  elements.syncNavigate.addEventListener('change',()=>{syncOptions.navigate=elements.syncNavigate.checked;updateNavWatch();updateSyncAvailability();saveComparePreference();announce('페이지 이동 동기화를 '+(syncOptions.navigate?'켰습니다.':'껐습니다.'));});
 
   /* ------------------------------------------------------------------
    * 초기화

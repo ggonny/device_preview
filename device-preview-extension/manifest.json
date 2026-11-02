@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Device Preview Scroll Bridge",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Device Preview 다중 비교의 스크롤 동기화를 다른 출처 iframe 에서도 쓰게 하는 브리지. 스크롤 비율만 주고받으며 페이지 내용은 읽지 않습니다.",
   "content_scripts": [
     {

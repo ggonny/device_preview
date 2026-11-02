@@ -1972,6 +1972,7 @@ svg {
   .preview_stage { --stage-pad: 24px; min-height: 460px; }
   .compare_grid { grid-template-columns: 1fr; gap: 14px; }
   .compare_bar { flex-wrap: wrap; }
+  .sync_controls { flex-wrap: wrap; row-gap: 6px; }   /* 동기화 스위치 4개(2026-10-22 페이지 이동 추가) 가 좁은 화면에서 바 밖으로 넘치지 않게 */
   .compare_note { margin-left: 0; white-space: normal; }
   .preview_footer { align-items: flex-start; flex-direction: column; gap: 2px; }
   .preview_footer > span { text-align: left; }
