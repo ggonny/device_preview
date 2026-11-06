@@ -156,6 +156,10 @@
             <button type="button" class="icon_btn compat_btn" id="compatBtn" aria-label="Safari 호환성 검사" aria-pressed="false" title="Safari 호환성 검사 — MacBook 에서 Safari 를 고르면 사용할 수 있습니다" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-compat"/></svg>
             </button>
+            <!-- 스크린샷 저장(2026-11-02 · 2026-11-03 풀페이지): 브라우저 탭 캡처로 기기마다 사이트 전체(문서 위 → 아래) 를 스크롤하며 이어 붙인 PNG 를 저장. 다중 비교는 카드마다 따로 -->
+            <button type="button" class="icon_btn" id="captureBtn" aria-label="풀페이지 스크린샷 저장" title="풀페이지 스크린샷 저장 — 기기마다 사이트 전체를 스크롤하며 이어 붙인 PNG(다중 비교는 기기별 파일). 브라우저가 화면 공유 대상을 물으면 이 탭을 선택하세요">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-camera"/></svg>
+            </button>
             <button type="button" class="icon_btn" id="refreshBtn" aria-label="미리보기 새로고침" title="미리보기 새로고침" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-refresh"/></svg>
             </button>
@@ -296,7 +300,8 @@
     <symbol id="icon-occlusion" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M6 7h12"/><rect x="9" y="5" width="6" height="5" rx="1" stroke-dasharray="2 1.5"/></symbol>
     <symbol id="icon-safe-area" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><rect x="8.5" y="6.5" width="7" height="11" rx="1" stroke-dasharray="2 1.5"/><path d="M12 19.5h.01"/></symbol>
     <!-- 새로고침: 단일 시계 방향 화살표 -->
-    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-8.5-8.5c2.4 0 4.6.98 6.2 2.6L20.5 8.4"/><path d="M20.5 3.5v4.9h-4.9"/></symbol>
+    <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M3.5 8.5a2 2 0 0 1 2-2h2.3l1.6-2.2h5.2l1.6 2.2h2.3a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.6"/></symbol>
+    <symbol id="icon-refresh"viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-8.5-8.5c2.4 0 4.6.98 6.2 2.6L20.5 8.4"/><path d="M20.5 3.5v4.9h-4.9"/></symbol>
     <!-- 새 창: 사각형 + 우상향 화살표 -->
     <symbol id="icon-compat" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="m9.5 12.5 2 2 3.5-4.5"/></symbol>
     <symbol id="icon-device-only" viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M15 4h5v5"/><path d="M20 15v5h-5"/><path d="M9 20H4v-5"/><rect x="9" y="8" width="6" height="8" rx="1.2"/></symbol>

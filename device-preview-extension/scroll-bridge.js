@@ -1,9 +1,10 @@
 /* Device Preview Scroll Bridge (content script, 2026-10-16)
  *
- * 하는 일: Device Preview(부모 페이지) 의 다중 비교 카드 iframe 안에서, 이 문서의 스크롤 비율만 부모와 주고받는다.
+ * 하는 일: Device Preview(부모 페이지) 의 다중 비교 카드 iframe(풀페이지 캡처 중에는 단일 보기 iframe 도) 안에서, 이 문서의 스크롤 비율만 부모와 주고받는다.
  *   ratio = scrollTop / (scrollHeight − clientHeight)  — app.js getScrollRatio() 와 같은 계산(document.scrollingElement 기준)
  *   1.1.0(2026-10-22): 사용자가 스크롤한 내부 overflow 요소도 같은 비율로 주고받는다(targetType 'element' + tag/id/class 로 만든 식별자).
  *   1.2.0(2026-10-22): 페이지 이동 동기화 — 부모가 watch 를 켠 동안 이 문서의 현재 URL 을 알리고, 부모가 보낸 같은 origin URL 로 이동한다.
+ *   1.3.0(2026-11-03): 풀페이지 스크린샷 — 부모가 요청할 때만 문서를 지정한 px 위치로 스크롤하고 위치 · 문서 높이 · 화면 높이 · 고정 띠 높이(숫자만) 를 알린다.
  * 하지 않는 일: 페이지 본문 · 입력값 · 속성을 읽거나 보내지 않는다(URL 은 페이지 이동 동기화에만 쓰고 저장하지 않음). 저장소 · 네트워크 · 백그라운드 없음.
  *
  * 평소에는 아무것도 하지 않는다. 아래 조건을 모두 만족하는 hello 를 받은 문서에서만 스크롤 리스너를 붙인다.
@@ -214,6 +215,53 @@
     location.replace(url.href);
   }
 
+  /* ---- 풀페이지 스크린샷(1.3.0, 2026-11-03) ----
+   * capture { op: 'metrics' | 'scroll', req, top?, left? } → 다음 화면 갱신 뒤 capture { req, metrics } 로 응답.
+   * metrics = 숫자만: 스크롤 위치 · 문서 높이 · 화면 크기 · 화면 위 / 아래 가장자리에 붙은 fixed · sticky 요소의 띠 높이.
+   * 띠 규칙은 app.js measureFixedBands() 와 같다(요소의 위치 · 크기 · position 만 보고 내용 · 속성은 읽지 않는다). */
+  function fixedBands() {
+    const root = scrollRoot();
+    const h = root.clientHeight, w = root.clientWidth;
+    const list = document.body ? document.body.getElementsByTagName('*') : [];
+    const start = performance.now();
+    let top = 0, bottom = 0;
+    for (let i = 0; i < list.length; i++) {
+      if ((i & 255) === 0 && performance.now() - start > 80) return { top: 0, bottom: 0 };   /* 아주 큰 문서는 띠 보정 없이 */
+      const cs = getComputedStyle(list[i]);
+      if (cs.position !== 'fixed' && cs.position !== 'sticky') continue;
+      if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) continue;
+      const r = list[i].getBoundingClientRect();
+      if (r.width < 1 || r.height < 1 || r.bottom <= 0 || r.top >= h || r.right <= 0 || r.left >= w || r.height > h * 0.4) continue;
+      if (cs.position === 'sticky') {
+        const stuckTop = cs.top !== 'auto' && Math.abs(r.top - parseFloat(cs.top)) <= 1;
+        const stuckBottom = cs.bottom !== 'auto' && Math.abs(h - r.bottom - parseFloat(cs.bottom)) <= 1;
+        if (!stuckTop && !stuckBottom) continue;
+      }
+      if (r.bottom <= h * 0.45) top = Math.max(top, Math.ceil(r.bottom));
+      else if (r.top >= h * 0.55) bottom = Math.max(bottom, Math.ceil(h - r.top));
+    }
+    return h - top - bottom < Math.max(40, h * 0.15) ? { top: 0, bottom: 0 } : { top, bottom };   /* 띠를 빼고 40px · 화면의 15% 이상 남을 때만 */
+  }
+  function captureMetrics() {
+    const root = scrollRoot();
+    const bands = fixedBands();
+    return { top: root.scrollTop, left: root.scrollLeft, height: root.scrollHeight, clientHeight: root.clientHeight, clientWidth: root.clientWidth, bandTop: bands.top, bandBottom: bands.bottom };
+  }
+  function onCapture(data) {
+    if (!isToken(data.req)) return;
+    if (data.op === 'scroll') {
+      const num = value => (typeof value === 'number' && Number.isFinite(value)) ? Math.max(0, value) : null;
+      const top = num(data.top), left = num(data.left);
+      if (top === null || left === null) return;
+      lastApplied = { top: Math.round(top), left: Math.round(left) };   /* 이 스크롤은 부모에 scroll 로 다시 알리지 않는다 */
+      ignoreUntil = performance.now() + 300;
+      try { window.scrollTo({ top, left, behavior: 'instant' }); } catch (error) { window.scrollTo(left, top); }   /* 사이트의 scroll-behavior: smooth 와 무관하게 바로 */
+    } else if (data.op !== 'metrics') {
+      return;
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => send('capture', { req: data.req, metrics: captureMetrics() })));
+  }
+
   window.addEventListener('message', event => {
     if (event.source !== window.parent || window.parent !== window.top) return;
     const data = event.data;
@@ -229,12 +277,13 @@
         document.addEventListener('scroll', onElementScroll, { capture: true, passive: true });   /* 요소 scroll 은 버블링되지 않아 capture 로 받는다 */
       }
       /* element · navigate 지원을 알려야 부모가 요소 적용 · 페이지 이동을 보낸다. url = 이 문서의 현재 주소(페이지 이동 동기화용) */
-      send('ready', { ratio: getRatio(), features: { element: true, navigate: true }, url: location.href });
+      send('ready', { ratio: getRatio(), features: { element: true, navigate: true, capture: true }, url: location.href });
       return;
     }
     if (!link || data.session !== link.session || data.view !== link.view || data.nonce !== link.nonce || event.origin !== link.origin) return;
     if (type === 'watch') { setUrlWatch(data.navigate === true); return; }
     if (type === 'navigate') { navigateTo(data.url); return; }
+    if (type === 'capture') { onCapture(data); return; }
     if (type !== 'apply' || !data.ratio || typeof data.ratio !== 'object') return;
     if (data.targetType === 'element') applyElement(data.target, data.ratio);
     else applyRatio(data.ratio);

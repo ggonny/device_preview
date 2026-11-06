@@ -242,7 +242,7 @@ svg {
   grid-template-columns: minmax(200px, 1fr) minmax(var(--fold-col), auto) auto auto auto auto;
   grid-template-areas: "device fold size browser tools view";
   align-items: start;
-  gap: 14px 18px;   /* 그룹 사이 18(2026-10-21 24 → 18): 가상 키보드 도구 버튼(+42px) 을 넣고도 이전 행 수를 유지 */
+  gap: 14px 12px;   /* 그룹 사이 12(2026-10-21 24 → 18, 2026-11-02 18 → 12): 가상 키보드 · 스크린샷 도구 버튼(각 +40px) 을 넣고도 이전 행 수를 유지 */
   padding: 12px 18px 14px;
   background: var(--panel-color);
   border: 1px solid var(--line-color);
@@ -517,12 +517,12 @@ svg {
 .switch_control input:checked::before { transform: translateX(12px); }
 .switch_control input:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 2px; }
 
-/* 도구: 제목 / 아이콘 5개(회전 · safe-area · 가림 검사 · 새로고침 · 새 창) */
+/* 도구: 제목 / 아이콘 7개(회전 · safe-area · 가림 검사 · 가상 키보드 | Safari 호환성 검사 · 스크린샷 · 새로고침 · 새 창) */
 .tool_actions {
   grid-area: tools;
   display: grid;
-  grid-template-columns: repeat(6, 36px);   /* 회전 · safe-area · 가림 검사 · 가상 키보드 · 새로고침 · 새 창 (MacBook + Safari 는 가상 키보드 대신 Safari 호환성 검사 — 둘 다 6열) */
-  gap: 6px 4px;   /* 세로 6 = 제목 ↔ 아이콘, 가로 4 = 아이콘 사이(2026-10-21 6 → 4) */
+  grid-template-columns: repeat(7, 36px);   /* 회전 · safe-area · 가림 검사 · 가상 키보드 · 스크린샷 · 새로고침 · 새 창 (MacBook + Safari 는 가상 키보드 대신 Safari 호환성 검사 — 둘 다 7열) */
+  gap: 6px 2px;   /* 세로 6 = 제목 ↔ 아이콘, 가로 2 = 아이콘 사이(2026-10-21 6 → 4, 2026-11-02 4 → 2 — 스크린샷 버튼 자리) */
 }
 /* Safari 호환성 검사 버튼(2026-10-16): MacBook + Safari(macOS) 단일 보기일 때만 보인다 — 기존 JS 가 그 조건에서만 브라우저 그룹에 붙이는 data-mac-safari 를 따른다(JS 변경 없음). 다른 기기의 도구 그룹은 5열 그대로 */
 .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) .compat_btn { display: none; }
@@ -1928,6 +1928,12 @@ svg {
       "browser tools view";
   }
 }
+/* 2행의 아래 줄(브라우저 · 도구 · 보기) 이 빠듯한 폭(2026-11-02): 도구 아이콘 7개가 한 줄이면 브라우저 그룹(약 257px) 이 도구 열과 겹치므로
+ * 아이콘을 5개씩 두 줄로 놓아 도구 열을 화면 상태 열(--fold-col) 폭 안에 둔다 — 버튼 크기 · 순서 그대로, 이 폭에서만 패널이 16px 높아짐(브라우저 그룹이 4행인 18 Pro · Duo 는 그대로).
+ * 이전(6개) 에도 1181~1214 · 901~934 에서는 주소창 위치 버튼이 회전 버튼과 겹쳐 있었다 */
+@media (min-width: 1181px) and (max-width: 1249px), (min-width: 901px) and (max-width: 980px) {
+  .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) .tool_actions { grid-template-columns: repeat(5, 36px); }   /* MacBook + Safari 는 별도 배치(아래)에서 한 줄로 들어간다 */
+}
 /* 2행에서 아래 줄(브라우저 · 도구 · 보기 ≈ 830px) 이 넘치는 폭에서만 4행 — 980 이하는 좌측 목록이 위로 올라가 패널이 다시 넓어지므로 2행으로 돌아가고, 900 이하에서 다시 4행 */
 @media (min-width: 981px) and (max-width: 1180px), (max-width: 900px) {
   .control_panel {
@@ -2067,6 +2073,62 @@ svg {
 }
 .is_device_only .device_only_btn svg { width: 16px; height: 16px; }
 .is_device_only .device_only_label { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+/* 스크린샷(2026-11-02): 탭 캡처 동안 기기 위에 겹칠 수 있는 떠 있는 UI(기기만 보기 고정 버튼 · 결과 / 설정 패널) 를 보이지 않게만 한다 — visibility 라 배치 · 크기 변화 없음 */
+.is_capturing.is_device_only .device_only_btn,
+.is_capturing .occlusion_list,
+.is_capturing .browser_controls[data-mac-safari="true"] .browser_settings.is_open { visibility: hidden; }
+/* 풀페이지 스크린샷(2026-11-03): 캡처 중인 기기만 사이트 위에 겹치는 Device Preview 표시(상태바 · 주소창 · 툴바 · 홈 띠 · 컷아웃 · 접힘선 ·
+ * safe-area 가이드 · 가림 검사 · 가상 키보드 · Duo 클러스터 / 아일랜드 / 측면 컨트롤) 를 보이지 않게 하고, 화면 마스크(둥근 모서리 · 렌즈 구멍 —
+ * 렌즈 구멍은 JS 가 넣는 inline clip-path 라 !important) 를 풀어 iframe 영역 전체가 찍히게 한다. visibility · 모양만이라 배치 · iframe 크기는 그대로 */
+.device_shell[data-capture="site"] .ui_band,
+.device_shell[data-capture="site"] .screen_cutout,
+.device_shell[data-capture="site"] .hinge_line,
+.device_shell[data-capture="site"] .safe_guides,
+.device_shell[data-capture="site"] .occlusion_layer,
+.device_shell[data-capture="site"] .kb_sim,
+.device_shell[data-capture="site"] .status_cluster,
+.device_shell[data-capture="site"] .dynamic_island,
+.device_shell[data-capture="site"] .side_controls { visibility: hidden; }
+.device_shell[data-capture="site"] .screen_wrap {
+  border-radius: 0;
+  clip-path: none !important;
+}
+/* 맞춤 배율의 반올림으로 카드 본문(.compare_body, overflow auto) 이 셸 가장자리 몇 px 을 잘라 화면에 안 보이는 경우가 있어, 캡처 중인 카드만 잘림을 푼다(크기 · 배치 그대로) */
+.compare_item:has(.device_shell[data-capture="site"]) .compare_body { overflow: visible; }
+/* 캡처 화질(2026-11-05): app.js 가 캡처하는 동안만 셸에 inline transform(확대) 을 넣는다 — 애니메이션 없이 바로(애니메이션 중 배율로
+ * 래스터가 굳는 것 방지), 확대된 셸이 옆 · 아래 카드에 가려지지 않게 그 카드만 위로. mount 크기 · 카드 배치는 그대로 */
+.device_shell[data-capture="site"] { transition: none; }
+.compare_item:has(.device_shell[data-capture="site"]) { position: relative; z-index: 4; }
+/* 풀페이지 캡처 중 새 프레임을 만들기 위한 1px 표시(app.js waitSliceFrame) — 화면 왼쪽 위 구석, 거의 투명, 클릭을 막지 않음 */
+.capture_tick {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  background: #000;
+  opacity: .01;
+}
+.capture_tick[data-on="1"] { opacity: .02; }
+/* 풀페이지 캡처 중 마우스 차단(app.js addCaptureShield) — 창 전체를 덮는 투명 상자. 그리는 것이 없어 캡처에 나타나지 않고,
+ * hover · 클릭이 iframe 에 닿지 않게 한다. 캡처가 끝나면(취소 · 오류 포함) 제거.
+ * cursor: none — Chrome 탭 캡처는 커서를 영상에 그리고 표준 cursor 제약을 지원하지 않아(2026-11-06 실측) 캡처 중에만 포인터를 숨긴다 */
+.capture_shield {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  cursor: none;
+  background: transparent;
+}
+/* 탭 캡처를 1:1 로 받을 영역(app.js cropCaptureRegion) — 창 왼쪽 위의 짝수 장치 px 크기 투명 상자. 그리지 않고 클릭도 막지 않는다 */
+.capture_region {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;

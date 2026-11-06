@@ -540,7 +540,7 @@
     occlusionCopy:document.getElementById('occlusionCopy'),occlusionCopyBox:document.getElementById('occlusionCopyBox'),occlusionCopyText:document.getElementById('occlusionCopyText'),occlusionCopyClose:document.getElementById('occlusionCopyClose'),
     browserControls:document.querySelector('.browser_controls'),safariControls:document.getElementById('safariControls'),
     safariLayoutInputs:Array.from(document.querySelectorAll('input[name="safariLayout"]')),viewportFitInputs:Array.from(document.querySelectorAll('input[name="viewportFit"]')),
-    rotateBtn:document.getElementById('rotateBtn'),refreshBtn:document.getElementById('refreshBtn'),scaleInput:document.getElementById('scaleInput'),scaleDownBtn:document.getElementById('scaleDownBtn'),scaleUpBtn:document.getElementById('scaleUpBtn'),scaleFitBtn:document.getElementById('scaleFitBtn'),scaleDeviceBtn:document.getElementById('scaleDeviceBtn'),
+    rotateBtn:document.getElementById('rotateBtn'),refreshBtn:document.getElementById('refreshBtn'),captureBtn:document.getElementById('captureBtn'),scaleInput:document.getElementById('scaleInput'),scaleDownBtn:document.getElementById('scaleDownBtn'),scaleUpBtn:document.getElementById('scaleUpBtn'),scaleFitBtn:document.getElementById('scaleFitBtn'),scaleDeviceBtn:document.getElementById('scaleDeviceBtn'),
     openLink:document.getElementById('openLink'),previewArea:document.getElementById('previewArea'),previewStage:document.getElementById('previewStage'),previewMount:document.getElementById('previewMount'),
     compareBar:document.getElementById('compareBar'),compareCount:document.getElementById('compareCount'),compareNote:document.getElementById('compareNote'),
     compareGrid:document.getElementById('compareGrid'),compareEmpty:document.getElementById('compareEmpty'),
@@ -1489,7 +1489,11 @@
     view.dom.mount.style.height=Math.ceil(frameHeight*scale)+'px';
   }
 
+  /* 풀페이지 스크린샷 중에는 배율을 다시 계산하지 않는다 — 공유 안내 막대로 스테이지가 줄어 화면 맞춤 배율이 애니메이션되면
+   * Chrome 이 변환된 iframe 을 예전 배율로 그린 채(흐림 · 1~3행 어긋남) 남는 경우가 있다(실측). 끝나면 한 번 다시 맞춘다 */
+  let captureScaleHold=false;
   function updateAllScales(){
+    if(captureScaleHold)return;
     syncScaleControls();
     visibleViews().forEach(updateScale);
     syncScaleControls();   /* 계산된 배율을 입력 필드·±버튼 상태에 반영 */
@@ -2005,10 +2009,11 @@
     const data=event.data;
     if(!data||typeof data!=='object'||typeof data.type!=='string'||!data.type.startsWith(BRIDGE_PREFIX))return;
     if(data.session!==BRIDGE_SESSION)return;
-    const view=Array.from(compareViews.values()).find(item=>item.bridge&&item.bridge.id===data.view);
+    const view=allViews().find(item=>item.bridge&&item.bridge.id===data.view);   /* 단일 보기 iframe 은 풀페이지 캡처 동안만 브리지가 있다 */
     if(!view||data.nonce!==view.bridge.nonce||event.source!==view.dom.siteFrame.contentWindow)return;
     const type=data.type.slice(BRIDGE_PREFIX.length);
-    if(type!=='ready'&&type!=='scroll'&&type!=='location')return;
+    if(type!=='ready'&&type!=='scroll'&&type!=='location'&&type!=='capture')return;
+    if(type==='capture'){const wait=captureReplies.get(data.req);if(wait&&wait.view===view){captureReplies.delete(data.req);wait.resolve(sanitizeCaptureMetrics(data.metrics));}return;}   /* 풀페이지 캡처(2026-11-03) 의 위치 · 높이 응답 */
     if(type==='location'){if(view.bridge.state==='ready'&&view.bridge.navigate)observeNav(view,data.url,{loading:false});return;}   /* 페이지 이동(2026-10-22): 같은 문서 안 URL 변경 */
     /* 내부 요소 스크롤(2026-10-22): 문서 위치 캐시(lastScrollRatio) 는 건드리지 않고 대응 요소에만 전달 */
     if(type==='scroll'&&data.targetType==='element'){
@@ -2019,6 +2024,7 @@
     if(type==='ready'){
       view.bridge.element=Boolean(data.features&&data.features.element===true);
       view.bridge.navigate=Boolean(data.features&&data.features.navigate===true);   /* 1.2.0 이상만 페이지 이동 동기화 */
+      view.bridge.capture=Boolean(data.features&&data.features.capture===true);     /* 1.3.0 이상만 풀페이지 캡처 */
     }
     view.lastScrollRatio=sanitizeRatio(data.ratio);   /* 다른 출처는 scrollTop 을 직접 못 읽으므로 마지막 비율을 기억해 둔다 */
     if(type==='ready'){
@@ -2026,7 +2032,7 @@
       view.bridge.state='ready';
       updateSyncAvailability();
       let navDocument=false;
-      if(view.bridge.navigate){
+      if(view.bridge.navigate&&view.compare){
         navDocument=first&&isNavigationDocument(view,data.url);
         observeNav(view,data.url,{loading:false});   /* 새 문서의 URL */
         syncBridgeWatch(view,navWatchActive());
@@ -2069,6 +2075,7 @@
   }
 
   function broadcastScroll(source){
+    if(captureLock)return;   /* 풀페이지 캡처 중: 대상 카드만 움직인다(설정은 그대로) */
     const ratio=getViewScrollRatio(source);
     if(!ratio)return;
     compareViews.forEach(other=>{if(other!==source)applyViewScrollRatio(other,ratio);});
@@ -2181,6 +2188,7 @@
   }
 
   function broadcastElementScroll(source,key,ratio){
+    if(captureLock)return;   /* 풀페이지 캡처 중 */
     compareViews.forEach(other=>{
       if(other===source)return;
       const win=getSameOriginWindow(other);
@@ -2299,7 +2307,7 @@
     nav.url=url;
     updateDisplayUrl(view);   /* 관찰한 URL 이 바뀌면 그 카드의 가상 주소창만 바로 갱신 */
     if(navHolding(nav)){nav.quietAt=performance.now()+NAV_QUIET_MS;return;}   /* 메아리 · redirect: 기준값만 갱신 */
-    if(!previous||!navSyncActive())return;                                       /* 기준값 설정 · 동기화 꺼짐 */
+    if(!previous||!navSyncActive()||captureLock)return;                          /* 기준값 설정 · 동기화 꺼짐 · 풀페이지 캡처 중(그 사이 URL 변화는 기준값만) */
     const origin=urlOrigin(previous);
     if(!origin||urlOrigin(url)!==origin)return;                                   /* 다른 사이트로 나간 카드는 독립 */
     broadcastNav(view,url,origin,Boolean(options&&options.loading));
@@ -4129,10 +4137,780 @@
   bindCompatControls();
   bindBrowserSettings();
   bindKeyboardControls();
+  bindCaptureControls();
   elements.syncScroll.addEventListener('change',()=>{syncOptions.scroll=elements.syncScroll.checked;if(syncOptions.scroll)realignScrollSync();updateSyncAvailability();saveComparePreference();announce('스크롤 동기화를 '+(syncOptions.scroll?'켰습니다.':'껐습니다.'));});
   elements.syncRotate.addEventListener('change',()=>{syncOptions.rotate=elements.syncRotate.checked;saveComparePreference();});
   elements.syncRefresh.addEventListener('change',()=>{syncOptions.refresh=elements.syncRefresh.checked;saveComparePreference();});
   elements.syncNavigate.addEventListener('change',()=>{syncOptions.navigate=elements.syncNavigate.checked;updateNavWatch();updateSyncAvailability();saveComparePreference();announce('페이지 이동 동기화를 '+(syncOptions.navigate?'켰습니다.':'껐습니다.'));});
+
+  /* ------------------------------------------------------------------
+   * 스크린샷(2026-11-02): 브라우저 탭 캡처(getDisplayMedia · preferCurrentTab) 로 이 탭의 실제 렌더 픽셀을 받아
+   * 단일 보기 = 기기 셸(측면 키 · 힌지 커버 · 그림자 포함), 다중 비교 = 비교 카드 전체 영역만 잘라 PNG 로 저장한다.
+   * 다른 출처 iframe 도 화면에 그려진 픽셀 그대로 들어간다(iframe DOM 을 읽지 않음 · 확장 · 라이브러리 없음).
+   * 해상도 = 화면에 그려진 크기 × devicePixelRatio. 화면보다 큰 해상도를 요청하면 Chrome 이 탭을 HiDPI 로 바꿔
+   * iframe 에 resize 이벤트가 생기므로 화면과 같은 해상도만 요청한다. viewport · iframe · 셸 · 배율 계산은 건드리지 않는다.
+   * 영역이 보이는 범위보다 크면(100% · 실기기 배율) 스테이지를 스크롤하며 나눠 찍어 이어 붙이고, 끝나면 스크롤을 되돌린다.
+   * ------------------------------------------------------------------ */
+  const CAPTURE_BAND=16;   /* 스크롤 가능한 상자의 오른쪽 · 아래 16px 은 쓰지 않는다 — 프로그램 스크롤 때 나타나는 overlay 스크롤바가 찍히지 않게 */
+  let capturing=false;
+  let captureMessageTimer=0;
+  function captureSupported(){return Boolean(window.isSecureContext&&navigator.mediaDevices&&navigator.mediaDevices.getDisplayMedia);}
+  function rectOf(r){return {left:r.left,top:r.top,right:r.right,bottom:r.bottom};}
+  function rectUnion(list){return list.reduce((a,r)=>a?{left:Math.min(a.left,r.left),top:Math.min(a.top,r.top),right:Math.max(a.right,r.right),bottom:Math.max(a.bottom,r.bottom)}:rectOf(r),null);}
+  function rectIntersect(a,b){const r={left:Math.max(a.left,b.left),top:Math.max(a.top,b.top),right:Math.min(a.right,b.right),bottom:Math.min(a.bottom,b.bottom)};return r.right>r.left&&r.bottom>r.top?r:null;}
+  function rectShift(r,dx,dy){return {left:r.left+dx,top:r.top+dy,right:r.right+dx,bottom:r.bottom+dy};}
+  /* box-shadow 의 바깥 퍼짐(inset 제외) — 화면에 그려진 배율을 곱해 화면 px 로 */
+  function shadowExtent(el,scale){
+    const ext={left:0,top:0,right:0,bottom:0};
+    const value=getComputedStyle(el).boxShadow;
+    if(!value||value==='none')return ext;
+    value.split(/,(?![^(]*\))/).forEach(part=>{
+      if(/inset/.test(part))return;
+      const [x=0,y=0,blur=0,spread=0]=(part.replace(/rgba?\([^)]*\)/g,'').match(/-?[\d.]+px/g)||[]).map(parseFloat);
+      const reach=blur+spread;
+      ext.left=Math.max(ext.left,reach-x);ext.right=Math.max(ext.right,reach+x);ext.top=Math.max(ext.top,reach-y);ext.bottom=Math.max(ext.bottom,reach+y);
+    });
+    Object.keys(ext).forEach(key=>{ext[key]*=scale;});
+    return ext;
+  }
+  /* 캡처 영역: core = 반드시 찍혀야 하는 부분(셸 · mount · 측면 키 · 힌지 커버 / 비교 카드), all = core + 셸 그림자(보이는 만큼) */
+  function getCaptureTarget(){
+    const viewRects=view=>{
+      const core=[view.dom.mount.getBoundingClientRect(),view.dom.shell.getBoundingClientRect()];
+      view.dom.shell.querySelectorAll('.side_key,.hinge_body').forEach(el=>{const r=el.getBoundingClientRect();if(r.width&&r.height&&getComputedStyle(el).display!=='none')core.push(r);});
+      const s=view.dom.shell.getBoundingClientRect();const e=shadowExtent(view.dom.shell,s.width/view.dom.shell.offsetWidth||view.scale);
+      return {core,shadow:{left:s.left-e.left,top:s.top-e.top,right:s.right+e.right,bottom:s.bottom+e.bottom}};
+    };
+    if(viewMode==='compare'){
+      const items=Array.from(compareViews.values()).filter(view=>!view.dom.item.hidden);
+      if(!items.length)return null;
+      const parts=items.map(view=>{const r=viewRects(view);r.core.push(view.dom.item.getBoundingClientRect());return r;});
+      const core=rectUnion(parts.flatMap(p=>p.core));
+      return {anchor:items[0].dom.item,core,all:rectUnion([core].concat(parts.map(p=>p.shadow)))};
+    }
+    const r=viewRects(primaryView);const core=rectUnion(r.core);
+    return {anchor:primaryView.dom.shell,core,all:rectUnion([core,r.shadow])};
+  }
+  /* 스크롤 상자들(안쪽 → 바깥, 마지막은 문서) */
+  function getCaptureScrollers(el){
+    const list=[];
+    for(let p=el.parentElement;p&&p!==document.body&&p!==document.documentElement;p=p.parentElement){
+      const cs=getComputedStyle(p);
+      if(/(auto|scroll)/.test(cs.overflowX+cs.overflowY))list.push(p);
+    }
+    list.push(document.scrollingElement||document.documentElement);
+    return list;
+  }
+  /* 스크롤 상자의 보이는 안쪽 상자(스크롤바 띠 제외) */
+  function scrollerBox(el){
+    const root=el===document.scrollingElement||el===document.documentElement;
+    const r=root?{left:0,top:0}:el.getBoundingClientRect();
+    /* transform 안쪽 요소(셸 안 .screen_wrap 등) 는 client 값이 변환 전 px 라 그려진 배율을 곱한다(캡처 화질 확대 때 보이는 범위가 작게 잡히지 않게) */
+    const sx=root||!el.offsetWidth?1:r.width/el.offsetWidth,sy=root||!el.offsetHeight?1:r.height/el.offsetHeight;
+    const left=r.left+(root?0:el.clientLeft*sx),top=r.top+(root?0:el.clientTop*sy);
+    const width=root?document.documentElement.clientWidth:el.clientWidth*sx,height=root?document.documentElement.clientHeight:el.clientHeight*sy;
+    return {left,top,right:left+width-(el.scrollHeight>el.clientHeight?CAPTURE_BAND:0),bottom:top+height-(el.scrollWidth>el.clientWidth?CAPTURE_BAND:0)};
+  }
+  /* 영역이 지금 화면에 보일 수 있는 범위: 창 ∩ overflow 조상들의 안쪽 상자 */
+  function getCaptureClip(el){
+    let clip={left:0,top:0,right:captureRegion?captureRegion.w:innerWidth,bottom:captureRegion?captureRegion.h:innerHeight};
+    for(let p=el.parentElement;p&&clip;p=p.parentElement){
+      if(p===document.body||p===document.documentElement){clip=rectIntersect(clip,scrollerBox(document.scrollingElement||document.documentElement));break;}
+      const cs=getComputedStyle(p);
+      if(cs.overflowX!=='visible'||cs.overflowY!=='visible')clip=rectIntersect(clip,scrollerBox(p));
+    }
+    return clip;
+  }
+  /* 스크롤 상자의 전체 내용 범위(화면 좌표) — 스크롤해서 볼 수 있는 한계 */
+  function scrollContentBox(el){
+    const root=el===document.scrollingElement||el===document.documentElement;
+    const r=root?{left:0,top:0}:el.getBoundingClientRect();
+    const left=r.left+(root?0:el.clientLeft)-el.scrollLeft,top=r.top+(root?0:el.clientTop)-el.scrollTop;
+    return {left,top,right:left+el.scrollWidth,bottom:top+el.scrollHeight};
+  }
+  /* 화면 좌표의 사각형이 보이도록 스크롤 상자들을 안쪽부터 최소한으로 움직인다 */
+  function revealCaptureRect(anchor,offset,scrollers){
+    scrollers.forEach(el=>{
+      const a=anchor.getBoundingClientRect();
+      const sub={left:a.left+offset.left,top:a.top+offset.top,right:a.left+offset.right,bottom:a.top+offset.bottom};
+      const box=scrollerBox(el);
+      const delta=(lo,hi,boxLo,boxHi)=>lo<boxLo?lo-boxLo:hi>boxHi?Math.min(hi-boxHi,lo-boxLo):0;
+      const dx=delta(sub.left,sub.right,box.left,box.right),dy=delta(sub.top,sub.bottom,box.top,box.bottom);
+      if(dx)el.scrollLeft+=dx;
+      if(dy)el.scrollTop+=dy;
+    });
+  }
+  /* since 이후에 찍힌 프레임이 올 때까지 기다린다(내용이 그대로면 새 프레임이 안 올 수 있어 timeout 후 현재 프레임 사용) */
+  function waitCaptureFrame(video,since,timeout){
+    return new Promise(resolve=>{
+      let done=false,count=0;
+      const finish=ok=>{if(!done){done=true;clearTimeout(timer);resolve(ok);}};
+      const timer=setTimeout(()=>finish(false),timeout);
+      if(!video.requestVideoFrameCallback){setTimeout(()=>finish(true),250);return;}
+      const step=(now,meta)=>{
+        if(done)return;
+        if(meta.captureTime!=null?meta.captureTime>=since:++count>=2)finish(true);
+        else video.requestVideoFrameCallback(step);
+      };
+      video.requestVideoFrameCallback(step);
+    });
+  }
+  const nextPaint=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  /* 탭 캡처가 시작되면 Chrome 공유 안내 막대만큼 창 높이가 바뀌어 화면 맞춤 배율이 다시 계산된다 — 영역 · 프레임 크기가 멈출 때까지 기다림 */
+  async function waitCaptureStable(video){
+    let last='',same=0;
+    const start=performance.now();
+    while(performance.now()-start<4000){
+      await new Promise(resolve=>setTimeout(resolve,60));
+      const target=getCaptureTarget();
+      const key=[innerWidth,innerHeight,video.videoWidth,video.videoHeight].concat(target?[target.core.left,target.core.top,target.core.right,target.core.bottom].map(v=>Math.round(v*4)):[]).join(',');
+      if(video.videoWidth&&key===last){if(++same>=6)return true;}else{same=0;last=key;}
+    }
+    return false;
+  }
+  /* 탭 화면이 프레임 안에 놓인 위치 · 배율 — 프레임 크기는 짝수여야 해서(I420) 창 크기가 홀수 px 이면 Chrome 이 내용을 비율대로 줄여
+   * 가운데 놓고 남는 1~2px 을 검게 채운다(위치 · 크기는 짝수로 내림). 같은 규칙으로 계산해야 오른쪽 · 아래로 갈수록 생기는 1~2px 어긋남이 없다 */
+  function getCaptureContentBox(video){
+    const vw=video.videoWidth,vh=video.videoHeight,iw=innerWidth,ih=innerHeight;
+    if(captureRegion)return{x:0,y:0,kx:vw/captureRegion.w,ky:vh/captureRegion.h};   /* Region Capture: 프레임 = 창 왼쪽 위 짝수 영역(1:1) */
+    const s=Math.min(vw/iw,vh/ih);
+    const w=Math.min(vw,Math.round(iw*s))&~1,h=Math.min(vh,Math.round(ih*s))&~1;
+    return {x:Math.floor((vw-w)/2)&~1,y:Math.floor((vh-h)/2)&~1,kx:w/iw,ky:h/ih};
+  }
+  function captureFileName(){
+    const d=new Date(),p=n=>String(n).padStart(2,'0');
+    const stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+    if(viewMode==='compare')return `device-preview-compare-${stamp}.png`;
+    const view=primaryView,device=getDevice(view);
+    const slug=text=>String(text).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+    let name=device?slug(device.name):`custom-${view.baseWidth}x${view.baseHeight}`;
+    if(device&&(!name||/[^\x00-\x7f]/.test(device.name)))name=slug(view.deviceId);   /* 한글 이름(Breakpoint 테스트) 은 기기 id 로 */
+    if(device&&device.states.length>1)name+='-'+slug(view.stateId);
+    if(view.rotated)name+='-rotated';
+    return `device-preview-${name}-${stamp}.png`;
+  }
+  function showCaptureMessage(text){
+    announce(text);
+    const status=elements.frameStatus,previous=status.textContent;
+    status.textContent=text;
+    clearTimeout(captureMessageTimer);
+    captureMessageTimer=setTimeout(()=>{if(status.textContent===text)status.textContent=previous;},4000);
+  }
+  /* 화면 캡처(2026-11-02): Device Preview 화면에 보이는 기기 셸 / 비교 카드 전체를 한 장으로. 2026-11-03 부터 버튼은 풀페이지(captureFullPage) 에 연결 —
+   * 이 함수는 화면 그대로의 캡처가 다시 필요할 때를 위해 남겨 둔다(조각 이어 붙이기 · 프레임 좌표 계산은 풀페이지와 같은 함수를 쓴다) */
+  async function captureScreenshot(){
+    const btn=elements.captureBtn;
+    if(capturing||!captureSupported())return;
+    if(!getCaptureTarget()){showCaptureMessage('캡처할 기기가 없습니다.');return;}
+    const focused=document.activeElement;   /* 버튼을 비활성화하기 전에 — 끝나면 여기로 포커스를 돌려준다 */
+    capturing=true;btn.disabled=true;btn.setAttribute('aria-busy','true');
+    let stream=null,video=null;
+    const scrollers=[],saved=[];
+    try{
+      const cap=await openTabCapture();   /* 클릭 처리의 첫 await(사용자 활성화) */
+      if(!cap)return;
+      stream=cap.stream;video=cap.video;
+      const target=getCaptureTarget();
+      if(!target){showCaptureMessage('캡처할 기기가 없습니다.');return;}
+      const fit=cap.fit;
+      const kx=fit.kx,ky=fit.ky;
+      const anchor=target.anchor;
+      getCaptureScrollers(anchor).forEach(el=>{scrollers.push(el);saved.push([el.scrollLeft,el.scrollTop]);});
+      const a0=anchor.getBoundingClientRect();
+      /* 기준 요소 왼쪽 위 기준 좌표(스크롤해도 그대로). 그림자가 스크롤 영역 밖까지 번지면 어떤 스크롤로도 보이지 않으므로 스크롤 내용 범위로 자른다 */
+      const reach=rectShift(scrollContentBox(scrollers[0]),-a0.left,-a0.top);
+      const core=rectShift(target.core,-a0.left,-a0.top),region=rectIntersect(rectShift(target.all,-a0.left,-a0.top),reach)||core;
+      const clip0=getCaptureClip(anchor);
+      if(!clip0){showCaptureMessage('기기가 화면에 보이지 않아 캡처하지 못했습니다.');return;}
+      const tileW=Math.max(40,Math.floor(clip0.right-clip0.left)-2),tileH=Math.max(40,Math.floor(clip0.bottom-clip0.top)-2);   /* 보이는 범위보다 2px 작게 — 아래 1px 겹침이 늘 보이는 범위 안에 들어가게 */
+      const k=kx;
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.round((region.right-region.left)*k);canvas.height=Math.round((region.bottom-region.top)*k);
+      const ctx=canvas.getContext('2d');
+      ctx.imageSmoothingEnabled=false;   /* 화면 px 와 1:1 이라 보간이 필요 없다 — 보간하면 보이는 범위 경계 바깥 1px(패널 테두리 등) 이 섞여 이음선이 된다 */
+      ctx.fillStyle=getComputedStyle(elements.previewStage).backgroundColor||'#fff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      let complete=true,first=true;
+      for(let ty=region.top;ty<region.bottom;ty+=tileH){
+        for(let tx=region.left;tx<region.right;tx+=tileW){
+          const tile={left:tx,top:ty,right:Math.min(tx+tileW,region.right),bottom:Math.min(ty+tileH,region.bottom)};
+          const tileCore=rectIntersect(tile,core);
+          const before=scrollers.map(el=>el.scrollLeft+','+el.scrollTop).join('|');
+          revealCaptureRect(anchor,tile,scrollers);
+          const moved=scrollers.map(el=>el.scrollLeft+','+el.scrollTop).join('|')!==before;
+          if(moved||first){const since=performance.now();await nextPaint();await waitCaptureFrame(video,since,first?300:1200);first=false;}
+          const a=anchor.getBoundingClientRect();
+          const screenTile=rectShift(tile,a.left,a.top);
+          const clip=getCaptureClip(anchor)||{left:0,top:0,right:0,bottom:0};
+          const visible=rectIntersect(screenTile,clip);
+          if(tileCore){const sc=rectShift(tileCore,a.left,a.top);if(!visible||visible.left>sc.left+1||visible.top>sc.top+1||visible.right<sc.right-1||visible.bottom<sc.bottom-1)complete=false;}
+          if(!visible)continue;
+          /* 이웃 조각과 1px 겹쳐 그린다 — 소수 경계에서 생기는 밝은 이음선 방지(겹치는 부분은 같은 화면이라 그대로) */
+          const piece=rectIntersect({left:visible.left-1,top:visible.top-1,right:visible.right+1,bottom:visible.bottom+1},rectIntersect(clip,rectShift(region,a.left,a.top))||visible)||visible;
+          ctx.drawImage(video,fit.x+piece.left*kx,fit.y+piece.top*ky,(piece.right-piece.left)*kx,(piece.bottom-piece.top)*ky,
+            (piece.left-a.left-region.left)*k,(piece.top-a.top-region.top)*k,(piece.right-piece.left)*k,(piece.bottom-piece.top)*k);
+        }
+      }
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+      if(!blob){showCaptureMessage('이미지를 만들지 못했습니다.');return;}
+      const link=document.createElement('a');
+      link.href=URL.createObjectURL(blob);link.download=captureFileName();
+      document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(link.href),2000);
+      showCaptureMessage(complete?`스크린샷을 저장했습니다 (${canvas.width} × ${canvas.height}).`:`스크린샷을 저장했습니다 — 화면 밖에 있어 일부를 찍지 못했습니다 (${canvas.width} × ${canvas.height}).`);
+    }finally{
+      scrollers.forEach((el,i)=>{el.scrollLeft=saved[i][0];el.scrollTop=saved[i][1];});
+      if(stream)stream.getTracks().forEach(track=>track.stop());
+      if(video)video.srcObject=null;
+      document.querySelectorAll('.capture_region, .capture_tick').forEach(el=>el.remove());captureRegion=null;   /* openTabCapture 가 만든 표시(이 함수는 closeTabCapture 를 쓰지 않음) */
+      document.body.classList.remove('is_capturing');
+      if(scrollers.length){await nextPaint();scrollers.forEach((el,i)=>{el.scrollLeft=saved[i][0];el.scrollTop=saved[i][1];});}   /* 공유 안내 막대가 사라지며 창 높이가 돌아온 뒤 한 번 더 */
+      capturing=false;btn.disabled=false;btn.removeAttribute('aria-busy');
+      if(focused&&focused.isConnected&&typeof focused.focus==='function')focused.focus({preventScroll:true});
+    }
+  }
+  /* 탭 캡처 시작(두 스크린샷 공통): 공유 창 → 이 탭인지 확인 → video 재생 → 공유 안내 막대로 바뀐 배치가 멈출 때까지 대기.
+   * 취소 · 실패면 안내하고 null. 클릭 처리에서 다른 await 보다 먼저 불러야 한다(getDisplayMedia 는 사용자 활성화가 필요 — 이 함수 안에서 await 없이 바로 호출된다) */
+  async function openTabCapture(){
+    const dpr=window.devicePixelRatio||1;
+    const width=Math.round(innerWidth*dpr),height=Math.round(innerHeight*dpr);
+    let stream;
+    try{
+      /* 이 탭을 기본 선택으로 하고 다른 창 · 화면은 고르지 않게 한다 */
+      /* 마우스 커서 제외: 표준 cursor 제약을 브라우저가 지원할 때만(Chrome 156 은 미지원 — getSupportedConstraints().cursor false, settings 'motion') */
+      const cursor=navigator.mediaDevices.getSupportedConstraints().cursor?{cursor:'never'}:{};
+      stream=await navigator.mediaDevices.getDisplayMedia({video:{width:{ideal:width,max:width},height:{ideal:height,max:height},frameRate:{ideal:30},...cursor},audio:false,preferCurrentTab:true,selfBrowserSurface:'include',surfaceSwitching:'exclude',monitorTypeSurfaces:'exclude'});
+    }catch(error){
+      showCaptureMessage(error&&error.name==='NotAllowedError'?'스크린샷을 취소했습니다.':'화면 캡처를 시작하지 못했습니다.');
+      return null;
+    }
+    const track=stream.getVideoTracks()[0];
+    const video=document.createElement('video');
+    const cap={stream,video};
+    /* 다른 탭 · 창을 골랐으면 중단 — Region Capture 는 이 탭을 찍는 트랙에만 cropTo 를 허용한다 */
+    let thisTab=track.getSettings().displaySurface!=='monitor'&&track.getSettings().displaySurface!=='window';
+    if(thisTab&&window.CropTarget&&track.cropTo){
+      try{await track.cropTo(await CropTarget.fromElement(document.body));await track.cropTo(null);}catch(error){thisTab=false;}
+    }
+    if(!thisTab){closeTabCapture(cap);showCaptureMessage('지금 보고 있는 이 탭을 선택해야 스크린샷을 저장할 수 있습니다.');return null;}
+    document.body.classList.add('is_capturing');
+    video.muted=true;video.playsInline=true;video.srcObject=stream;
+    await video.play();
+    await waitCaptureStable(video);
+    cap.tick=document.createElement('i');   /* 새 프레임을 만들기 위한 화면 구석 1px 표시(styles.css .capture_tick) */
+    cap.tick.className='capture_tick';
+    cap.tick.setAttribute('aria-hidden','true');
+    document.body.appendChild(cap.tick);
+    /* 트랙 프레임을 직접 읽는다(풀페이지): 문서에 붙지 않은 video 는 누가 읽기 전까지 새 프레임 · requestVideoFrameCallback 을 주지 않아
+     * 스크롤 직후 이전 화면이 잘릴 수 있다(다른 출처 iframe 에서 실측). 가장 최근 프레임과 도착 시각만 보관한다 */
+    if(window.MediaStreamTrackProcessor){
+      try{
+        cap.reader=new MediaStreamTrackProcessor({track}).readable.getReader();
+        cap.latest=null;cap.latestAt=0;cap.latestShot=0;cap.clockOffset=Infinity;
+        (async()=>{
+          try{
+            for(;;){
+              const {value,done}=await cap.reader.read();
+              if(done)break;
+              const previous=cap.latest;
+              cap.latest=value;cap.latestAt=performance.now();
+              /* VideoFrame.timestamp = 캡처 시각(µs, 별도 단조 시계) — 도착 시각과의 최소 차로 performance.now() 기준에 맞춘다 */
+              const stamp=value.timestamp/1000;
+              cap.clockOffset=Math.min(cap.clockOffset,cap.latestAt-stamp);
+              cap.latestStamp=stamp;
+              if(previous)previous.close();
+            }
+          }catch(error){}
+        })();
+      }catch(error){cap.reader=null;}
+    }
+    if(cap.reader)await cropCaptureRegion(cap,track);
+    const fit=cap.reader&&cap.latest?getCaptureContentBox({videoWidth:cap.latest.displayWidth,videoHeight:cap.latest.displayHeight}):getCaptureContentBox(video);
+    if(!fit.kx||Math.abs(fit.kx-fit.ky)/fit.kx>.02){closeTabCapture(cap);showCaptureMessage('캡처 화면 크기가 맞지 않아 저장하지 않았습니다. 이 탭을 다시 선택해 주세요.');return null;}
+    cap.fit=fit;
+    return cap;
+  }
+  /* 1:1 프레임(2026-11-05 캡처 화질): 창 크기가 홀수 장치 px 이면 Chrome 이 탭 화면을 짝수 크기 프레임에 맞춰 다시 샘플링해
+   * (실측 — 창 높이 793 → 프레임 792, 세로 0.9987배) 1px 선 · 작은 글자 · 이미지가 통째로 흐려진다. 창 왼쪽 위에 짝수 장치 px 크기의
+   * 투명 고정 요소(.capture_region) 를 두고 Region Capture(cropTo) 로 그 영역만 받으면 프레임 1px = 화면 장치 1px.
+   * 등록한 요소가 한 번 그려진 뒤에 cropTo 해야 프레임이 온다(실측). 1.5초 안에 그 크기 프레임이 안 오면 자르지 않고 이전 방식 */
+  let captureRegion=null;   /* Region Capture 영역 {w, h}(CSS px, 창 왼쪽 위 기준) */
+  async function cropCaptureRegion(cap,track){
+    if(!window.CropTarget||!track.cropTo)return;
+    const dpr=window.devicePixelRatio||1;
+    const want=[Math.floor(innerWidth*dpr+1e-3)&~1,Math.floor(innerHeight*dpr+1e-3)&~1];
+    const el=document.createElement('i');
+    el.className='capture_region';
+    el.setAttribute('aria-hidden','true');
+    el.style.width=want[0]/dpr+'px';el.style.height=want[1]/dpr+'px';
+    document.body.appendChild(el);
+    const bump=()=>{cap.tick.dataset.on=cap.tick.dataset.on==='1'?'0':'1';};
+    try{
+      const target=await CropTarget.fromElement(el);
+      for(let i=0;i<3;i++){bump();await nextPaint();}
+      await track.cropTo(target);
+      const since=performance.now(),end=since+1500;
+      while(performance.now()<end){
+        bump();await nextPaint();await sleep(30);
+        const frame=cap.latest;
+        if(frame&&cap.latestAt>since&&frame.displayWidth===want[0]&&frame.displayHeight===want[1]){
+          cap.region=el;captureRegion={w:want[0]/dpr,h:want[1]/dpr};
+          cap.clockOffset=cap.latestAt-cap.latestStamp;   /* 자른 뒤 프레임 시각 기준을 다시 잡는다(waitSliceFrame) */
+          return;
+        }
+      }
+      await track.cropTo(null);
+    }catch(error){
+      try{await track.cropTo(null);}catch(e){}
+    }
+    el.remove();
+  }
+  function closeTabCapture(cap){
+    if(!cap)return;
+    if(cap.region){cap.region.remove();cap.region=null;captureRegion=null;}
+    if(cap.tick){cap.tick.remove();cap.tick=null;}
+    if(cap.reader)cap.reader.cancel().catch(()=>{});
+    if(cap.latest){cap.latest.close();cap.latest=null;}
+    cap.stream.getTracks().forEach(track=>track.stop());
+    cap.video.srcObject=null;
+  }
+  /* since 이후에 도착한 프레임을 기다린다(내용이 그대로면 새 프레임이 오지 않으므로 timeout 뒤 가장 최근 프레임을 쓴다) */
+  async function waitTrackFrame(cap,since,timeout){
+    if(!cap.reader){await waitCaptureFrame(cap.video,since,timeout);return;}
+    const end=performance.now()+timeout;
+    while(cap.latestAt<since&&performance.now()<end)await sleep(16);
+  }
+  /* 지금 잘라 쓸 프레임과 그 프레임 기준 좌표 변환. release() 로 돌려준다 */
+  function takeTrackFrame(cap){
+    if(cap.reader&&cap.latest){
+      const frame=cap.latest.clone();
+      return{source:frame,fit:getCaptureContentBox({videoWidth:frame.displayWidth,videoHeight:frame.displayHeight}),release:()=>frame.close()};
+    }
+    return{source:cap.video,fit:getCaptureContentBox(cap.video),release:()=>{}};
+  }
+  function saveCapturePng(canvas,name){
+    return new Promise(resolve=>canvas.toBlob(blob=>{
+      if(!blob){resolve(false);return;}
+      const link=document.createElement('a');
+      link.href=URL.createObjectURL(blob);link.download=name;
+      document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(link.href),2000);
+      resolve(true);
+    },'image/png'));
+  }
+
+  /* ------------------------------------------------------------------
+   * 풀페이지 스크린샷(2026-11-03, 스크린샷 버튼의 기본 동작)
+   *
+   * 기기마다 사이트 viewport(iframe 폭 · 높이 · breakpoint · 방향) 를 그대로 둔 채 문서(document) 를 위에서 아래로 스크롤하며
+   * iframe 영역만 잘라 한 장의 긴 PNG 로 잇는다 — 기기 프레임 · 상태바 · 주소창 · 그림자는 넣지 않는다. 다중 비교는 카드마다 따로 PNG.
+   * 탭 캡처는 한 번만 승인받아 모든 기기에 쓰고, 끝나면 트랙을 멈춘다.
+   *   스크롤 · 높이: 같은 출처 = 문서 직접 · 다른 출처 = Scroll Bridge 1.3.0 의 capture 메시지(px 위치 적용 · 문서 높이 · 고정 띠 높이 — 숫자만).
+   *     단일 보기의 다른 출처 iframe 은 평소 브리지가 없어 캡처할 때만 연결하고 끝나면 정리한다.
+   *   조각: 화면 px 와 1:1 로 잘라(보간 없음 — iframe 가장자리는 안쪽으로 반올림해 베젤 색이 섞이지 않게) 세로로 잇는다.
+   *     마지막 조각은 문서 끝(scrollHeight − clientHeight) 에 맞추고 이미 이은 부분은 다시 넣지 않는다. 조각마다 문서 높이를 다시 읽어
+   *     lazy-load 로 길어진 만큼 계속하되 FULL_MAX_SLICES 조각 · 출력 높이 FULL_MAX_HEIGHT · 면적 FULL_MAX_PIXELS 에서 멈춘다.
+   *   fixed / sticky: 사이트를 바꾸지 않는다. 화면 위 · 아래 가장자리에 붙은 고정 요소의 높이(띠) 만큼 이어 붙일 범위를 줄여
+   *     위 띠는 첫 조각에만 · 아래 띠는 마지막 조각에만 남게 한다(그 뒤에 가려진 내용은 이웃 조각에서 가져옴). 화면 가운데 · 옆에 떠 있는
+   *     고정 요소와 키 큰 고정 요소(높이 40% 초과) 는 조각마다 반복될 수 있다.
+   *   캡처 중에는 그 기기만 사이트 위에 겹치는 Device Preview 표시(띠 · 컷아웃 · 접힘선 · 가이드 · 가상 키보드 · Duo UI) 를 숨기고
+   *     화면 마스크를 푼다(CSS data-capture, 배치 변화 없음). 스크롤 · 페이지 이동 동기화 전파는 잠근다(syncOptions 는 그대로).
+   *   끝나면(취소 · 오류 포함) 문서 스크롤 · 스테이지 스크롤 · 표시를 되돌린다. 내부 overflow 영역은 건드리지 않는다.
+   * ------------------------------------------------------------------ */
+  const FULL_MAX_SLICES=100;
+  const FULL_MAX_HEIGHT=32000;        /* 출력 PNG 높이 상한(px) — Chrome 캔버스 한 변 한계 32767 안 */
+  const FULL_MAX_PIXELS=60000000;     /* 출력 PNG 면적 상한(px) — 캔버스 · 조각 메모리 */
+  const FULL_SETTLE_MS=250;           /* 스크롤 뒤 렌더 안정화(저해상도 → 원래 해상도 다시 그리기 · 짧은 애니메이션 · lazy 이미지) */
+  /* 캡처 화질(2026-11-05): 목표 출력 px / 사이트 CSS px. 캡처하는 동안만 그 기기 셸의 시각 transform 을 키워 Chrome 이 iframe 을
+   * 더 높은 배율로 다시 그리게 하고(실측 — 단순 확대가 아닌 재래스터, 같은 출처 · 다른 출처 같음) 그 화면 px 를 1:1 로 잇는다.
+   * iframe CSS 크기 · innerWidth / innerHeight · media query · 저장 배율(view.scale) 은 그대로. 문서가 길어 한계를 넘으면 낮은 배율부터 고른다 */
+  const CAPTURE_QUALITY=[2,1.7,1.4,1];
+  let captureLock=false;              /* 캡처 중 스크롤 · 페이지 이동 동기화 전파 잠금 */
+  let captureReqSeq=0;
+  const captureReplies=new Map();     /* 브리지 capture 응답 대기 req → {view, resolve} */
+  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
+  /* 화면 위 · 아래 가장자리에 붙은 fixed / (지금 붙어 있는) sticky 요소의 띠 높이(CSS px). Scroll Bridge 의 fixedBands() 와 같은 규칙 */
+  function measureFixedBands(win){
+    const doc=win.document,root=doc.scrollingElement||doc.documentElement;
+    const h=root.clientHeight,w=root.clientWidth;
+    const list=doc.body?doc.body.getElementsByTagName('*'):[];
+    const start=performance.now();
+    let top=0,bottom=0;
+    for(let i=0;i<list.length;i++){
+      if((i&255)===0&&performance.now()-start>80)return{top:0,bottom:0};   /* 아주 큰 문서는 띠 보정 없이 */
+      const cs=win.getComputedStyle(list[i]);
+      if(cs.position!=='fixed'&&cs.position!=='sticky')continue;
+      if(cs.display==='none'||cs.visibility==='hidden'||Number(cs.opacity)===0)continue;
+      const r=list[i].getBoundingClientRect();
+      if(r.width<1||r.height<1||r.bottom<=0||r.top>=h||r.right<=0||r.left>=w||r.height>h*.4)continue;
+      if(cs.position==='sticky'){
+        const stuckTop=cs.top!=='auto'&&Math.abs(r.top-parseFloat(cs.top))<=1;
+        const stuckBottom=cs.bottom!=='auto'&&Math.abs(h-r.bottom-parseFloat(cs.bottom))<=1;
+        if(!stuckTop&&!stuckBottom)continue;
+      }
+      if(r.bottom<=h*.45)top=Math.max(top,Math.ceil(r.bottom));
+      else if(r.top>=h*.55)bottom=Math.max(bottom,Math.ceil(h-r.top));
+    }
+    return h-top-bottom<Math.max(40,h*.15)?{top:0,bottom:0}:{top,bottom};   /* 띠를 빼고 한 조각에 40px · 화면의 15% 이상 남을 때만 보정(가로 휴대폰의 헤더 + sticky + 하단 내비도 포함되게) */
+  }
+  function readDocMetrics(win){
+    const root=win.document.scrollingElement||win.document.documentElement;
+    const bands=measureFixedBands(win);
+    return{top:root.scrollTop,left:root.scrollLeft,height:root.scrollHeight,clientHeight:root.clientHeight,clientWidth:root.clientWidth,bandTop:bands.top,bandBottom:bands.bottom};
+  }
+  function sanitizeCaptureMetrics(value){
+    const num=key=>value&&typeof value[key]==='number'&&Number.isFinite(value[key])?Math.max(0,value[key]):0;
+    return{top:num('top'),left:num('left'),height:num('height'),clientHeight:num('clientHeight'),clientWidth:num('clientWidth'),bandTop:num('bandTop'),bandBottom:num('bandBottom')};
+  }
+  function bridgeCapture(view,message){
+    return new Promise((resolve,reject)=>{
+      const req='c'+(++captureReqSeq);
+      const timer=setTimeout(()=>{captureReplies.delete(req);reject(new Error('bridge-timeout'));},4000);
+      captureReplies.set(req,{view,resolve:metrics=>{clearTimeout(timer);resolve(metrics);}});
+      postToBridge(view,'capture',Object.assign({req},message));
+    });
+  }
+  /* 문서 스크롤 수단: 같은 출처 = 직접, 다른 출처 = capture 를 알린 브리지. 없으면 null */
+  function makeDocDriver(view){
+    const win=getSameOriginWindow(view);
+    if(win){
+      const painted=()=>Promise.race([new Promise(resolve=>win.requestAnimationFrame(()=>win.requestAnimationFrame(resolve))),sleep(200)]);
+      return{
+        metrics:async()=>readDocMetrics(win),
+        scroll:async(top,left)=>{
+          try{win.scrollTo({top,left,behavior:'instant'});}catch(error){win.scrollTo(left,top);}   /* instant: 사이트의 scroll-behavior: smooth 와 무관하게 바로 */
+          await painted();
+          return readDocMetrics(win);
+        }
+      };
+    }
+    if(view.bridge&&view.bridge.state==='ready'&&view.bridge.capture)return{
+      metrics:()=>bridgeCapture(view,{op:'metrics'}),
+      scroll:(top,left)=>bridgeCapture(view,{op:'scroll',top,left})
+    };
+    return null;
+  }
+  /* 단일 보기의 다른 출처 iframe: 캡처할 때만 브리지를 연결한다(READY 까지 최대 3.5초) */
+  function connectCaptureBridge(view){
+    startScrollBridge(view);
+    const bridge=view.bridge,start=performance.now();
+    return new Promise(resolve=>{
+      const check=()=>{
+        if(view.bridge!==bridge||bridge.state==='none'||performance.now()-start>3500){resolve(false);return;}
+        if(bridge.state==='ready'){resolve(true);return;}
+        setTimeout(check,50);
+      };
+      check();
+    });
+  }
+  function captureNameFor(view,kind,stamp){
+    const device=getDevice(view);
+    const slug=text=>String(text).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+    let name=device?slug(device.name):`custom-${view.baseWidth}x${view.baseHeight}`;
+    if(device&&(!name||/[^\x00-\x7f]/.test(device.name)))name=slug(view.deviceId);   /* 한글 이름(Breakpoint 테스트) 은 기기 id 로 */
+    if(device&&device.states.length>1)name+='-'+slug(view.stateId);
+    if(view.rotated)name+='-rotated';
+    return `device-preview-${name}-${kind}-${stamp}.png`;
+  }
+  function captureStamp(){
+    const d=new Date(),p=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  }
+  /* 스크롤 직후: 짧게 안정화한 뒤 지금 화면 그대로의 새 프레임을 받는다.
+   * 탭 캡처는 화면이 바뀔 때만 프레임을 보내는데, 스크롤 직후의 중간 상태(저해상도로 먼저 그린 화면 등) 를 마지막으로 보내고 멈추는 경우가 있다(실측 —
+   * 마지막 프레임이 실제 화면과 4~5행 어긋남). 그래서 안정화 뒤 화면 구석의 1px 표시(.capture_tick) 를 바꿔 새 프레임을 만들게 하고,
+   * 그 변경 이후(다음 requestAnimationFrame 뒤) 에 찍힌 프레임만 쓴다 — 프레임은 탭 전체를 담으므로 그 순간의 iframe 화면이 들어 있다 */
+  async function waitSliceFrame(cap){
+    await sleep(FULL_SETTLE_MS);
+    if(!cap.reader||!cap.tick){await nextPaint();await waitCaptureFrame(cap.video,performance.now(),300);return;}
+    cap.tick.dataset.on=cap.tick.dataset.on==='1'?'0':'1';
+    const mark=await new Promise(resolve=>requestAnimationFrame(()=>resolve(performance.now())));
+    const end=performance.now()+800;
+    while(!(cap.latest&&cap.latestStamp+cap.clockOffset>=mark+4)&&performance.now()<end)await sleep(10);
+  }
+  /* iframe 의 화면 px 상자(안쪽으로 반올림) — 조각 열 · 행 0 의 기준 */
+  function frameCaptureBox(frame,fit){
+    const r=frame.getBoundingClientRect();
+    /* 창 크기가 홀수 px 이라 Chrome 이 프레임을 비율대로 줄였으면(kx · ky ≠ DPR) 경계 1px 이 이웃 색과 섞인다 → 이음선 · 가장자리에서 1px 씩 덜 쓴다 */
+    /* 2026-11-05: 배율 변환된 iframe 은 가장자리 1px 이 안티앨리어싱으로 배경과 섞이고, 영상 프레임은 색을 2×2 px 묶음(4:2:0) 으로 담아
+     * 그 옆 1px 까지 번진다(Region Capture 1:1 프레임에서 실측). 홀수 px 가장자리도 같은 번짐 → 이 경우들에도 같은 보정 */
+    const dpr=window.devicePixelRatio||1;
+    const scale=r.height/(frame.offsetHeight||1);
+    const x0=Math.ceil(fit.x+r.left*fit.kx-1e-3),y0=Math.ceil(fit.y+r.top*fit.ky-1e-3),x1=Math.floor(fit.x+r.right*fit.kx+1e-3),y1=Math.floor(fit.y+r.bottom*fit.ky+1e-3);
+    const trim=Math.abs(fit.kx-dpr)>1e-4||Math.abs(fit.ky-dpr)>1e-4||Math.abs(scale-1)>1e-4||(x0|y0|x1|y1)&1?1:0;
+    return{r,trim,x0,y0,x1,y1,scale};
+  }
+  /* 현재 문서 위치의 iframe 화면에서 조각 행 [rowA, rowB) · 열 [0, width) 를 잘라 pieces 에 넣는다(행 · 열 = iframe 화면 px 상자 x0 / y0 기준 정수).
+   * iframe 이 보이는 범위보다 크면(100% · 실기기) 스테이지를 스크롤하며 나눠 찍는다. 다 덮지 못하면 false */
+  async function grabFrameRows(cap,frame,rowA,rowB,width,outBase,pieces,scrollers,snap){
+    let fit=takeTrackFrame(cap);fit.release();fit=fit.fit;
+    let clip0=getCaptureClip(frame);
+    if(!clip0){
+      /* 캡처 배율로 커진 기기의 화면 상자가 스테이지 보이는 범위 밖(아래 · 오른쪽) 에 있으면 이 줄의 시작 부분이 보이게 먼저 스크롤 */
+      const box=frameCaptureBox(frame,fit);
+      revealCaptureRect(frame,{left:(box.x0-fit.x)/fit.kx-box.r.left-2,top:(box.y0+rowA-fit.y)/fit.ky-box.r.top-2,right:(box.x1-fit.x)/fit.kx-box.r.left+2,bottom:(box.y0+rowB-fit.y)/fit.ky-box.r.top+2},scrollers);
+      await waitSliceFrame(cap);
+      fit=takeTrackFrame(cap);fit.release();fit=fit.fit;
+      clip0=getCaptureClip(frame);
+      if(!clip0)return false;
+    }
+    const tileW=Math.max(40,Math.floor((clip0.right-clip0.left)*fit.kx)-6),tileH=Math.max(40,Math.floor((clip0.bottom-clip0.top)*fit.ky)-6);   /* 화면 px — 보이는 범위보다 6px 작게(아래 2px 여유 · 반올림) */
+    let complete=true;
+    for(let ra=rowA;ra<rowB;ra+=tileH){
+      const rb=Math.min(ra+tileH,rowB);
+      for(let ca=0;ca<width;ca+=tileW){
+        const cb=Math.min(ca+tileW,width);
+        let box=frameCaptureBox(frame,fit);
+        /* 이 조각(화면 px) 이 보이게 스크롤 — revealCaptureRect 는 iframe 기준 CSS 좌표 */
+        const css={left:(box.x0+ca-fit.x)/fit.kx-box.r.left,top:(box.y0+ra-fit.y)/fit.ky-box.r.top,right:(box.x0+cb-fit.x)/fit.kx-box.r.left,bottom:(box.y0+rb-fit.y)/fit.ky-box.r.top};
+        const before=scrollers.map(el=>el.scrollLeft+','+el.scrollTop).join('|');
+        revealCaptureRect(frame,{left:css.left-2,top:css.top-2,right:css.right+2,bottom:css.bottom+2},scrollers);   /* 보이는 범위 가장자리에 딱 붙이면 안쪽 반올림으로 1px 이 빠진다 */
+        const moved=scrollers.map(el=>el.scrollLeft+','+el.scrollTop).join('|')!==before;
+        if((snap&&snap())||moved)await waitSliceFrame(cap);   /* 스크롤 직후 첫 프레임은 이전 화면일 수 있어 안정화까지 */
+        const shot=takeTrackFrame(cap);
+        fit=shot.fit;
+        box=frameCaptureBox(frame,fit);
+        const clip=getCaptureClip(frame);
+        if(!clip){shot.release();complete=false;continue;}
+        const sx=Math.max(box.x0+ca,box.x0+box.trim,Math.ceil(fit.x+clip.left*fit.kx-1e-3)),ex=Math.min(box.x0+cb,box.x1-box.trim,Math.floor(fit.x+clip.right*fit.kx+1e-3));
+        const sy=Math.max(box.y0+ra,Math.ceil(fit.y+clip.top*fit.ky-1e-3)),ey=Math.min(box.y0+rb,box.y1,Math.floor(fit.y+clip.bottom*fit.ky+1e-3));
+        if(sx>Math.max(box.x0+ca,box.x0+box.trim)||sy>box.y0+ra||ex<Math.min(box.x0+cb,box.x1-box.trim)||ey<Math.min(box.y0+rb,box.y1))complete=false;   /* 조각 일부가 화면 밖 */
+        if(ex>sx&&ey>sy)pieces.push({bitmap:await createImageBitmap(shot.source,sx,sy,ex-sx,ey-sy),x:sx-box.x0,y:outBase+(sy-box.y0)});
+        shot.release();
+      }
+    }
+    return complete;
+  }
+  /* 문서 크기(CSS px) 가 출력 한계 안에 들어가는 가장 높은 화질 배율(최소 1) */
+  function pickCaptureQuality(cssWidth,cssHeight,below){
+    for(const q of CAPTURE_QUALITY){
+      if(below&&q>=below)continue;
+      const w=Math.ceil(cssWidth*q),h=Math.ceil(cssHeight*q);
+      if(h<=FULL_MAX_HEIGHT&&w*h<=FULL_MAX_PIXELS)return q;
+    }
+    return 1;
+  }
+  /* 기기 하나의 풀페이지 캡처 → canvas(또는 건너뛴 이유 · 더 낮은 화질로 다시 찍을 배율 retry) */
+  async function captureViewFullPage(cap,view,onSlice,qualityCap){
+    const driver=makeDocDriver(view);
+    if(!driver)return{skip:'access'};
+    const frame=view.dom.siteFrame,shell=view.dom.shell;
+    const scrollers=getCaptureScrollers(frame);
+    const stageSaved=scrollers.map(el=>[el.scrollLeft,el.scrollTop]);
+    let start=null;
+    const pieces=[];
+    let truncated=false,complete=true,covered=0,width=0,f=0,slices=0,trim=0,docHeight=0,quality=0,raised=false,snap=null;
+    const shellTransform=shell.style.transform;
+    try{
+      start=await driver.metrics();
+      shell.dataset.capture='site';   /* 사이트 위에 겹치는 표시 숨김 · 화면 마스크 해제 · 셸 transition 끔(styles.css) */
+      let m=await driver.scroll(0,start.left);
+      await waitSliceFrame(cap);
+      {
+        let shot=takeTrackFrame(cap);shot.release();
+        let box=frameCaptureBox(frame,shot.fit);
+        /* 화질: 지금 그려진 배율(셸 배율 × 캡처 px / CSS px — 실제 프레임 크기 기준) 이 목표보다 낮으면 캡처하는 동안만 셸을 키운다 */
+        const k=shot.fit.ky,current=box.scale*k;
+        quality=Math.min(qualityCap||Infinity,pickCaptureQuality(frame.offsetWidth,Math.max(m.height,m.clientHeight)));
+        if(quality>current+1e-3){
+          const s=quality/k,fit=shot.fit;
+          let tx=0,ty=0;
+          shell.style.transform=`scale(${s})`;
+          /* 조각마다(스테이지 스크롤 뒤) iframe 왼쪽 위를 짝수 화면 px 에 오게 2 화면 px 미만만 옮긴다 —
+           * 안쪽 반올림으로 폭 · 높이가 줄지 않고, 가장자리가 영상 색 묶음(2×2) 경계와 맞아 베젤 색이 섞이지 않는다 */
+          snap=()=>{
+            const r=frame.getBoundingClientRect();
+            const px=fit.x+r.left*fit.kx,py=fit.y+r.top*fit.ky;
+            const ex=2*Math.ceil((px-1e-3)/2)-px,ey=2*Math.ceil((py-1e-3)/2)-py;
+            if(ex<1e-3&&ey<1e-3)return false;
+            tx+=ex/fit.kx;ty+=ey/fit.ky;
+            shell.style.transform=`translate(${tx}px, ${ty}px) scale(${s})`;
+            return true;
+          };
+          await nextPaint();
+          snap();
+          raised=true;
+          await waitSliceFrame(cap);
+          await waitSliceFrame(cap);   /* 확대 뒤 첫 프레임은 낮은 배율 타일이 남아 있을 수 있어 한 번 더 */
+          shot=takeTrackFrame(cap);shot.release();
+          box=frameCaptureBox(frame,shot.fit);
+        }else{
+          quality=current;
+        }
+        width=box.x1-box.x0;
+        f=box.scale*shot.fit.ky;   /* 문서 CSS px → 출력 px */
+      }
+      const maxRows=Math.min(FULL_MAX_HEIGHT,Math.floor(FULL_MAX_PIXELS/Math.max(1,width)));
+      let first=true;
+      for(;;){
+        const h=m.clientHeight,t=m.top;
+        const last=t>=Math.max(0,m.height-h)-.5;
+        const shot=takeTrackFrame(cap);shot.release();
+        const box=frameCaptureBox(frame,shot.fit);
+        trim=Math.max(trim,box.trim);
+        const rowsInSlice=box.y1-box.y0-(last?0:box.trim);   /* 이어 붙일 아래 경계 1px 은 다음 조각에서(섞인 행 제외) */
+        const off=Math.round(t*f);
+        const wantA=first?0:Math.round((t+m.bandTop)*f);
+        if(wantA>covered+1)complete=false;   /* 위 띠가 바뀌어 사이가 빔(되돌릴 수 없는 위치) */
+        const outA=first?0:Math.max(covered,off+box.trim);   /* 위 경계 1px 도 제외 — 다음 위치를 그만큼 위로 잡아 빈 행이 없다 */
+        if(!first&&off+box.trim>covered)complete=false;
+        let outB=last?off+rowsInSlice:Math.min(off+rowsInSlice,Math.round((t+h-m.bandBottom)*f)-(m.bandBottom?2:0));   /* 고정 요소 가장자리 2행은 영상 색 번짐(4:2:0) 이 있어 이웃 조각에서 */
+        if(outB>maxRows){outB=maxRows;truncated=true;}
+        if(outB>outA&&!await grabFrameRows(cap,frame,outA-off,outB-off,width,off,pieces,scrollers,snap))complete=false;
+        covered=Math.max(covered,outB);
+        docHeight=Math.max(m.height,h);
+        slices++;
+        if(onSlice)onSlice(slices);
+        if(truncated)break;
+        if(last){
+          /* 끝에 닿은 뒤 lazy-load 로 길어졌으면 계속 */
+          await sleep(300);
+          const again=await driver.metrics();
+          if(again.height<=t+h+1)break;
+          m=again;
+        }
+        if(slices>=FULL_MAX_SLICES){truncated=true;break;}
+        first=false;
+        const docCovered=covered/f;
+        let next=Math.max(t+1,Math.floor(docCovered-m.bandTop-(trim+1+(m.bandTop?2:0))/f));
+        m=await driver.scroll(next,start.left);
+        /* 새로 붙은 sticky 등으로 위 띠가 커졌으면 그만큼 위로 다시 */
+        if(m.top+m.bandTop+(m.bandTop?(trim+2)/f:0)>docCovered+.5&&m.top<Math.max(0,m.height-m.clientHeight)-.5){
+          next=Math.max(t+1,Math.floor(docCovered-m.bandTop-(trim+1+(m.bandTop?2:0))/f));
+          if(next<m.top)m=await driver.scroll(next,start.left);
+        }
+        if(m.top<=t)break;   /* 더 내려가지 않음(문서가 줄었음) */
+        await waitSliceFrame(cap);
+      }
+    }finally{
+      shell.style.transform=shellTransform;   /* 캡처 전용 배율 되돌림(view.scale · --preview-scale 은 처음부터 그대로) */
+      if(start)try{await driver.scroll(start.top,start.left);}catch(error){}
+      delete shell.dataset.capture;
+      scrollers.forEach((el,i)=>{el.scrollLeft=stageSaved[i][0];el.scrollTop=stageSaved[i][1];});
+    }
+    /* lazy-load 등으로 문서가 길어져 높인 화질에서 한계에 걸렸으면 한 단계 낮은 배율로 다시 찍는다(1 에서도 넘으면 기존처럼 잘라 저장) */
+    if(truncated&&raised&&quality>1&&slices<FULL_MAX_SLICES){
+      pieces.forEach(piece=>piece.bitmap.close());
+      return{retry:pickCaptureQuality(frame.offsetWidth,docHeight,quality)};
+    }
+    if(!pieces.length||!width||!covered)return{skip:'empty'};
+    /* 마지막 조각은 iframe 가장자리를 안쪽으로 반올림해 문서 끝 1~2행이 모자랄 수 있다 → 높이를 문서 높이 × 배율로 맞추고 마지막 행으로 채운다 */
+    const fullRows=truncated?covered:Math.round(docHeight*f);
+    const extra=fullRows>covered&&fullRows-covered<=3?fullRows-covered:0;
+    const canvas=document.createElement('canvas');
+    canvas.width=width;canvas.height=covered+extra;
+    const ctx=canvas.getContext('2d');
+    ctx.imageSmoothingEnabled=false;
+    pieces.forEach(piece=>{ctx.drawImage(piece.bitmap,piece.x,piece.y);piece.bitmap.close();});
+    if(trim&&width>4){ctx.drawImage(canvas,2,0,1,covered,0,0,2,covered);ctx.drawImage(canvas,width-3,0,1,covered,width-2,0,2,covered);}   /* 덜 쓰거나 섞인 좌우 끝 2열(소수 위치의 안쪽 반올림 · 비정수 DPR) 은 바로 안쪽 열로 채움 */
+    if(extra)ctx.drawImage(canvas,0,covered-1,width,1,0,covered,width,extra);   /* 덜 쓴 좌우 끝(왼쪽 1 · 오른쪽 최대 2 — 소수 위치의 안쪽 반올림) 은 바로 옆 열로 채움 */
+    return{canvas,truncated,complete,slices,quality:f};
+  }
+  /* 캡처 중 마우스 차단(2026-11-06): 풀페이지 캡처는 실제 렌더 픽셀을 찍으므로, 마우스가 iframe 위에 있으면 :hover 상태가 들어가고
+   * 문서 · 스테이지 스크롤과 캡처 배율 확대로 마우스 아래를 지나가는 요소마다 조각별로 다른 hover 가 생긴다(실측 — 같은 출처 · 다른 출처 모두).
+   * 부모 문서에 창 전체를 덮는 투명 상자(.capture_shield) 를 두어 hit-test 가 iframe 에 닿지 않게 한다 — 사이트 CSS · DOM · iframe 크기 · 위치는 그대로,
+   * 그리는 것이 없어 PNG 에 나타나지 않는다. 캡처 시작 전 기존 hover 가 풀렸는지 프레임 단위로 확인한다 */
+  function addCaptureShield(){
+    const el=document.createElement('i');
+    el.className='capture_shield';
+    el.setAttribute('aria-hidden','true');
+    document.body.appendChild(el);
+    return el;
+  }
+  async function waitHoverCleared(views){
+    const hovered=()=>views.some(view=>{
+      if(view.dom.siteFrame.matches(':hover'))return true;   /* 부모 쪽 판정(다른 출처 공통) */
+      const win=getSameOriginWindow(view);
+      try{return Boolean(win&&win.document.querySelector(':hover'));}catch(error){return false;}
+    });
+    for(let i=0;i<30&&hovered();i++)await nextPaint();   /* 최대 약 1초 — 브라우저가 상자를 넣은 뒤 hover 를 다시 계산할 때까지 */
+    await nextPaint();   /* hover 가 풀린 화면이 한 번 그려진 뒤 */
+  }
+  async function captureFullPage(){
+    const btn=elements.captureBtn;
+    if(capturing||!captureSupported())return;
+    if(!currentUrl){showCaptureMessage('캡처할 페이지가 없습니다. 사이트 주소를 입력해 주세요.');return;}
+    const views=viewMode==='compare'
+      ?Array.from(compareViews.values()).filter(view=>!view.dom.item.hidden).sort((a,b)=>a.dom.item.compareDocumentPosition(b.dom.item)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1)
+      :[primaryView];
+    if(!views.length){showCaptureMessage('캡처할 기기가 없습니다.');return;}
+    /* 승인 창을 띄우기 전에 캡처할 수 없는 카드를 가린다(단일 보기의 다른 출처는 승인 뒤 브리지 연결로 판정) */
+    const skipped=[];
+    const reason=view=>{
+      if(!view.loaded)return'불러오는 중';
+      if(getSameOriginWindow(view))return'';
+      if(predictScrollAccess(currentUrl)==='file-origin')return'file://';
+      if(view===primaryView&&viewMode!=='compare')return'';
+      if(!view.bridge||view.bridge.state!=='ready')return'다른 출처 · Scroll Bridge 연결 안 됨';
+      return view.bridge.capture?'':'다른 출처 · Scroll Bridge 1.3.0 필요';
+    };
+    let targets=views.filter(view=>{const why=reason(view);if(why)skipped.push(getDeviceName(view)+': '+why);return!why;});
+    if(!targets.length){showCaptureMessage('풀페이지 캡처할 수 있는 기기가 없습니다 — '+skipped.join(' · '));return;}
+    const focused=document.activeElement;
+    const statusBefore=elements.frameStatus.textContent;   /* 진행 문구를 지운 뒤 결과 문구가 4초 뒤 이 문구로 돌아가게 */
+    capturing=true;btn.disabled=true;btn.setAttribute('aria-busy','true');
+    let cap=null,bridgeStarted=false,saved=0,shield=null;
+    captureScaleHold=true;
+    try{
+      shield=addCaptureShield();   /* 동기 — getDisplayMedia 의 사용자 활성화에 영향 없음 */
+      cap=await openTabCapture();   /* 클릭 처리의 첫 await — 승인은 한 번 */
+      if(!cap)return;
+      const single=targets[0]===primaryView&&viewMode!=='compare';
+      if(single&&!getSameOriginWindow(primaryView)){
+        bridgeStarted=true;
+        if(!await connectCaptureBridge(primaryView)||!primaryView.bridge.capture){
+          showCaptureMessage('풀페이지 캡처를 하지 못했습니다 — 다른 출처 페이지는 Scroll Bridge 1.3.0 이상이 필요합니다.');
+          return;
+        }
+      }
+      captureLock=true;
+      await waitHoverCleared(targets);
+      const stamp=captureStamp();
+      for(let i=0;i<targets.length;i++){
+        const view=targets[i];
+        const label=`풀페이지 캡처 중 · ${getDeviceName(view)}${targets.length>1?` (${i+1}/${targets.length})`:''}`;
+        elements.frameStatus.textContent=label;
+        let result;
+        try{
+          result=await captureViewFullPage(cap,view,count=>{elements.frameStatus.textContent=label+` · 조각 ${count}`;});
+          for(let tries=0;result.retry&&tries<3;tries++)result=await captureViewFullPage(cap,view,count=>{elements.frameStatus.textContent=label+` · ${result.retry}× 다시 · 조각 ${count}`;},result.retry);
+        }
+        catch(error){result={skip:'error'};}
+        if(!result.canvas){skipped.push(getDeviceName(view)+': '+(result.skip==='access'?'스크롤할 수 없음':'캡처 실패'));continue;}
+        const ok=await saveCapturePng(result.canvas,captureNameFor(view,'full',stamp));
+        if(!ok){skipped.push(getDeviceName(view)+': 이미지를 만들지 못함');continue;}
+        saved++;
+        if(result.truncated)skipped.push(getDeviceName(view)+': 최대 높이에서 잘림');
+        else if(!result.complete)skipped.push(getDeviceName(view)+': 일부 영역을 찍지 못함');
+        if(i<targets.length-1)await sleep(250);   /* 여러 파일 다운로드 간격 */
+      }
+      elements.frameStatus.textContent=statusBefore;
+      const note=skipped.length?' — '+skipped.join(' · '):'';
+      showCaptureMessage(saved?`풀페이지 스크린샷 ${saved}개를 저장했습니다${note}`:`풀페이지 스크린샷을 저장하지 못했습니다${note}`);
+    }finally{
+      if(elements.frameStatus.textContent.startsWith('풀페이지 캡처 중'))elements.frameStatus.textContent=statusBefore;   /* 오류로 끝난 경우 */
+      closeTabCapture(cap);
+      if(shield)shield.remove();
+      document.body.classList.remove('is_capturing');
+      if(bridgeStarted)stopScrollBridge(primaryView);
+      captureScaleHold=false;
+      updateAllScales();   /* 캡처 중 바뀐 스테이지 크기(공유 막대) 에 맞춰 한 번 */
+      await sleep(250);   /* 되돌린 스크롤의 늦은 scroll 이벤트(16ms 묶음) 가 다른 카드로 전파되지 않게 잠금을 조금 늦게 푼다 */
+      captureLock=false;
+      capturing=false;btn.disabled=false;btn.removeAttribute('aria-busy');
+      if(focused&&focused.isConnected&&typeof focused.focus==='function')focused.focus({preventScroll:true});
+    }
+  }
+  function bindCaptureControls(){
+    const btn=elements.captureBtn;
+    if(!captureSupported()){
+      btn.disabled=true;
+      btn.title=window.isSecureContext?'스크린샷 저장 — 이 브라우저는 탭 캡처를 지원하지 않습니다':'스크린샷 저장 — localhost · 127.0.0.1 · https 로 연 경우에만 사용할 수 있습니다';
+      return;
+    }
+    btn.addEventListener('click',captureFullPage);
+  }
 
   /* ------------------------------------------------------------------
    * 초기화
