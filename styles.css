@@ -398,14 +398,27 @@ svg {
 .switch_address { grid-area: address; }
 .switch_toolbar { grid-area: toolbar; }
 .switch_overlay { grid-area: overlay; }
-/* iOS Safari 실측 viewport 설정 행(Safari 탭 레이아웃 · viewport-fit) — 실측 데이터 기기에서만 4행으로 추가(숨김일 때는 행·간격 자체가 없음) */
-.browser_controls[data-safari="true"] {
+/* Safari 상세 설정(2026-11-09): 실측 viewport 기기(iPhone 18 Pro Safari) · iPhone Duo 측면 레이아웃은 탭 레이아웃 · viewport-fit 을 그룹 안 4행 대신
+ * 브라우저 선택 옆 버튼(#safariDetailBtn) 의 popover 로 옮겼다. 이 기기들은 주소창 위치를 레이아웃이 정해 위치 버튼도 숨겨지므로(data-position="hidden")
+ * [브라우저 선택][상세 설정] / [주소창][툴바][UI 겹침] 두 줄. 다중 비교에서 위치를 고를 수 있는 기기가 섞이면 위치 버튼을 상세 설정 오른쪽에 둔다 */
+.browser_controls[data-safari="true"] { position: relative; }
+.browser_controls[data-safari="true"][data-position="hidden"] {
   grid-template-areas:
     "title   title   title"
-    "select  select  position"
-    "address toolbar overlay"
-    "safari  safari  safari";
+    "select  select  detail"
+    "address toolbar overlay";
 }
+.browser_controls[data-safari="true"][data-position="shown"] {
+  grid-template-columns: auto auto auto auto;
+  grid-template-areas:
+    "title   title   title   title"
+    "select  select  detail  position"
+    "address toolbar overlay overlay";
+}
+.control_panel .position_controls[hidden] { display: none; }
+.safari_detail_btn { grid-area: detail; justify-self: start; }
+.safari_detail_btn[hidden] { display: none; }
+.control_panel .safari_detail_btn[aria-expanded="true"] { color: var(--point-dark); background: #eff6ff; border-color: #b9cff5; }
 /* MacBook + Safari(macOS) 단일 보기(2026-10-16, progressive disclosure): 기존 JS 가 붙이는 data-mac-safari 만으로 바꾼다.
  * 브라우저 그룹 = [Safari (macOS)] [Safari 버전] [설정] 한 줄. 주소창 · 위치 · 툴바 · UI 겹침은 같은 요소(.browser_settings) 를
  * 설정 버튼 아래 작은 popover 로 띄운다 — 컨트롤을 복제하지 않고 위치만 바꾸며, 닫혀 있으면 공간을 차지하지 않는다(absolute) */
@@ -481,8 +494,27 @@ svg {
   cursor: pointer;
 }
 .safari_version_select:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; }
-.safari_controls { grid-area: safari; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+/* Safari 상세 설정 popover: 열려 있을 때만 보이고 공간을 차지하지 않는다(absolute — 패널 · 브라우저 그룹 높이 그대로). 브라우저 그룹 왼쪽 끝 정렬 */
+.safari_controls {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  gap: 10px;
+  width: max-content;
+  padding: 10px 14px 14px;
+  background: #fff;
+  border: 1px solid var(--line-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .08);
+  white-space: nowrap;
+}
 .safari_controls[hidden] { display: none; }
+.safari_title { margin: 0; color: var(--sub-color); font-size: 11px; font-weight: 600; line-height: 16px; }
+.safari_field { display: grid; gap: 4px; justify-items: start; }
+.safari_field[hidden] { display: none; }
+.safari_label { color: #475467; font-size: 12px; font-weight: 600; line-height: 16px; }
 .safari_controls .position_controls { grid-area: auto; justify-self: auto; }
 .safari_controls .position_controls[hidden] { display: none; }   /* iPhone Duo 측면 레이아웃: Safari 탭 레이아웃 없이 viewport-fit 만 */
 .seg_label { padding: 0 4px 0 8px; color: var(--sub-color); font-size: 11px; font-weight: 600; }
@@ -517,17 +549,65 @@ svg {
 .switch_control input:checked::before { transform: translateX(12px); }
 .switch_control input:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 2px; }
 
-/* 도구: 제목 / 아이콘 7개(회전 · safe-area · 가림 검사 · 가상 키보드 | Safari 호환성 검사 · 스크린샷 · 새로고침 · 새 창) */
+/* 도구: 제목 / 아이콘 8개(회전 · safe-area · 가림 검사 · 가상 키보드 | Safari 호환성 검사 · 테스트 상태 프리셋 · 스크린샷 · 새로고침 · 새 창) */
 .tool_actions {
   grid-area: tools;
+  position: relative;   /* 테스트 상태 프리셋 popover(.preset_menu, absolute) 기준 */
   display: grid;
-  grid-template-columns: repeat(7, 36px);   /* 회전 · safe-area · 가림 검사 · 가상 키보드 · 스크린샷 · 새로고침 · 새 창 (MacBook + Safari 는 가상 키보드 대신 Safari 호환성 검사 — 둘 다 7열) */
+  grid-template-columns: repeat(8, 36px);   /* 회전 · safe-area · 가림 검사 · 가상 키보드 · 테스트 상태 프리셋 · 스크린샷 · 새로고침 · 새 창 (MacBook + Safari 는 가상 키보드 대신 Safari 호환성 검사 — 둘 다 8열, 2026-11-09 프리셋 버튼으로 7 → 8) */
   gap: 6px 2px;   /* 세로 6 = 제목 ↔ 아이콘, 가로 2 = 아이콘 사이(2026-10-21 6 → 4, 2026-11-02 4 → 2 — 스크린샷 버튼 자리) */
 }
 /* Safari 호환성 검사 버튼(2026-10-16): MacBook + Safari(macOS) 단일 보기일 때만 보인다 — 기존 JS 가 그 조건에서만 브라우저 그룹에 붙이는 data-mac-safari 를 따른다(JS 변경 없음). 다른 기기의 도구 그룹은 5열 그대로 */
 .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) .compat_btn { display: none; }
 .control_panel:has(.browser_controls[data-mac-safari="true"]) .keyboard_btn { display: none; }   /* 가상 키보드는 모바일 · 태블릿 · breakpoint 프리셋용 — MacBook 에서는 숨김(2026-10-21) */
 .tool_actions .ctrl_title { grid-column: 1 / -1; margin-bottom: 0; }   /* gap 6 이 제목 ↔ 아이콘 간격 */
+/* 테스트 상태 프리셋 popover(2026-11-09): 버튼 아래 작은 목록. 닫혀 있으면(hidden) 공간 없음, 열려도 패널 높이 그대로(absolute).
+ * 브라우저 설정 popover 와 같은 모양(흰 배경 · border 1 · radius 8 · 옅은 그림자). 선택 표시 = aria-current(실제 현재 설정과 일치) */
+.preset_menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  width: 236px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--line-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, .08);
+}
+.preset_menu[hidden] { display: none; }
+.preset_title { margin: 2px 8px 6px; color: var(--sub-color); font-size: 11px; font-weight: 700; }
+.preset_item {
+  position: relative;
+  display: grid;
+  gap: 1px;
+  padding: 7px 30px 7px 10px;
+  color: #344054;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.preset_item:hover:not(:disabled) { background: #f3f5f8; }
+.preset_item:focus-visible { outline: 2px solid var(--focus-color); outline-offset: -2px; }
+.preset_item:disabled { color: #98a2b3; cursor: not-allowed; }
+.preset_name { font-size: 13px; font-weight: 600; }
+.preset_hint { color: #475467; font-size: 11px; }
+.preset_item:disabled .preset_hint { color: #98a2b3; }
+.preset_item[aria-current="true"] { color: var(--point-dark); background: #eff6ff; }
+.preset_item[aria-current="true"]::after {   /* 체크 표시(색 외 구분) */
+  content: "";
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  width: 5px;
+  height: 10px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-65%) rotate(45deg);
+}
 /* 기본 아이콘 버튼(다중 비교 카드의 .is_small 도 사용 — 이번 단계에서 값 그대로) */
 .icon_btn {
   width: 42px;
@@ -1928,11 +2008,18 @@ svg {
       "browser tools view";
   }
 }
-/* 2행의 아래 줄(브라우저 · 도구 · 보기) 이 빠듯한 폭(2026-11-02): 도구 아이콘 7개가 한 줄이면 브라우저 그룹(약 257px) 이 도구 열과 겹치므로
+/* 2행의 아래 줄(브라우저 · 도구 · 보기) 이 빠듯한 폭(2026-11-02): 도구 아이콘이 한 줄이면 브라우저 그룹(약 260px) 이 도구 열과 겹치므로
  * 아이콘을 5개씩 두 줄로 놓아 도구 열을 화면 상태 열(--fold-col) 폭 안에 둔다 — 버튼 크기 · 순서 그대로, 이 폭에서만 패널이 16px 높아짐(브라우저 그룹이 4행인 18 Pro · Duo 는 그대로).
- * 이전(6개) 에도 1181~1214 · 901~934 에서는 주소창 위치 버튼이 회전 버튼과 겹쳐 있었다 */
-@media (min-width: 1181px) and (max-width: 1249px), (min-width: 901px) and (max-width: 980px) {
+ * 이전(6개) 에도 1181~1214 · 901~934 에서는 주소창 위치 버튼이 회전 버튼과 겹쳐 있었다.
+ * 2026-11-09 테스트 상태 프리셋 버튼(8개, 한 줄 302px) 으로 위 범위를 1249 → 1279 로 넓혔다 — 아래 줄 260 + 302 + 331 + 간격 24 = 917px 이 패널 폭(창 − 약 362) 에 들어가는 창 1280 부터 한 줄 */
+@media (min-width: 1181px) and (max-width: 1279px), (min-width: 901px) and (max-width: 980px) {
   .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) .tool_actions { grid-template-columns: repeat(5, 36px); }   /* MacBook + Safari 는 별도 배치(아래)에서 한 줄로 들어간다 */
+}
+/* 1행(창 1920 이상, 2026-11-09): 테스트 상태 프리셋 버튼(+38px) 으로 6영역 합계가 약 1596px 가 되어 창 1920 의 패널 폭(1558) 을 넘으므로(보기 그룹이 줄바꿈되며 패널 112 → 122)
+ * 새 breakpoint 없이 이 폭의 여백만 줄인다: 화면 상태 열 예약 200 → 181(가장 넓은 상태 묶음 Flip8 커버 · 펼침 · Flex 의 실제 폭 — 버튼 · 글자 크기 그대로) · 그룹 사이 12 → 8.
+ * MacBook + Safari 는 화면 상태 열이 없는 별도 배치라 제외 */
+@media (min-width: 1920px) {
+  .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) { --fold-col: 181px; column-gap: 8px; }
 }
 /* 2행에서 아래 줄(브라우저 · 도구 · 보기 ≈ 830px) 이 넘치는 폭에서만 4행 — 980 이하는 좌측 목록이 위로 올라가 패널이 다시 넓어지므로 2행으로 돌아가고, 900 이하에서 다시 4행 */
 @media (min-width: 981px) and (max-width: 1180px), (max-width: 900px) {
@@ -1973,7 +2060,8 @@ svg {
   .size_controls { justify-self: stretch; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; }
   .size_field { width: 100%; }
   .browser_controls { justify-self: stretch; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title title" "select position" "address toolbar" "overlay overlay"; white-space: normal; }
-  .browser_controls[data-safari="true"] { grid-template-areas: "title title" "select position" "address toolbar" "overlay overlay" "safari safari"; }
+  .browser_controls[data-safari="true"][data-position="hidden"] { grid-template-areas: "title title" "select detail" "address toolbar" "overlay overlay"; }
+  .browser_controls[data-safari="true"][data-position="shown"] { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "title title title" "select detail position" "address toolbar toolbar" "overlay overlay overlay"; }
   .browser_select { width: 100%; }
   .preview_stage { --stage-pad: 24px; min-height: 460px; }
   .compare_grid { grid-template-columns: 1fr; gap: 14px; }
@@ -1984,6 +2072,18 @@ svg {
   .preview_footer > span { text-align: left; }
   .preview_footer > span:last-child { white-space: normal; }
   .test_notice { margin-top: 9px; }
+}
+/* 화면 상태 그룹이 숨겨진 단일 화면 기기(2026-11-09): 비어 있는 화면 상태 자리를 기기 정보 · 화면 그룹이 쓰게 한다 — 열 구성 · 행 수는 그대로라 패널이 높아지지 않는다.
+ * 1열(≤700) 에서는 빈 행(간격 14) 을 없앤다. MacBook + Safari 는 아래 별도 배치가 이긴다(같은 우선순위 · 뒤에 선언) */
+.control_panel:has(.fold_controls[hidden]) { grid-template-areas: "device device size browser tools view"; }
+@media (max-width: 1919px) {
+  .control_panel:has(.fold_controls[hidden]) { grid-template-areas: "device device size" "browser tools view"; }
+}
+@media (min-width: 981px) and (max-width: 1180px), (max-width: 900px) {
+  .control_panel:has(.fold_controls[hidden]) { grid-template-areas: "device device" "size size" "browser browser" "tools view"; }
+}
+@media (max-width: 700px) {
+  .control_panel:has(.fold_controls[hidden]) { grid-template-areas: "device" "size" "browser" "tools" "view"; }
 }
 /* MacBook + Safari(macOS) 단일 보기 컨트롤 패널(2026-10-16): 화면 상태가 고정이라 "화면 상태 / 단일 화면" 그룹을 숨기고(state 데이터 · JS 는 그대로)
  * 기기 정보 → 화면 → 브라우저 → 도구 → 보기 순서를 유지한 채 줄만 바꾼다. 다른 기기는 위 규칙 그대로(:has 조건이 없으면 적용 안 됨) */

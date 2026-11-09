@@ -59,7 +59,7 @@
             </div>
           </div>
 
-          <!-- 접힘/펼침 상태. 단일 화면 기기에서도 자리를 유지해 다른 컨트롤 위치가 바뀌지 않게 한다. -->
+          <!-- 접힘/펼침 상태. 단일 보기에서 고를 상태가 하나뿐인 기기는 그룹 전체를 숨긴다(2026-11-09, 다중 비교의 "카드별 설정" 안내는 그대로). -->
           <fieldset class="fold_controls is_single" id="foldControls">
             <legend>화면 상태</legend>
             <div class="state_list" id="stateList"><span class="state_single">단일 화면</span></div>
@@ -87,6 +87,29 @@
             <span class="ctrl_title" aria-hidden="true">브라우저</span>
             <label class="sr_only" for="browserSelect">브라우저 종류</label>
             <select class="browser_select" id="browserSelect"></select>
+            <!-- Safari 상세 설정(2026-11-09): 실측 viewport 데이터가 있는 Safari(iPhone 18 Pro) · iPhone Duo 측면 레이아웃에서만 보인다(기존 safariControls 표시 조건 그대로). 아래 #safariControls 를 popover 로 연다 -->
+            <button type="button" class="icon_btn safari_detail_btn" id="safariDetailBtn" aria-label="Safari 상세 설정" title="Safari 상세 설정 — 탭 레이아웃 · viewport-fit" aria-expanded="false" aria-controls="safariControls" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sliders"/></svg></button>
+            <!-- Safari 상세 설정 popover(2026-11-09): 탭 레이아웃 · viewport-fit. 위 #safariDetailBtn 으로 열고(버튼 바로 뒤에 두어 Tab 순서 = 버튼 → 설정 → 주소창), 닫혀 있으면 공간을 차지하지 않는다(absolute).
+                 iframe 크기 계산에만 쓰이며 대상 사이트의 meta viewport 를 바꾸지 않는다. iPhone Duo 측면 레이아웃은 viewport-fit 만 -->
+            <div class="safari_controls" id="safariControls" role="group" aria-labelledby="safariControlsTitle" hidden>
+              <p class="safari_title" id="safariControlsTitle">Safari 상세 설정</p>
+              <div class="safari_field" id="safariLayoutField">
+                <span class="safari_label" aria-hidden="true">탭 레이아웃</span>
+                <fieldset class="position_controls" title="iPhone 설정 &gt; 앱 &gt; Safari &gt; 탭 레이아웃 — iPhone 17 Pro 실기기 측정값으로 사이트 영역을 계산합니다">
+                  <legend class="sr_only">Safari 탭 레이아웃</legend>
+                  <label><input type="radio" name="safariLayout" value="compact" checked><span>하단형 (Compact)</span></label>
+                  <label><input type="radio" name="safariLayout" value="top"><span>상단형 (Top)</span></label>
+                </fieldset>
+              </div>
+              <div class="safari_field">
+                <span class="safari_label" aria-hidden="true">viewport-fit</span>
+                <fieldset class="position_controls" title="테스트 사이트의 meta viewport-fit 설정에 따른 미리보기 계산 — 기본(auto) 은 safe-area 를 뺀 폭(iPhone 가로 좌우 · iPhone Duo 측면 Safari UI 쪽 — Duo 는 기존 safe-area 데이터로 만든 시뮬레이션), cover 는 화면 전체 폭입니다(iframe 안의 meta 는 바꾸지 않음)">
+                  <legend class="sr_only">대상 사이트 viewport-fit</legend>
+                  <label><input type="radio" name="viewportFit" value="auto" checked><span>기본 (auto)</span></label>
+                  <label><input type="radio" name="viewportFit" value="cover"><span>cover</span></label>
+                </fieldset>
+              </div>
+            </div>
             <!-- Safari(macOS) 버전: MacBook 에서 데스크톱 Safari 를 고른 경우에만 표시. "Safari 호환성 검사" 의 기준 버전이며, 미리보기 렌더링 엔진(Chrome) 은 바뀌지 않는다 -->
             <div class="safari_version" id="safariVersionRow" hidden>
               <label class="seg_label" for="safariVersion">Safari 버전</label>
@@ -117,21 +140,6 @@
               </label>
             </div>
             <span class="sr_only" id="overlayHelp">켜면 주소창과 툴바가 사이트 영역을 줄이지 않고 콘텐츠 위에 겹쳐 표시되어 100vh 기준 하단 가림을 확인할 수 있습니다.</span>
-            <!-- iOS Safari 실측 viewport 설정: 실측 데이터가 있는 기기(iPhone 18 Pro + Safari) 에서만 표시. iframe 크기 계산에만 쓰이며 대상 사이트의 meta viewport 를 바꾸지 않는다 -->
-            <div class="safari_controls" id="safariControls" hidden>
-              <fieldset class="position_controls" title="설정 › 앱 › Safari › 탭 레이아웃. iPhone 17 Pro 실기기 측정값으로 사이트 영역을 계산합니다">
-                <legend class="sr_only">Safari 탭 레이아웃</legend>
-                <span class="seg_label" aria-hidden="true">Safari</span>
-                <label><input type="radio" name="safariLayout" value="compact" checked><span>Compact</span></label>
-                <label><input type="radio" name="safariLayout" value="top"><span>Top</span></label>
-              </fieldset>
-              <fieldset class="position_controls" title="테스트할 사이트의 meta viewport-fit. 기본(auto) 은 safe-area 를 뺀 폭(iPhone 가로 좌우 · iPhone Duo 측면 Safari UI 쪽 — Duo 는 기존 safe-area 데이터로 만든 시뮬레이션), cover 는 화면 전체 폭입니다(iframe 안의 meta 는 바꾸지 않음)">
-                <legend class="sr_only">대상 사이트 viewport-fit</legend>
-                <span class="seg_label" aria-hidden="true">viewport-fit</span>
-                <label><input type="radio" name="viewportFit" value="auto" checked><span>auto</span></label>
-                <label><input type="radio" name="viewportFit" value="cover"><span>cover</span></label>
-              </fieldset>
-            </div>
           </div>
 
           <!-- 아이콘 규칙: 24×24 viewBox · 전역 svg 스타일(outline, stroke 1.8, currentColor) · aria-hidden, 의미는 버튼 aria-label 이 전달.
@@ -156,6 +164,20 @@
             <button type="button" class="icon_btn compat_btn" id="compatBtn" aria-label="Safari 호환성 검사" aria-pressed="false" title="Safari 호환성 검사 — MacBook 에서 Safari 를 고르면 사용할 수 있습니다" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-compat"/></svg>
             </button>
+            <!-- 테스트 상태 프리셋(2026-11-09): 이미 있는 설정(UI 겹침 · safe-area · 가상 키보드 · 가림 검사) 을 자주 쓰는 조합으로 한 번에 적용한다.
+                 새 상태 · 저장 키 없음 — 선택 표시는 실제 현재 설정으로 판정. 목록은 버튼 아래 작은 popover(.preset_menu, 닫혀 있으면 공간 없음) -->
+            <button type="button" class="icon_btn preset_btn" id="presetBtn" aria-label="테스트 상태 프리셋" title="테스트 상태 프리셋" aria-expanded="false" aria-controls="presetMenu">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-presets"/></svg>
+            </button>
+            <div class="preset_menu" id="presetMenu" role="group" aria-labelledby="presetMenuTitle" hidden>
+              <p class="preset_title" id="presetMenuTitle">테스트 상태</p>
+              <button type="button" class="preset_item" data-preset="basic"><span class="preset_name">기본</span><span class="preset_hint">테스트용 표시 모두 끔</span></button>
+              <button type="button" class="preset_item" data-preset="overlay"><span class="preset_name">브라우저 UI 겹침</span><span class="preset_hint">주소창 · 툴바를 콘텐츠 위에 겹침</span></button>
+              <button type="button" class="preset_item" data-preset="safe"><span class="preset_name">Safe Area</span><span class="preset_hint">safe-area 가이드 켬</span></button>
+              <button type="button" class="preset_item" data-preset="kb-resize"><span class="preset_name">키보드 · 화면 축소</span><span class="preset_hint">가상 키보드 켬 · 화면 축소</span></button>
+              <button type="button" class="preset_item" data-preset="kb-overlay"><span class="preset_name">키보드 · 겹침</span><span class="preset_hint">가상 키보드 켬 · 겹침</span></button>
+              <button type="button" class="preset_item" data-preset="occlusion"><span class="preset_name">가림 영역 검사</span><span class="preset_hint">가림 검사 켬</span></button>
+            </div>
             <!-- 스크린샷 저장(2026-11-02 · 2026-11-03 풀페이지): 브라우저 탭 캡처로 기기마다 사이트 전체(문서 위 → 아래) 를 스크롤하며 이어 붙인 PNG 를 저장. 다중 비교는 카드마다 따로 -->
             <button type="button" class="icon_btn" id="captureBtn" aria-label="풀페이지 스크린샷 저장" title="풀페이지 스크린샷 저장 — 기기마다 사이트 전체를 스크롤하며 이어 붙인 PNG(다중 비교는 기기별 파일). 브라우저가 화면 공유 대상을 물으면 이 탭을 선택하세요">
               <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-camera"/></svg>
@@ -307,6 +329,7 @@
     <symbol id="icon-device-only" viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M15 4h5v5"/><path d="M20 15v5h-5"/><path d="M9 20H4v-5"/><rect x="9" y="8" width="6" height="8" rx="1.2"/></symbol>
     <symbol id="icon-external" viewBox="0 0 24 24"><path d="M14.5 3.5h6v6"/><path d="M10.5 13.5l10-10"/><path d="M20.5 13.5v5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h5"/></symbol>
     <!-- 제거: X -->
+    <symbol id="icon-presets" viewBox="0 0 24 24"><path d="M11 6.5h9.5M11 12h9.5M11 17.5h9.5"/><path d="m3.5 6.5 1.6 1.6L8 5"/><path d="m3.5 12 1.6 1.6L8 10.5"/><path d="m3.5 17.5 1.6 1.6L8 16"/></symbol>
     <symbol id="icon-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
     <symbol id="icon-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   </svg>

@@ -538,7 +538,7 @@
     occlusionBtn:document.getElementById('occlusionBtn'),occlusionStatus:document.getElementById('occlusionStatus'),occlusionText:document.getElementById('occlusionText'),occlusionRecheck:document.getElementById('occlusionRecheck'),
     occlusionListBtn:document.getElementById('occlusionListBtn'),occlusionList:document.getElementById('occlusionList'),occlusionItems:document.getElementById('occlusionItems'),occlusionListNote:document.getElementById('occlusionListNote'),
     occlusionCopy:document.getElementById('occlusionCopy'),occlusionCopyBox:document.getElementById('occlusionCopyBox'),occlusionCopyText:document.getElementById('occlusionCopyText'),occlusionCopyClose:document.getElementById('occlusionCopyClose'),
-    browserControls:document.querySelector('.browser_controls'),safariControls:document.getElementById('safariControls'),
+    browserControls:document.querySelector('.browser_controls'),safariControls:document.getElementById('safariControls'),safariDetailBtn:document.getElementById('safariDetailBtn'),
     safariLayoutInputs:Array.from(document.querySelectorAll('input[name="safariLayout"]')),viewportFitInputs:Array.from(document.querySelectorAll('input[name="viewportFit"]')),
     rotateBtn:document.getElementById('rotateBtn'),refreshBtn:document.getElementById('refreshBtn'),captureBtn:document.getElementById('captureBtn'),scaleInput:document.getElementById('scaleInput'),scaleDownBtn:document.getElementById('scaleDownBtn'),scaleUpBtn:document.getElementById('scaleUpBtn'),scaleFitBtn:document.getElementById('scaleFitBtn'),scaleDeviceBtn:document.getElementById('scaleDeviceBtn'),
     openLink:document.getElementById('openLink'),previewArea:document.getElementById('previewArea'),previewStage:document.getElementById('previewStage'),previewMount:document.getElementById('previewMount'),
@@ -1355,7 +1355,12 @@
     });
     const sideLocked=locked&&bandsList.every(bands=>bands.urlPositionLockReason==='side');
     const layoutLocked=locked&&bandsList.every(bands=>bands.urlPositionLockReason==='safari-layout');
-    elements.urlPositionControls.title=sideLocked?'iPhone Duo 측면 컨트롤 배치에서는 주소창 위치를 바꿀 수 없습니다(공식 자료에 주소 필드 없음).':(layoutLocked?'주소창 위치는 아래 Safari 탭 레이아웃(Compact = 하단 · Top = 상단) 을 따릅니다.':(locked?'가로 모드에서는 주소창이 상단에 고정됩니다.':(showAddressBar?'':'주소창을 켜면 위치를 바꿀 수 있습니다.')));
+    /* 위치를 사용자가 고를 수 없는 배치(Safari 실측 탭 레이아웃 · iPhone Duo 측면 컨트롤) 만 보이는 화면에서는 비활성 버튼 대신 그룹을 숨긴다(2026-11-09).
+     * 실측 기기는 가로에서도 같은 레이아웃이 위치를 정하므로 회전해도 숨긴 채 둔다 — 라디오 값 · 잠금 · urlBarPosition 계산은 그대로 */
+    const positionHidden=locked&&views.every((view,index)=>hasMeasuredViewport(view)||bandsList[index].urlPositionLockReason==='side');
+    elements.urlPositionControls.hidden=positionHidden;
+    elements.browserControls.dataset.position=positionHidden?'hidden':'shown';
+    elements.urlPositionControls.title=sideLocked?'iPhone Duo 측면 컨트롤 배치에서는 주소창 위치를 바꿀 수 없습니다(공식 자료에 주소 필드 없음).':(layoutLocked?'주소창 위치는 Safari 상세 설정의 탭 레이아웃(하단형 Compact · 상단형 Top) 을 따릅니다.':(locked?'가로 모드에서는 주소창이 상단에 고정됩니다.':(showAddressBar?'':'주소창을 켜면 위치를 바꿀 수 있습니다.')));
     syncSafariControls(views);
   }
 
@@ -1366,12 +1371,14 @@
   }
 
   /* Safari 탭 레이아웃 · viewport-fit: 표시 중인 view 중 실측 viewport 데이터가 있는 기기(현재 iPhone 18 Pro + Safari) 가 있을 때 보인다.
-   * iPhone Duo 측면 레이아웃만 있으면 viewport-fit 만 보이고 탭 레이아웃(Compact / Top) 은 숨긴다 */
+   * iPhone Duo 측면 레이아웃만 있으면 viewport-fit 만 보이고 탭 레이아웃(Compact / Top) 은 숨긴다.
+   * 2026-11-09: 같은 조건으로 "Safari 상세 설정" 버튼만 보이고, 두 설정은 그 버튼의 popover(#safariControls) 안에 있다 */
   function syncSafariControls(views){
     const measured=views.some(hasMeasuredViewport);
     const visible=measured||views.some(isSideLayoutView);
-    elements.safariControls.hidden=!visible;
-    elements.safariLayoutInputs[0].closest('fieldset').hidden=!measured;
+    elements.safariDetailBtn.hidden=!visible;
+    if(!visible&&!elements.safariControls.hidden)setSafariDetailOpen(false);
+    document.getElementById('safariLayoutField').hidden=!measured;
     elements.browserControls.dataset.safari=visible?'true':'false';
     elements.safariLayoutInputs.forEach(input=>{input.checked=input.value===safariLayout;});
     elements.viewportFitInputs.forEach(input=>{input.checked=input.value===viewportFit;});
@@ -3034,6 +3041,8 @@
     }
     elements.stateList.replaceChildren(fragment);
     elements.foldControls.classList.toggle('is_single',!foldable);
+    /* 단일 보기에서 고를 상태가 하나뿐이면 조작할 것이 없으므로 그룹 전체를 숨긴다(2026-11-09). 다중 비교의 "카드별 설정" 안내는 그대로 */
+    elements.foldControls.hidden=viewMode==='single'&&!foldable;
     updateStateButtons();
   }
 
@@ -3267,6 +3276,107 @@
     [btn,panel].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&isOpen()){event.preventDefault();setBrowserSettingsOpen(false,true);}}));
     panel.addEventListener('focusout',event=>{if(isOpen()&&event.relatedTarget&&!panel.contains(event.relatedTarget)&&event.relatedTarget!==btn)setBrowserSettingsOpen(false);});
     document.addEventListener('pointerdown',event=>{if(isOpen()&&!panel.contains(event.target)&&!btn.contains(event.target))setBrowserSettingsOpen(false);});
+  }
+
+  /* 테스트 상태 프리셋(2026-11-09): 이미 있는 설정을 자주 쓰는 조합으로 한 번에 바꾸는 단축 동작. 프리셋은 상태 snapshot 이 아니라
+   * "그 테스트에 필요한 설정만" 바꾸고(기본만 테스트용 표시를 정리), 각 설정은 기존 setter · 계산 함수 · 저장(saveDisplayPreference) 을 그대로 쓴다.
+   * 선택 표시는 프리셋 이름을 저장하지 않고 실제 현재 설정이 조건과 맞는지로 판정한다(개별 컨트롤로 바꾸면 자동으로 풀림). 새 저장 키 없음 */
+  const keyboardUsable=()=>visibleViews().some(view=>(view.frameProfile&&view.frameProfile.platform)!=='macos');   /* keyboardApplies 와 같은 MacBook 제외 규칙 */
+  const keyboardShown=()=>keyboardEnabled&&keyboardUsable();
+  function setUiModeValue(mode){
+    if(uiMode===mode)return;
+    uiMode=mode;
+    elements.uiOverlayToggle.checked=uiMode==='overlay';
+    refreshViews();
+  }
+  function setKeyboardPreset(mode){
+    if(keyboardMode!==mode){keyboardMode=mode;if(keyboardEnabled)updateAllKeyboards();}
+    if(!keyboardEnabled)setKeyboardEnabled(true);
+  }
+  const TEST_PRESETS={
+    basic:{label:'기본',match:()=>uiMode==='shrink'&&!safeAreaGuide&&!keyboardShown()&&!occlusionEnabled,
+      apply(){setUiModeValue('shrink');if(safeAreaGuide)setSafeAreaGuide(false);if(keyboardEnabled)setKeyboardEnabled(false);if(occlusionEnabled)setOcclusionEnabled(false);}},
+    overlay:{label:'브라우저 UI 겹침',match:()=>uiMode==='overlay',apply(){setUiModeValue('overlay');}},
+    safe:{label:'Safe Area',match:()=>safeAreaGuide,apply(){if(!safeAreaGuide)setSafeAreaGuide(true);}},
+    'kb-resize':{label:'키보드 · 화면 축소',keyboard:true,match:()=>keyboardShown()&&keyboardMode==='resize',apply(){setKeyboardPreset('resize');}},
+    'kb-overlay':{label:'키보드 · 겹침',keyboard:true,match:()=>keyboardShown()&&keyboardMode==='overlay',apply(){setKeyboardPreset('overlay');}},
+    occlusion:{label:'가림 영역 검사',match:()=>occlusionEnabled,apply(){if(!occlusionEnabled)setOcclusionEnabled(true);}}
+  };
+  function getPresetDom(){return {btn:document.getElementById('presetBtn'),menu:document.getElementById('presetMenu')};}
+  /* 목록을 열 때마다 현재 설정으로 다시 판정(선택 표시 = aria-current + 체크). 키보드 프리셋은 보이는 화면이 모두 MacBook 이면 비활성(기존 정책) */
+  function syncPresetMenu(){
+    const dom=getPresetDom();
+    dom.menu.querySelectorAll('.preset_item').forEach(item=>{
+      const preset=TEST_PRESETS[item.dataset.preset];
+      const blocked=Boolean(preset.keyboard)&&!keyboardUsable();
+      item.disabled=blocked;
+      item.title=blocked?'MacBook 에서는 가상 키보드를 사용하지 않습니다':'';
+      if(!blocked&&preset.match())item.setAttribute('aria-current','true');
+      else item.removeAttribute('aria-current');
+    });
+  }
+  function setPresetMenuOpen(open,returnFocus){
+    const dom=getPresetDom();
+    if(!dom.btn)return;
+    if(open){setBrowserSettingsOpen(false);setSafariDetailOpen(false);syncPresetMenu();}
+    dom.menu.hidden=!open;
+    dom.btn.setAttribute('aria-expanded',open?'true':'false');
+    if(open){const first=dom.menu.querySelector('.preset_item[aria-current]:not(:disabled)')||dom.menu.querySelector('.preset_item:not(:disabled)');if(first)first.focus();}
+    else if(returnFocus)dom.btn.focus();
+  }
+  function applyTestPreset(id){
+    const preset=TEST_PRESETS[id];
+    if(!preset||(preset.keyboard&&!keyboardUsable()))return;
+    preset.apply();
+    saveDisplayPreference();   /* 각 설정이 원래 저장되던 그대로(viewportLabDisplay) — 프리셋 이름은 저장하지 않음 */
+    announce('테스트 상태 "'+preset.label+'" 를 적용했습니다.');
+  }
+  function bindTestPresets(){
+    const dom=getPresetDom();
+    if(!dom.btn)return;
+    const isOpen=()=>!dom.menu.hidden;
+    dom.btn.addEventListener('click',()=>setPresetMenuOpen(!isOpen()));
+    dom.menu.addEventListener('click',event=>{
+      const item=event.target.closest('.preset_item');
+      if(!item||item.disabled)return;
+      applyTestPreset(item.dataset.preset);
+      setPresetMenuOpen(false,true);
+    });
+    [dom.btn,dom.menu].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&isOpen()){event.preventDefault();setPresetMenuOpen(false,true);}}));
+    /* 위 · 아래 화살표로 항목 이동(Tab 도 그대로 동작) */
+    dom.menu.addEventListener('keydown',event=>{
+      if(event.key!=='ArrowDown'&&event.key!=='ArrowUp')return;
+      const items=Array.from(dom.menu.querySelectorAll('.preset_item:not(:disabled)'));
+      const index=items.indexOf(document.activeElement);
+      if(!items.length)return;
+      event.preventDefault();
+      items[(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length].focus();
+    });
+    dom.menu.addEventListener('focusout',event=>{if(isOpen()&&event.relatedTarget&&!dom.menu.contains(event.relatedTarget)&&event.relatedTarget!==dom.btn)setPresetMenuOpen(false);});
+    document.addEventListener('pointerdown',event=>{if(isOpen()&&!dom.menu.contains(event.target)&&!dom.btn.contains(event.target))setPresetMenuOpen(false);});
+    window.addEventListener('blur',()=>{if(isOpen())setPresetMenuOpen(false);});   /* 미리보기 iframe 안을 누르면 부모 문서에 pointerdown 이 오지 않는다 — 포커스가 iframe 으로 가며 창 blur */
+  }
+
+  /* Safari 상세 설정 popover(2026-11-09): 기존 탭 레이아웃 · viewport-fit 라디오를 그대로 담은 #safariControls 를 열고 닫기만 한다(값 · 저장 · 계산은 기존 change 핸들러).
+   * 테스트 상태 프리셋과 같은 동작 — 클릭 토글 · Esc(버튼으로 포커스) · 바깥 클릭 · 포커스가 밖으로 · 창 blur 에서 닫힘, 열면 현재 선택된 라디오로 포커스 */
+  function setSafariDetailOpen(open,returnFocus){
+    const btn=elements.safariDetailBtn,panel=elements.safariControls;
+    if(!btn||!panel)return;
+    if(open){setPresetMenuOpen(false);setBrowserSettingsOpen(false);}
+    panel.hidden=!open;
+    btn.setAttribute('aria-expanded',open?'true':'false');
+    if(open){const first=panel.querySelector('.safari_field:not([hidden]) input:checked');if(first)first.focus();}
+    else if(returnFocus)btn.focus();
+  }
+  function bindSafariDetail(){
+    const btn=elements.safariDetailBtn,panel=elements.safariControls;
+    if(!btn||!panel)return;
+    const isOpen=()=>!panel.hidden;
+    btn.addEventListener('click',()=>setSafariDetailOpen(!isOpen()));
+    [btn,panel].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&isOpen()){event.preventDefault();setSafariDetailOpen(false,true);}}));
+    panel.addEventListener('focusout',event=>{if(isOpen()&&event.relatedTarget&&!panel.contains(event.relatedTarget)&&event.relatedTarget!==btn)setSafariDetailOpen(false);});
+    document.addEventListener('pointerdown',event=>{if(isOpen()&&!panel.contains(event.target)&&!btn.contains(event.target))setSafariDetailOpen(false);});
+    window.addEventListener('blur',()=>{if(isOpen())setSafariDetailOpen(false);});
   }
 
   function fillSafariVersions(data){
@@ -4103,10 +4213,14 @@
   elements.occlusionItems.addEventListener('click',event=>{const item=event.target.closest('button[data-index]');if(item)highlightOcclusionResult(Number(item.dataset.index));});
   /* Esc: 목록을 닫고 결과 보기 버튼으로 포커스 복귀 */
   [elements.occlusionList,elements.occlusionListBtn].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&!elements.occlusionList.hidden){event.preventDefault();setOcclusionListOpen(false,true);}}));
-  elements.safeAreaBtn.addEventListener('click',()=>{
-    safeAreaGuide=!safeAreaGuide;
+  /* safe-area 가이드 켜기 / 끄기(버튼 · 테스트 상태 프리셋 공통) */
+  function setSafeAreaGuide(on){
+    safeAreaGuide=Boolean(on);
     allViews().forEach(updateSafeGuides);
     elements.safeAreaBtn.setAttribute('aria-pressed',safeAreaGuide?'true':'false');
+  }
+  elements.safeAreaBtn.addEventListener('click',()=>{
+    setSafeAreaGuide(!safeAreaGuide);
     saveDisplayPreference();
     announce('safe-area 가이드를 '+(safeAreaGuide?'표시합니다.':'숨겼습니다.'));
   });
@@ -4137,6 +4251,8 @@
   bindCompatControls();
   bindBrowserSettings();
   bindKeyboardControls();
+  bindTestPresets();
+  bindSafariDetail();
   bindCaptureControls();
   elements.syncScroll.addEventListener('change',()=>{syncOptions.scroll=elements.syncScroll.checked;if(syncOptions.scroll)realignScrollSync();updateSyncAvailability();saveComparePreference();announce('스크롤 동기화를 '+(syncOptions.scroll?'켰습니다.':'껐습니다.'));});
   elements.syncRotate.addEventListener('change',()=>{syncOptions.rotate=elements.syncRotate.checked;saveComparePreference();});
