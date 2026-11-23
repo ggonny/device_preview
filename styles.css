@@ -1313,17 +1313,33 @@ svg {
   box-shadow: none;
 }
 .screen_wrap[data-browser="tablet-chrome"] .band_url, .screen_wrap[data-browser="android-tablet-chrome"] .band_url, .screen_wrap[data-browser="android-tablet-samsung"] .band_url { align-items: flex-end; padding-bottom: 8px; }
-.screen_wrap[data-browser="tablet-chrome"] .band_url::before, .screen_wrap[data-browser="android-tablet-chrome"] .band_url::before, .screen_wrap[data-browser="android-tablet-samsung"] .band_url::before {
-  content: "";
-  position: absolute;
-  left: 12px;
-  top: 8px;
-  width: 140px;
-  height: 26px;
-  background: #fff;
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 0 0 1px #d5dae2;
-}
+/* 태블릿 Chrome(tablet-chrome) 탭 줄 + 툴바(2026-11-10) — 사용자 Galaxy Z Fold8 펼침 실기기 Chrome 캡처(축소본 448 px = 1088 CSS, 1 px ≈ 2.4 CSS) 의 구조 · 밀도.
+ * 주소창 띠 높이(urlBar 88) · iframe 은 그대로, 띠 안만 재배치: 위 41 = 탭 줄, 아래 = 툴바(주소 필드 위 46 · 높이 38 · 아래 여백 3 + 테두리 1 → 화면 89~127, 캡처 약 90~127.5).
+ * 탭 줄: 오른쪽 정렬 [비활성 탭 …(왼쪽 끝은 잘림)] [활성 탭 ×] [+] — 탭 폭 약 200 · 활성 탭 203(캡처 838~1041) · 탭 위 9 · 높이 32(캡처 화면 52~84) · + 중심 오른쪽에서 26.
+ * 툴바: [뒤로][앞으로] 주소 필드(사이트 정보 · 가운데 도메인 · 새로고침) [빈 칸][홈][빈 칸][탭][메뉴] — 버튼 슬롯 40 · 간격 8(캡처 피치 약 48). 캡처의 확장 · 북마크 아이콘은 프로젝트에 없어 그리지 않고
+ * 자리만 비워(.is_reserved) 주소 필드 오른쪽 끝이 캡처 위치(약 826) 에 온다. 탭 줄 배경 = 상태바 색(캡처에서 둘 사이 경계 없음).
+ * 모두 photo-observed visual approximation(±2~3). android-tablet-chrome · Samsung Internet 태블릿은 이 구조를 쓰지 않는다 */
+.tchrome_tabs, .tchrome_btn { display: none; }
+.screen_wrap[data-browser="tablet-chrome"] { --band-bg: #f5f6f8; }
+.screen_wrap[data-browser="tablet-chrome"] .band_url { align-items: flex-start; gap: 8px; padding: 46px 15px 3px; background: var(--band-bg); }
+.screen_wrap[data-browser="tablet-chrome"] .browser_address { height: 38px; max-height: 38px; margin: 0 8px; padding: 0 12px; background: #fff; }
+.screen_wrap[data-browser="tablet-chrome"] .browser_url { text-align: center; font-size: 13px; }
+.screen_wrap[data-browser="tablet-chrome"] .tchrome_btn { display: flex; flex: 0 0 40px; align-items: center; justify-content: center; height: 38px; color: #5f6876; }
+.tchrome_btn.is_reserved { visibility: hidden; }
+.tchrome_btn svg { width: 20px; height: 20px; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tchrome_tabcount { width: 16px; height: 16px; border: 1.8px solid currentColor; border-radius: 4px; box-sizing: border-box; }
+.screen_wrap[data-browser="tablet-chrome"] .tchrome_tabs { position: absolute; inset: 0 0 auto; height: 41px; background: #f7f8fa; display: flex; justify-content: flex-end; align-items: flex-end; padding-right: 10px; overflow: hidden; }
+.tchrome_tab { position: relative; flex: 0 0 200px; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; box-sizing: border-box; }
+.tchrome_tab:not(.is_active)::after { content: ""; position: absolute; right: 0; top: 9px; bottom: 9px; width: 1px; background: #e2e5e9; }   /* 탭 사이 옅은 구분 */
+.tchrome_tab i { flex: 0 0 auto; width: 13px; height: 13px; border-radius: 3px; background: #d5d9df; }
+.tchrome_tab b { width: 55%; height: 6px; border-radius: 3px; background: #e1e4e8; }
+.tchrome_tab.is_active { flex-basis: 203px; margin-right: 5px; padding-right: 8px; background: #fff; border-radius: 8px 8px 0 0; color: #303846; font-size: 12px; }
+.tchrome_fav { flex: 0 0 auto; width: 13px; height: 13px; border: 1.5px solid #8a94a3; border-radius: 50%; box-sizing: border-box; }
+.tchrome_title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tchrome_close, .tchrome_new { display: flex; flex: 0 0 auto; align-items: center; justify-content: center; color: #5f6876; }
+.tchrome_close svg { width: 14px; height: 14px; fill: none; stroke-width: 2; stroke-linecap: round; }
+.tchrome_new { align-self: center; width: 32px; height: 32px; margin-top: 9px; }
+.tchrome_new svg { width: 18px; height: 18px; fill: none; stroke-width: 2; stroke-linecap: round; }
 .screen_wrap[data-browser^="ios"], .screen_wrap[data-browser="ipad-safari"], .screen_wrap[data-browser="ipados-safari"] { --band-bg: #f5f5f7; }
 .screen_wrap[data-browser^="ios"] .ui_band, .screen_wrap[data-browser="ipad-safari"] .ui_band, .screen_wrap[data-browser="ipados-safari"] .ui_band { background: var(--band-bg); }
 .band_toolbar {
@@ -1553,6 +1569,67 @@ svg {
 .side_circle[hidden], .side_capsule > span[hidden] { display: none; }
 .side_controls svg { width: 22px; height: 22px; }
 .side_controls .icon_dot { fill: currentColor; stroke: none; }
+.side_group[data-group="top"] .side_circle:not([hidden]) ~ .side_circle:not([hidden]) { margin-top: var(--side-gap, 13px); }
+
+/* iPhone Duo Safari 주소 필드 · 상단 가로 Safari(2026-11-09, 실기기 사진 기준 1차 — 시각 레이어, iframe 크기와 무관).
+ * 외부: 측면 열 반대쪽부터 열 앞까지의 하단 주소 필드. 내부: 상단 툴바 줄([뒤로][북마크] · 주소 필드 · [+][탭]) + 탭 줄, 축약 = 작은 도메인 pill.
+ * 마감은 측면 열과 같은 반투명 유리(approximation) */
+.duo_url, .duo_top { position: absolute; z-index: 5; pointer-events: none; color: #1c2430; }
+.duo_url[hidden], .duo_top[hidden], .duo_tabs[hidden] { display: none; }
+.duo_field, .duo_circle, .duo_top_capsule, .duo_pill {
+  background: rgba(255, 255, 255, .74);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .2), inset 0 0 0 1px rgba(255, 255, 255, .7);
+  backdrop-filter: blur(12px) saturate(1.2);
+}
+.duo_field { display: flex; align-items: center; gap: 8px; box-sizing: border-box; padding: 0 12px; border-radius: 99px; font: 500 15px/1 -apple-system, "SF Pro Text", Roboto, Arial, sans-serif; }
+.duo_field_text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.duo_field_menu, .duo_field_reload { display: flex; flex: 0 0 auto; }
+.duo_url svg, .duo_top svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.duo_url { bottom: var(--side-bottom, 21px); height: var(--duo-field-h, 44px); }
+.screen_wrap[data-side-edge="right"] .duo_url { left: var(--duo-field-inset, 13px); right: calc(var(--side-axis, 48px) + var(--side-capsule, 44px) / 2 + var(--side-gap, 13px)); }
+.screen_wrap[data-side-edge="left"] .duo_url { right: var(--duo-field-inset, 13px); left: calc(var(--side-axis, 48px) + var(--side-capsule, 44px) / 2 + var(--side-gap, 13px)); }
+.duo_top { inset: 0 0 auto; height: var(--duo-top-h, 0px); }   /* 높이는 app.js getDuoTopChrome() 한 곳 — iframe 시작 위치와 같은 값 */
+/* 툴바 한 줄(2026-11-10 실기기 사진 보정): 왼쪽 그룹 | 주소 필드(화면 가운데, 폭 --duo-url-w) | 오른쪽 그룹을 grid 한 줄로 놓는다.
+ * 좌우 열이 남은 폭을 나눠 가져 주소 필드는 항상 화면 가운데, 왼쪽 원형은 왼쪽 끝, 캡슐은 상태 영역(시간 · 링 — OS 레이어라 이 줄 밖) 바로 앞에 붙는다 */
+.duo_top_bar { position: absolute; left: 0; right: 0; top: calc(var(--duo-top-center, 45px) - var(--duo-circle, 44px) / 2); height: var(--duo-circle, 44px); display: grid; grid-template-columns: minmax(0, 1fr) var(--duo-url-w, 38%) minmax(0, 1fr); align-items: center; color: #30353d; }
+.duo_top_left { display: flex; gap: var(--duo-circle-gap, 8px); padding-left: var(--duo-inset, 13px); }
+.duo_top_right { display: flex; justify-content: flex-end; padding-right: calc(var(--duo-status-right, 13px) + var(--cluster-ring-size, 38px) + var(--duo-status-gap, 8px) + var(--duo-time-w, 30px) + var(--duo-caps-gap, 13px)); }
+.duo_circle { display: flex; flex: 0 0 auto; align-items: center; justify-content: center; width: var(--duo-circle, 44px); height: var(--duo-circle, 44px); border-radius: 50%; }
+/* 주소 필드 안쪽도 [1fr | 도메인 | 1fr] grid — 메뉴 · 새로고침 아이콘 폭이 달라도 도메인 글자가 필드(= 화면) 가운데에 온다(긴 주소는 가운데 열이 줄어 … 처리, 양쪽 열 최소 폭 = 가장 큰 아이콘 26 으로 같게) */
+.duo_top_field { display: grid; grid-template-columns: minmax(26px, 1fr) minmax(0, max-content) minmax(26px, 1fr); align-items: center; height: var(--duo-row, 44px); column-gap: 10px; padding: 0 14.5px; font: 400 17px/1 -apple-system, "SF Pro Text", Roboto, Arial, sans-serif; color: #3b4048; }
+.duo_top_field .duo_field_menu { justify-self: start; }
+.duo_top_field .duo_field_reload { justify-self: end; }
+.duo_top_capsule { display: flex; height: var(--duo-row, 44px); border-radius: 99px; }
+.duo_top_capsule > span { display: flex; align-items: center; justify-content: center; width: var(--duo-slot, 44px); }
+/* 사진의 유리 버튼은 배경과 거의 같은 밝기 + 얇은 윤곽 + 위쪽 하이라이트(흰 채움 · 그림자 없음). pill 은 이전 마감 그대로 */
+.duo_top .duo_circle, .duo_top .duo_top_field, .duo_top .duo_top_capsule {
+  background: rgba(255, 255, 255, .24);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .1), inset 0 1px 0 rgba(255, 255, 255, .6);
+  backdrop-filter: blur(10px) saturate(1.1);
+}
+/* 아이콘 잉크 크기 = 사진(뒤로 8.5 × 17 · 북마크 21 × 19 · 메뉴 15 × 11 · 새로고침 13 × 15 · + 15 · 탭 20), 획은 화면에서 약 2px */
+.duo_top .duo_ic_back svg { width: 24px; height: 24px; stroke-width: 2; }
+.duo_top .duo_ic_book svg { width: 30px; height: 30px; stroke-width: 1.6; }
+.duo_top_field .duo_field_menu svg { width: 26px; height: 26px; stroke-width: 1.85; }
+.duo_top_field .duo_field_reload svg { width: 22px; height: 22px; stroke-width: 2; }
+.duo_top .duo_ic_plus svg { width: 26px; height: 26px; stroke-width: 1.85; }
+.duo_top .duo_ic_tabs svg { width: 31px; height: 31px; stroke-width: 1.5; }
+/* 탭 줄: 툴바 줄 바로 아래(위치 · 높이는 app.js), 배경과 낮은 대비 — 활성 탭은 반투명 흰색, 닫기 = 작은 어두운 원 안 흰 × (사진) */
+.duo_tabs { position: absolute; left: var(--duo-tab-inset, 36px); right: var(--duo-tab-inset, 36px); top: var(--duo-tab-top, 73px); height: var(--duo-tab-h, 36px); display: flex; padding: 2px; box-sizing: border-box; background: rgba(15, 23, 42, .06); border-radius: 99px; }
+.duo_tab { position: relative; flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 99px; }
+.duo_tab.is_active { background: rgba(255, 255, 255, .62); box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .06); }
+.duo_tab i { width: 8px; height: 8px; border-radius: 50%; background: #aab1bb; }
+.duo_tab b { width: 30%; height: 7px; border-radius: 4px; background: #d3d8df; }
+.duo_tab_close { position: absolute; left: 10px; top: 50%; display: flex; align-items: center; justify-content: center; width: 13px; height: 13px; border-radius: 50%; background: rgba(40, 44, 52, .78); color: #fff; transform: translateY(-50%); }
+.duo_tab_close svg { width: 9px; height: 9px; stroke-width: 3.2; }
+.duo_pill { display: none; position: absolute; left: 50%; top: calc(var(--duo-top-center, 45px) - var(--duo-pill-h, 26px) / 2); height: var(--duo-pill-h, 26px); align-items: center; padding: 0 14px; border-radius: 99px; transform: translateX(-50%); font: 500 13px/1 -apple-system, "SF Pro Text", Roboto, Arial, sans-serif; white-space: nowrap; }
+.screen_wrap[data-duo-top="pill"] .duo_top > :not(.duo_pill) { display: none; }
+.screen_wrap[data-duo-top="pill"] .duo_pill { display: flex; }
+/* 내부 상단 Safari: OS 코너 클러스터(시간 · 링) 는 세로 열 대신 툴바 줄 오른쪽 끝에 가로로 놓는다(사진). 요소 · 크기는 그대로, 배치만 */
+.screen_wrap[data-ui-layout="top"] .status_cluster { top: calc(var(--duo-top-center, 45px) - var(--cluster-ring-size, 40px) / 2); left: auto; right: var(--duo-status-right, 13px); display: flex; align-items: center; gap: var(--duo-status-gap, 8px); width: auto; height: var(--cluster-ring-size, 40px); }
+.screen_wrap[data-ui-layout="top"] .status_cluster[hidden] { display: none; }
+.screen_wrap[data-ui-layout="top"] .cluster_time, .screen_wrap[data-ui-layout="top"] .cluster_ring { position: static; transform: none; }
+.screen_wrap[data-ui-layout="top"] .cluster_time { width: var(--duo-time-w, 30px); font-size: var(--duo-time-size, 15px); text-align: center; }   /* 사진 시간 숫자 높이 약 10 = 14px · 상자 폭은 캡슐 위치 계산(.duo_top_right) 과 같은 값 */
 
 /* ---------- 8. 컷아웃·힌지·safe-area 가이드 ----------
  * 컷아웃 위치·크기는 frameProfiles.cutout 을 바탕으로 app.js 가 화면 좌표 px 로 계산한다.
@@ -2188,7 +2265,9 @@ svg {
 .device_shell[data-capture="site"] .kb_sim,
 .device_shell[data-capture="site"] .status_cluster,
 .device_shell[data-capture="site"] .dynamic_island,
-.device_shell[data-capture="site"] .side_controls { visibility: hidden; }
+.device_shell[data-capture="site"] .side_controls,
+.device_shell[data-capture="site"] .duo_url,
+.device_shell[data-capture="site"] .duo_top { visibility: hidden; }
 .device_shell[data-capture="site"] .screen_wrap {
   border-radius: 0;
   clip-path: none !important;

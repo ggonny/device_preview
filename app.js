@@ -190,8 +190,8 @@
     'duo-inner':{family:'duo',top:18,right:18,bottom:18,left:18,ring:4,radius:70.5,screenRadius:51,platform:'ios',obstruction:'언더 디스플레이 카메라·접힘선',
       hingeBody:{type:'seam',size:3},
       controls:{keys:[{type:'volume',edge:'top',start:673.5,length:61.5},{type:'volume',edge:'top',start:749,length:61.5},{type:'power',edge:'right',start:189,length:105.5}]},   /* 위 변 볼륨 2 · 오른쪽 Touch ID 측면 버튼 — Siri-AI-app 원본 photo-measured(돌출 3.1~3.2 = 기본 3) */
-      cutout:{type:'none'},safeArea:{top:0,right:89,bottom:0,left:0},safeAreaLandscape:{top:0,right:0,bottom:0,left:0},homeIndicator:false,
-      source:{body:'official: 펼침 164.6×117.8mm (Apple iPhone Duo specs) · 내부 2670×1878 official',bezel:'photo-measured(2026-10-08): Apple 뉴스룸 "Apple-iPhone-Duo-Siri-AI-app-260909" 원본(3840×2560, 펼친 내부 화면 정면 · 흰 배경 — 바디 3037.99 × 2174.3px, 비 1.3972 = 공식 164.6/117.8 의 1.3973 · 화면 2913.6 × 2049.3px = 890 × 626 CSS → 3.2737px/CSS) — 바디 외곽 → 활성 화면 좌 19.02 · 우 18.98 · 위 18.94 · 아래 19.26 → 셸 border 1px 포함 표시 19 가 되도록 frame 18 · 셸 928 × 664 = 이미지 바디 928.0 × 664.2 CSS(공식 mm 환산 930.3 × 665.8 과 0.3% 이내) · 이전: 공식 mm derived 20(셸 border 미반영 → 표시 21)',radius:'photo-measured(2026-10-08, 같은 이미지, 4코너): 바디 외곽을 직선 변에 접하는 원으로 맞추면 70.36 · 70.33 · 70.75 · 70.75(70.5 에서 rms 0.37 CSS; 72 는 0.60) → 70.5(이전 72) · glassRadius 미지정 — 링 안쪽 분리선이 두 줄로 겹쳐 원 맞춤이 불안정해 fallback 바디 − 링 = 66.5 유지',screenRadius:'photo-measured(2026-10-08, 같은 이미지): 화면 코너 접선 맞춤 왼쪽 위 51.23 · 오른쪽 위 51.29 · 오른쪽 아래 51.30(왼쪽 아래는 화면 내용이 어두워 제외) → 51(이전 52)',hingeBody:'photo-measured(2026-10-08, 같은 이미지): 위·아래 가운데(화면 중앙 x 와 0.2px 이내) 에서 바디 외곽선이 V 자로 갈라지는 이음새 — 바깥 폭 약 6 CSS(18~23px) 에서 깊이 약 4 CSS(링 두께와 같음) 에서 닫힘 → 평균 폭 약 3 이라 seam 3 유지(V 형상은 구현하지 않음) · 위 베젤 안의 힌지 커버 블록(폭 약 62 CSS) 은 그리지 않음',ring:'photo-measured(같은 이미지): 금속 테(바디 외곽 → 테 안쪽 어두운 분리선) 좌 12.15 · 우 12.3 · 위 11.6 · 아래 12.7px = 약 3.7 CSS → 4 유지(이전 근거: 0.5mm 어림값)',crease:'approximation: 공식 이미지에서는 접힘선이 검출되지 않음(나노 텍스처) — 위치 표시용 2px 희미한 선',cutout:'official: 언더 디스플레이 카메라 (Apple)',controls:'photo-measured(2026-10-08, 같은 이미지): 위 변 볼륨 2 — 바디 왼쪽 외곽에서 673.4 · 749.2, 길이 61.7 · 61.4, 돌출 3.2 → start 673.5 / 749 · length 61.5 / 오른쪽 Touch ID 측면 버튼 — 바디 위에서 189.0 · 길이 105.7 · 돌출 3.1 → start 189 · length 105.5(돌출은 기본 3) · 이전: n/a(family 기본 키)',statusBar:'official(HIG): 펼침(가로형) 은 카메라 쪽(우측) 세로 축에 상태 클러스터·컨트롤, 세로로 돌리면 표준 가로 바 → statusBarProfiles.duo 참조 · safe-area 우측 89 = 측면 열(축 45 + 22 + 22) derived · 홈 인디케이터는 공식 이미지에 없음(approximation)'}},
+      cutout:{type:'none'},safeArea:{top:0,right:0,bottom:0,left:0},safeAreaLandscape:{top:0,right:0,bottom:0,left:0},homeIndicator:false,
+      source:{body:'official: 펼침 164.6×117.8mm (Apple iPhone Duo specs) · 내부 2670×1878 official',bezel:'photo-measured(2026-10-08): Apple 뉴스룸 "Apple-iPhone-Duo-Siri-AI-app-260909" 원본(3840×2560, 펼친 내부 화면 정면 · 흰 배경 — 바디 3037.99 × 2174.3px, 비 1.3972 = 공식 164.6/117.8 의 1.3973 · 화면 2913.6 × 2049.3px = 890 × 626 CSS → 3.2737px/CSS) — 바디 외곽 → 활성 화면 좌 19.02 · 우 18.98 · 위 18.94 · 아래 19.26 → 셸 border 1px 포함 표시 19 가 되도록 frame 18 · 셸 928 × 664 = 이미지 바디 928.0 × 664.2 CSS(공식 mm 환산 930.3 × 665.8 과 0.3% 이내) · 이전: 공식 mm derived 20(셸 border 미반영 → 표시 21)',radius:'photo-measured(2026-10-08, 같은 이미지, 4코너): 바디 외곽을 직선 변에 접하는 원으로 맞추면 70.36 · 70.33 · 70.75 · 70.75(70.5 에서 rms 0.37 CSS; 72 는 0.60) → 70.5(이전 72) · glassRadius 미지정 — 링 안쪽 분리선이 두 줄로 겹쳐 원 맞춤이 불안정해 fallback 바디 − 링 = 66.5 유지',screenRadius:'photo-measured(2026-10-08, 같은 이미지): 화면 코너 접선 맞춤 왼쪽 위 51.23 · 오른쪽 위 51.29 · 오른쪽 아래 51.30(왼쪽 아래는 화면 내용이 어두워 제외) → 51(이전 52)',hingeBody:'photo-measured(2026-10-08, 같은 이미지): 위·아래 가운데(화면 중앙 x 와 0.2px 이내) 에서 바디 외곽선이 V 자로 갈라지는 이음새 — 바깥 폭 약 6 CSS(18~23px) 에서 깊이 약 4 CSS(링 두께와 같음) 에서 닫힘 → 평균 폭 약 3 이라 seam 3 유지(V 형상은 구현하지 않음) · 위 베젤 안의 힌지 커버 블록(폭 약 62 CSS) 은 그리지 않음',ring:'photo-measured(같은 이미지): 금속 테(바디 외곽 → 테 안쪽 어두운 분리선) 좌 12.15 · 우 12.3 · 위 11.6 · 아래 12.7px = 약 3.7 CSS → 4 유지(이전 근거: 0.5mm 어림값)',crease:'approximation: 공식 이미지에서는 접힘선이 검출되지 않음(나노 텍스처) — 위치 표시용 2px 희미한 선',cutout:'official: 언더 디스플레이 카메라 (Apple)',controls:'photo-measured(2026-10-08, 같은 이미지): 위 변 볼륨 2 — 바디 왼쪽 외곽에서 673.4 · 749.2, 길이 61.7 · 61.4, 돌출 3.2 → start 673.5 / 749 · length 61.5 / 오른쪽 Touch ID 측면 버튼 — 바디 위에서 189.0 · 길이 105.7 · 돌출 3.1 → start 189 · length 105.5(돌출은 기본 3) · 이전: n/a(family 기본 키)',statusBar:'official(HIG): 펼침(가로형) 은 카메라 쪽(우측) 세로 축에 상태 클러스터·컨트롤, 세로로 돌리면 표준 가로 바 → statusBarProfiles.duo 참조 · safe-area 우측 0(2026-11-09 — 이전 89 는 측면 열(축 45 + 22 + 22) 용 derived 값이었으나 실기기 사진에서 펼친 내부는 측면 열 없이 상단 가로 Safari 라 제거) · 홈 인디케이터는 공식 이미지에 없음(approximation)'}},
 
     /* iPad 9.7" 홈 버튼형 (768×1024): iPad 6세대(2018) 바디 240.0×169.5mm(Apple), 활성영역 147.8×197.1mm(9.7" 4:3) → 5.20px/mm */
     'ipad-home':{family:'ipad-classic',top:112,right:56,bottom:112,left:56,ring:8,radius:57,screenRadius:0,platform:'any',obstruction:'화면 밖 홈 버튼·카메라',
@@ -408,13 +408,25 @@
      * layout:'side' 상태에서는 가로 밴드(상태바·URL·툴바·홈) 를 쓰지 않고 .side_controls 를 콘텐츠 위에 띄운다(뉴스룸 Netflix·Slack 이미지처럼 콘텐츠가 전체 화면).
      *   → 사이트 뷰포트는 viewport-fit 설정으로 고른다(2026-10-16): auto(기본) = 측면 UI 쪽 safe-area(프레임 safeArea, 외부 92 · 내부 89 approximation) 를 뺀 폭 — 안전 영역 시뮬레이션,
      *     cover = 화면 전체(측면 UI 가 콘텐츠 위에 겹침, safe-area 미대응 사이트의 가림 테스트). 실제 Duo Safari 의 웹 뷰포트 인셋은 출시 후 실기기 확인 필요. 축소/겹침 모드 구분은 없다.
-     *   주소창 표시 스위치 = 상단 그룹(뒤로 원형 + 캡슐 3: 정보·공유·검색), 툴바 스위치 = 하단 캡슐(4). 주소(URL) 필드는 공식 자료에서 확인되지 않아 그리지 않는다.
+     *   2026-11-09 실기기 사진(사용자 촬영 3장, Apple Store 진열 기기) 기준 1차 구조 수정 — 사진에서 보이는 컨트롤만 그린다:
+     *     접힘 · 외부(side) = 오른쪽 세로 열 [뒤로 원형][북마크 원형] … 아래 캡슐 [+][탭] + 하단 별도 주소 필드(메뉴 · 도메인 · 새로고침, urlField).
+     *       주소창 스위치 = 뒤로 · 북마크 + 하단 주소 필드, 툴바 스위치 = 아래 캡슐. 이전의 정보 · 공유 · 검색 / 나침반 · 작성 · 선택 · 창 아이콘은 사진과 맞지 않아 뺐다.
+     *     펼침 · 내부(top, state.uiLayout) = 측면 열 없음, 상단 가로 Safari(top): [뒤로][북마크] · 주소 필드 · [+][탭] · 코너 클러스터(가로) + 탭 줄(시각용 placeholder).
+     *       주소창 스위치 OFF = 사진의 스크롤 축약 상태(상단 가운데 작은 도메인 pill, 상태 클러스터 없음), 툴바 스위치 = 탭 줄.
+     *     두 레이어 모두 콘텐츠 위에 그리는 시각 레이어이고 iframe 크기는 이전 값 그대로(실제 Duo Safari 의 innerWidth / innerHeight 미측정 — 사진으로는 CSS viewport 를 정할 수 없음).
+     *     크기 값(urlField · top) 은 기존 측면 열 값(원형 44 · 캡슐 44 · 간격 13 · 하단 21 · 클러스터 축) 을 재사용하고, 그 밖의 값(주소 필드 폭 비율 · 탭 줄 · pill) 은 approximation.
      * 측면 열 값(photo-measured, 뉴스룸 multitasking 이미지의 Safari 창): 원형 Ø44 · 캡슐 폭 44 · 항목 간격 47 · 원형↔캡슐 13 · 하단 여백 21. 상단 시작 = 클러스터 아래(gap 22: Netflix 이미지 실측) 는 Safari 전체 화면 이미지가 없어 approximation.
      * exclusive: Duo 기기의 기본 브라우저일 때만 목록에 노출. standardFallback: 표준 가로 바 상태에서 쓰는 프로필(밴드만 차용, 상태바 밴드는 0). */
     'duo-safari':{label:'Safari (iPhone Duo)',platform:'ios',urlBarPosition:'bottom',layout:'side',exclusive:true,standardFallback:'ios-safari',
       portrait:{statusBar:0,urlBar:0,toolbar:0,homeIndicator:0},
       landscape:{statusBar:0,urlBar:0,toolbar:0,homeIndicator:0},
-      side:{circle:44,capsule:44,pitch:47,gap:13,clusterGap:22,bottomMargin:21,top:['back'],topCapsule:['info','share','search'],bottomCapsule:['compass','compose','select','window']}},
+      side:{circle:44,capsule:44,pitch:47,gap:13,clusterGap:22,bottomMargin:21,top:['back','bookmark'],topCapsule:[],bottomCapsule:['plus','tabs'],urlField:{height:44,inset:13}},
+      /* 내부 상단 Safari(2026-11-10 디자인 보정 — 사용자 실기기 사진(Apple Store 진열 기기, 펼침 · 손에 든 사선 사진) 을 화면 가장자리 직선으로 기울기 보정해 890 CSS 폭으로 환산.
+       * 모두 photo-observed visual approximation(원근 · 기울기 · JPEG 로 ±1~2 CSS): 줄 중심 46 · 원형 Ø46 · 원형 간격 11 · 왼쪽 여백 11 · 주소 필드 폭 337(.38, 화면 가운데) · 높이 44 ·
+       * 캡슐 슬롯 44 × 2 · 캡슐 ↔ 시간 25 · 링 오른쪽 여백 28 · 시간 ↔ 링 15 · 시간 상자 30 / 14px · 원형 아래 ↔ 탭 줄 11(탭 줄 위 80) · 높이 33 · 좌우 47 · 탭 줄 아래 ↔ 사이트 10(사이트 내비 띠 시작 약 123).
+       * 가로값은 사진 좌표를 환산할 때만 −4.5 보정(측정 단계 — 보정 좌표의 화면 가장자리 추정 오차, 코드에는 오프셋 없음). 주소 필드 · 탭 줄 · 도메인은 CSS 구조(대칭 grid) 로 화면 50% 에 놓인다. 사진의 시간 위 위치 화살표는 상태(위치 사용 중) 표시라 그리지 않는다 */
+      top:{center:46,row:44,circle:46,circleGap:11,inset:11,urlWidth:.38,slot:44,capsuleGap:25,statusRight:28,statusGap:15,timeWidth:30,timeSize:14,
+        tabHeight:33,tabGap:11,tabInset:47,bottomGap:10,pillHeight:26}},
     /* 데스크톱 Safari(macOS, 2026-10-15) — 모바일 Safari 와 별개 프로필. 창을 화면 크기로(메뉴 막대 아래) 연 상태 · 탭 1개(탭 막대 숨김) · Dock 자동 숨김을 가정한다.
      * 상단 툴바 52 는 approximation(Apple 공식 수치 · 신뢰할 실측 없음 — 실제 Mac 에서 safari-measure.html 로 innerHeight 를 재서 확인할 것). 툴바 · 홈 밴드 0.
      * MacBook 은 회전하지 않으므로 화면 형상(가로) 기준 landscape 값만 쓰이며 주소창은 항상 상단 */
@@ -500,7 +512,7 @@
     'iphone-duo':{name:'iPhone Duo',group:'fold',subtitle:'북 타입 폴더블',note:'단일 7.6" 폴딩 내부 화면 + 접힘선 · 외부 5.4" · 힌지 쪽 각진 코너',source:'official: 외부 5.4" 1398 × 2034 · 내부 7.6" 2670 × 1878, DPR 3 · 바디 펼침 164.6 × 117.8 / 접힘 84.1 × 117.8mm · 표준 사각형 대각선 5.36" / 7.58" (Apple iPhone Duo specs)',
       browser:'ios-safari',dpr:3,states:[
       {id:'outer',label:'접힘 · 외부',width:466,height:678,diagonal:5.36,physicalWidth:1398,physicalHeight:2034,frame:'duo-outer',browser:'duo-safari',uiLayout:{natural:'side',rotated:'side'},note:'외부 화면 466 × 678 CSS 화면 · 우상단 카메라 · 코너 상태 클러스터·측면 컨트롤(iOS 27)'},
-      {id:'inner',label:'펼침 · 내부',width:890,height:626,diagonal:7.58,physicalWidth:2670,physicalHeight:1878,orientation:'portrait',browser:'duo-safari',uiLayout:{natural:'side',rotated:'bars'},frame:'duo-inner',hinge:'vertical',hingeSize:2,note:'내부 화면 890 × 626 CSS 화면 · 단일 폴딩 화면 · 코너 상태 클러스터·측면 컨트롤, 세로로 돌리면 표준 가로 바(iOS 27)'}
+      {id:'inner',label:'펼침 · 내부',width:890,height:626,diagonal:7.58,physicalWidth:2670,physicalHeight:1878,orientation:'portrait',browser:'duo-safari',uiLayout:{natural:'top',rotated:'bars'},frame:'duo-inner',hinge:'vertical',hingeSize:2,note:'내부 화면 890 × 626 CSS 화면 · 단일 폴딩 화면 · 상단 가로 Safari(측면 열 없음 — 2026-11-09 실기기 사진), 세로로 돌리면 표준 가로 바(iOS 27)'}
     ]},
     /* physicalWidth/Height 는 세로 기준 정규화 값(derived-orientation). Apple 공식 native 표기는 2360×1640 → frameProfiles['ipad-air-11'].source 참조. dpr 2 는 M2 동일 패널 레퍼런스 준용(derived, M4 실기기 미검증) */
     'ipad-air-11':{name:'iPad Air 11',group:'tablet',subtitle:'M4 (2026) · 홈 인디케이터형',note:'iPad Air 11 (M4) 820 × 1180 CSS 화면 · 긴 변 카메라 · 상태바 30 · 홈 인디케이터 20',source:'official: 2360 × 1640 px 264ppi · 대각선 10.86"(27.59cm) · 바디 247.6 × 178.5 × 6.1mm (Apple tech specs 126471) · CSS 820 × 1180 @2 는 동일 패널 이전 모델(M2) 레퍼런스 준용(derived, M4 실기기 미검증)',
@@ -611,9 +623,10 @@
       mount:container,shell,
       screenWrap:shell.querySelector('.screen_wrap'),siteView:shell.querySelector('.site_view'),siteFrame:shell.querySelector('iframe'),
       bandStatus:shell.querySelector('.band_status'),bandUrl:shell.querySelector('.band_url'),bandToolbar:shell.querySelector('.band_toolbar'),bandHome:shell.querySelector('.band_home'),
-      browserUrl:shell.querySelector('.browser_url'),hingeLine:shell.querySelector('.hinge_line'),
+      browserUrl:shell.querySelector('.browser_url'),tchromeTitle:shell.querySelector('.tchrome_title'),hingeLine:shell.querySelector('.hinge_line'),
       statusCluster:shell.querySelector('.status_cluster'),clusterTime:shell.querySelector('.cluster_time'),clusterRing:shell.querySelector('.cluster_ring'),
-      dynamicIsland:shell.querySelector('.dynamic_island'),sideControls:shell.querySelector('.side_controls'),occlusionLayer:shell.querySelector('.occlusion_layer'),
+      dynamicIsland:shell.querySelector('.dynamic_island'),sideControls:shell.querySelector('.side_controls'),
+      duoUrl:shell.querySelector('.duo_url'),duoTop:shell.querySelector('.duo_top'),duoTabs:shell.querySelector('.duo_tabs'),duoUrlTexts:Array.from(shell.querySelectorAll('.duo_field_text')),occlusionLayer:shell.querySelector('.occlusion_layer'),
       kbSim:shell.querySelector('.kb_sim'),kbValue:shell.querySelector('.kb_value'),kbHandle:shell.querySelector('.kb_handle'),
       statusTime:shell.querySelector('.status_time'),batteryFill:shell.querySelector('.battery_fill'),statusPercent:shell.querySelector('.status_percent'),statusPill:shell.querySelector('.status_pill'),
       keyVolume:shell.querySelector('.key_volume'),keyVolumeB:shell.querySelector('.key_volume_b'),keyPower:shell.querySelector('.key_power'),keyAction:shell.querySelector('.key_action'),
@@ -812,7 +825,8 @@
     return profile&&urlBarPositions.includes(profile.urlBarPosition)?profile.urlBarPosition:'top';
   }
 
-  /* UI 레이아웃: 'side'(카메라 쪽 세로 축 — iPhone Duo) | 'bars'(표준 가로 밴드). 프로필이 side 를 지원할 때 state.uiLayout 이 자세별로 정한다 */
+  /* UI 레이아웃: 'side'(카메라 쪽 세로 축 — iPhone Duo 외부) | 'top'(iPhone Duo 내부 상단 가로 Safari — 시각 레이어, viewport 는 side 와 같은 계산) | 'bars'(표준 가로 밴드).
+   * 프로필이 side 를 지원할 때 state.uiLayout 이 자세별로 정한다 */
   function getUiLayout(view,profile){
     if(!profile||profile.layout!=='side')return 'bars';
     const state=getState(view);
@@ -861,6 +875,10 @@
       if(barsOrientation==='portrait'&&urlBarPositions.includes(chrome.urlBarPosition))measuredPosition=chrome.urlBarPosition;
     }
     const side=layout==='side';
+    /* Duo 내부 상단 가로 Safari(2026-11-09): 측면 열 없음. 사이트는 상단 Safari 시각 UI(getDuoTopChrome — 그려지는 높이와 같은 값) 아래에서 시작한다(축소 모드).
+     * 실측 innerHeight 가 아닌 "시각 UI 를 뺀 preview viewport approximation". 좌우 safe-area 는 0(측면 열용 89 제거) */
+    const duoTop=layout==='top';
+    const duoChrome=duoTop?getDuoTopChrome(view,profile):null;
     const safe=getSafeArea(view);
     /* 상태바 밴드 높이: 브라우저 프로필 값 → 없으면 프레임 statusBarHeight(세로)/statusBarHeightLandscape(가로) → 없으면 safe-area top (컷아웃 인셋과 상태바 창 높이가 같다고 보는 기본값) */
     const frameStatus=barsOrientation==='landscape'?view.frameProfile.statusBarHeightLandscape:view.frameProfile.statusBarHeight;
@@ -874,12 +892,12 @@
       status,home,
       url:showAddressBar?metrics.urlBar:0,
       urlPosition:measuredPosition||resolveUrlBarPosition(view,profileId,barsOrientation),
-      urlPositionLocked:barsOrientation==='landscape'||side||Boolean(measured),
-      urlPositionLockReason:side?'side':(barsOrientation==='landscape'?'landscape':(measured?'safari-layout':'')),
+      urlPositionLocked:barsOrientation==='landscape'||side||duoTop||Boolean(measured),
+      urlPositionLockReason:side?'side':(duoTop?'duo-top':(barsOrientation==='landscape'?'landscape':(measured?'safari-layout':''))),
       toolbar:showBottomBar?metrics.toolbar:0,
       left:sideInset?safe.left:0,
       right:sideInset?safe.right:0,
-      side,sideEdge:side?getControlEdge(view):null,styleId,measured
+      side,duoTop,chromeTop:duoChrome?duoChrome.height:0,sideEdge:side?getControlEdge(view):null,styleId,measured
     };
   }
 
@@ -911,11 +929,12 @@
     }
     const urlTop=bands.urlPosition==='top'?bands.url:0;
     const urlBottom=bands.urlPosition==='bottom'?bands.url:0;
-    const top=bands.status+(overlay?0:urlTop);
+    const chromeTop=bands.chromeTop||0;   /* Duo 내부 상단 Safari 시각 UI 높이 — 축소 모드에서만 뺀다(UI 겹침 모드는 다른 브라우저 UI 처럼 콘텐츠 위에 겹침) */
+    const top=bands.status+(overlay?0:urlTop+chromeTop);
     const bottom=bands.home+(overlay?0:urlBottom+bands.toolbar);
     const width=Math.max(80,view.currentWidth-bands.left-bands.right);
     const height=Math.max(80,view.currentHeight-top-bottom);
-    const visibleHeight=Math.max(80,view.currentHeight-bands.status-bands.url-bands.toolbar-bands.home);
+    const visibleHeight=Math.max(80,view.currentHeight-bands.status-bands.url-bands.toolbar-bands.home-chromeTop);
     return{width,height,visibleHeight,top,bottom,left:bands.left,right:bands.right,urlTop,urlBottom,overlay,bands};
   }
 
@@ -933,7 +952,10 @@
   }
   /* 주소 텍스트만 갱신(레이아웃 · 밴드 · 배율 재계산 없음) */
   function updateDisplayUrl(view){
-    if(view.dom.browserUrl)view.dom.browserUrl.textContent=getDisplayUrl(view);
+    /* 태블릿 Chrome(tablet-chrome) 주소 필드는 실기기 캡처처럼 도메인만 표시(다른 브라우저는 기존 host + path, iframe URL · 이동 로직과 무관) */
+    if(view.dom.browserUrl)view.dom.browserUrl.textContent=view.dom.screenWrap.dataset.browser==='tablet-chrome'?getDisplayUrl(view).split('/')[0]:getDisplayUrl(view);
+    if(view.dom.tchromeTitle)view.dom.tchromeTitle.textContent=getDisplayUrl(view).split('/')[0];   /* 태블릿 Chrome 활성 탭: 같은 표시 주소의 도메인(iframe 제목은 읽지 않음) */
+    if(view.dom.duoUrlTexts)view.dom.duoUrlTexts.forEach(el=>{el.textContent=getDisplayUrl(view);});
   }
 
   function updateBrowserChrome(view){
@@ -945,7 +967,7 @@
     wrap.dataset.urlPosition=bands.urlPosition;
     wrap.dataset.uiMode=uiMode;
     wrap.style.setProperty('--status-row',bands.status+'px');
-    wrap.style.setProperty('--url-top-row',(viewport.overlay?0:viewport.urlTop)+'px');
+    wrap.style.setProperty('--url-top-row',(viewport.overlay?0:viewport.urlTop+(bands.chromeTop||0))+'px');
     wrap.style.setProperty('--url-bottom-row',(viewport.overlay?0:viewport.urlBottom)+'px');
     wrap.style.setProperty('--toolbar-row',(viewport.overlay?0:bands.toolbar)+'px');
     wrap.style.setProperty('--home-row',bands.home+'px');
@@ -982,10 +1004,11 @@
     view.dom.bandUrl.hidden=bands.url===0;
     view.dom.bandToolbar.hidden=bands.toolbar===0;
     view.dom.bandHome.hidden=bands.home===0;
-    view.dom.browserUrl.textContent=getDisplayUrl(view);
-    wrap.dataset.uiLayout=bands.side?'side':'bars';
+    updateDisplayUrl(view);
+    wrap.dataset.uiLayout=bands.side?'side':(bands.duoTop?'top':'bars');
     updateStatusBar(view);
     updateSideControls(view,bands);
+    updateDuoSafari(view,bands);
     updateKeyboard(view,viewport);
     return viewport;
   }
@@ -1151,7 +1174,7 @@
     let capsule=showAddressBar?(side.topCapsule||[]).slice():[];
     let bottom=showBottomBar?(side.bottomCapsule||[]).slice():[];
     const available=view.currentHeight-(cluster.bottom+side.clusterGap)-side.bottomMargin;
-    const need=()=>top.length*side.circle+(top.length&&capsule.length?side.gap:0)+capsule.length*side.pitch+(bottom.length&&(top.length||capsule.length)?side.gap:0)+bottom.length*side.pitch;
+    const need=()=>top.length*side.circle+Math.max(0,top.length-1)*side.gap+(top.length&&capsule.length?side.gap:0)+capsule.length*side.pitch+(bottom.length&&(top.length||capsule.length)?side.gap:0)+bottom.length*side.pitch;
     let collapsedTabs=false,overflow=false;
     if(need()>available&&bottom.length>1){bottom=bottom.slice(0,1);collapsedTabs=true;}
     while(need()>available&&capsule.length>1){capsule=capsule.slice(0,-1);overflow=true;}
@@ -1165,6 +1188,61 @@
     });
     root.dataset.collapsedTabs=collapsedTabs?'true':'false';
     root.dataset.overflow=overflow?'true':'false';
+  }
+
+  /* iPhone Duo Safari 주소 필드 · 상단 가로 Safari(2026-11-09, 실기기 사진 기준 1차 — 브라우저 UI 시각 레이어, iframe 크기와 무관).
+   * 외부(side): 측면 열 왼쪽 하단의 별도 주소 필드(주소창 스위치). 내부(top): 상단 툴바 + 주소 필드 + 탭 줄(placeholder), 주소창 스위치 OFF = 작은 도메인 pill.
+   * 주소 글자는 getDisplayUrl(view). 탭 줄은 iframe 제목 · 기록과 연결하지 않는다 */
+  /* Duo 내부 상단 Safari 시각 UI 의 높이(한 곳에서 계산 — 그리는 높이 --duo-top-h 와 iframe top / height 가 같은 값을 쓴다).
+   * 주소창 ON = 툴바 줄 아래 끝(+ 툴바 스위치 ON 이면 간격 + 탭 줄), OFF = 축약 pill 아래 끝. 값은 photo-observed visual chrome approximation(browserProfiles['duo-safari'].top) */
+  function getDuoTopChrome(view,profile){
+    const top=profile&&profile.top;
+    if(!top)return null;
+    const center=top.center||getClusterGeometry(getStatusBarProfile(view)).axis;   /* 툴바 줄 · pill 세로 중심 */
+    const full=showAddressBar;
+    const tabs=full&&showBottomBar;
+    /* 주소창 ON = 툴바 줄(원형 · 주소 필드 중 큰 높이) 아래 끝 (+ 탭 줄) + 사이트까지 간격, OFF = pill 아래 끝(pill 디자인 · 계산은 이전과 같음) */
+    const rowBottom=center+Math.max(top.row,top.circle||top.row)/2;
+    const tabTop=rowBottom+top.tabGap;
+    const height=full?(tabs?tabTop+top.tabHeight:rowBottom)+(top.bottomGap||0):center+top.pillHeight/2;
+    return{center,full,tabs,tabTop,height};
+  }
+
+  function updateDuoSafari(view,bands){
+    const dom=view.dom,wrap=dom.screenWrap;
+    const profile=browserProfiles[bands.profileId]||{};
+    const set=(name,value)=>wrap.style.setProperty(name,value+'px');
+    if(dom.duoUrlTexts)dom.duoUrlTexts.forEach(el=>{el.textContent=getDisplayUrl(view);});
+    const field=bands.side&&profile.side&&profile.side.urlField;
+    if(dom.duoUrl){
+      dom.duoUrl.hidden=!(field&&showAddressBar);
+      if(field){set('--duo-field-h',field.height);set('--duo-field-inset',field.inset);}
+    }
+    const top=bands.duoTop&&profile.top;
+    if(dom.duoTop)dom.duoTop.hidden=!top;
+    if(!top){delete wrap.dataset.duoTop;return;}
+    const chrome=getDuoTopChrome(view,profile);
+    wrap.dataset.duoTop=chrome.full?'full':'pill';
+    set('--duo-top-center',chrome.center);   /* 툴바 줄 세로 중심 = 측면 배치 때 컨트롤 축(가장자리 → 중심) 과 같은 거리(approximation) */
+    set('--duo-top-h',chrome.height);        /* 레이어 높이 = iframe 이 시작하는 위치(getBrowserBands().chromeTop 과 같은 값) */
+    set('--duo-row',top.row);
+    set('--duo-circle',top.circle||top.row);
+    set('--duo-circle-gap',top.circleGap||8);
+    set('--duo-inset',top.inset);
+    set('--duo-slot',top.slot||top.row);
+    set('--duo-caps-gap',top.capsuleGap||13);
+    set('--duo-status-right',top.statusRight||top.inset);
+    set('--duo-status-gap',top.statusGap||8);
+    set('--duo-time-w',top.timeWidth||30);
+    set('--duo-time-size',top.timeSize||15);
+    set('--duo-tab-top',chrome.tabTop);
+    set('--duo-tab-h',top.tabHeight);
+    set('--duo-tab-gap',top.tabGap);
+    set('--duo-tab-inset',top.tabInset);
+    set('--duo-pill-h',top.pillHeight);
+    wrap.style.setProperty('--duo-url-w',(top.urlWidth*100)+'%');
+    if(dom.duoTabs)dom.duoTabs.hidden=!chrome.tabs;
+    if(dom.statusCluster&&!showAddressBar)dom.statusCluster.hidden=true;   /* 축약 상태(사진) 에서는 상태 클러스터가 보이지 않는다 */
   }
 
   /* OS 상태바: 플랫폼 프로필 → 시간·아이콘 순서·배터리 잔량·컷아웃 회피 여백. 밴드 높이는 getBrowserBands() 의 status 값 */
@@ -1357,17 +1435,18 @@
     const layoutLocked=locked&&bandsList.every(bands=>bands.urlPositionLockReason==='safari-layout');
     /* 위치를 사용자가 고를 수 없는 배치(Safari 실측 탭 레이아웃 · iPhone Duo 측면 컨트롤) 만 보이는 화면에서는 비활성 버튼 대신 그룹을 숨긴다(2026-11-09).
      * 실측 기기는 가로에서도 같은 레이아웃이 위치를 정하므로 회전해도 숨긴 채 둔다 — 라디오 값 · 잠금 · urlBarPosition 계산은 그대로 */
-    const positionHidden=locked&&views.every((view,index)=>hasMeasuredViewport(view)||bandsList[index].urlPositionLockReason==='side');
+    const positionHidden=locked&&views.every((view,index)=>hasMeasuredViewport(view)||bandsList[index].urlPositionLockReason==='side'||bandsList[index].urlPositionLockReason==='duo-top');
     elements.urlPositionControls.hidden=positionHidden;
     elements.browserControls.dataset.position=positionHidden?'hidden':'shown';
-    elements.urlPositionControls.title=sideLocked?'iPhone Duo 측면 컨트롤 배치에서는 주소창 위치를 바꿀 수 없습니다(공식 자료에 주소 필드 없음).':(layoutLocked?'주소창 위치는 Safari 상세 설정의 탭 레이아웃(하단형 Compact · 상단형 Top) 을 따릅니다.':(locked?'가로 모드에서는 주소창이 상단에 고정됩니다.':(showAddressBar?'':'주소창을 켜면 위치를 바꿀 수 있습니다.')));
+    elements.urlPositionControls.title=sideLocked?'iPhone Duo 외부 화면 Safari 는 주소 필드가 측면 열 옆 하단에 고정됩니다.':(layoutLocked?'주소창 위치는 Safari 상세 설정의 탭 레이아웃(하단형 Compact · 상단형 Top) 을 따릅니다.':(locked?'가로 모드에서는 주소창이 상단에 고정됩니다.':(showAddressBar?'':'주소창을 켜면 위치를 바꿀 수 있습니다.')));
     syncSafariControls(views);
   }
 
-  /* Safari(iPhone Duo) 측면 레이아웃 view 인지 — viewport-fit 만 쓰는 상태(Duo 내부 화면 회전 = 표준 바 상태는 제외) */
+  /* Safari(iPhone Duo) 측면 · 내부 상단 레이아웃 view 인지 — viewport-fit 만 쓰는 상태(Duo 내부 화면 회전 = 표준 바 상태는 제외) */
   function isSideLayoutView(view){
     const profileId=resolveBrowserId(view);
-    return getUiLayout(view,browserProfiles[profileId])==='side';
+    const layout=getUiLayout(view,browserProfiles[profileId]);
+    return layout==='side'||layout==='top';
   }
 
   /* Safari 탭 레이아웃 · viewport-fit: 표시 중인 view 중 실측 viewport 데이터가 있는 기기(현재 iPhone 18 Pro + Safari) 가 있을 때 보인다.
