@@ -2048,6 +2048,13 @@ svg {
 .compare_meta_text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .compare_badge { flex: 0 0 auto; padding: 1px 5px; color: #b42318; background: #fee4e2; border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .compare_badge[hidden] { display: none; }
+/* 카드별 가림 검사 결과(2026-11-23): 메타 글자와 같은 중립 표시, 실제 가림(하드웨어 · OS · 브라우저) 이 있을 때만 경고 색 */
+.compare_occlusion { flex: 0 0 auto; white-space: nowrap; }
+.compare_occlusion[data-hit="true"] { color: #c2410c; font-weight: 700; }
+.compare_occlusion[hidden] { display: none; }
+.occlusion_items .oi_group { margin: 6px 8px 2px; color: #111827; font-size: 12px; font-weight: 700; }
+.occlusion_items li:first-child .oi_group { margin-top: 0; }
+.occlusion_items .oi_skip { margin: 4px 8px 0; color: #536071; font-size: 12px; }
 .switch_control input:disabled { opacity: .5; cursor: not-allowed; }
 .switch_control input:disabled + span { color: #98a2b3; }
 .compare_tools { grid-area: tools; display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }

@@ -1939,7 +1939,7 @@
       if(url)observeNav(view,url,{loading:false});
       attachScrollSync(view);
     }
-    if(view===primaryView){view.occlusionSlow=false;scheduleOcclusionCheck(view,OCCLUSION_LOAD_DELAY);}   /* 새 문서: 큰 페이지 판정 초기화 */
+    view.occlusionSlow=false;scheduleOcclusionCheck(view,OCCLUSION_LOAD_DELAY);   /* 새 문서: 큰 페이지 판정 초기화(view 마다 따로, 대상이 아니면 예약하지 않음) */
     if(view===primaryView&&compatEnabled)setTimeout(runCompatCheck,80);   /* Safari 호환성 검사: 새 문서면 다시 검사 */
     updateLoadStatus();
   }
@@ -2510,13 +2510,55 @@
   const OCCLUSION_KINDS=['hardware','os','browser','safe'];
   const OCCLUSION_LABELS={hardware:'하드웨어',os:'OS',browser:'브라우저',safe:'safe-area'};
 
-  function isOcclusionTarget(view){return occlusionEnabled&&view===primaryView&&viewMode==='single';}
+  /* 검사 대상 = 지금 보이는 view(단일 → primaryView, 다중 비교 → compareViews 의 카드). 숨겨진 primaryView · 제거된 카드는 대상 아님.
+   * 결과 · 타이머 · 큰 페이지 판정은 view 마다 따로(view.occlusion · occlusionTimer · occlusionSlow) — 전역 결과 배열 없음 */
+  function isOcclusionTarget(view){
+    if(!occlusionEnabled||!view)return false;
+    return viewMode==='single'?view===primaryView:Boolean(view.compare)&&compareViews.get(view.deviceId)===view;
+  }
 
   function scheduleOcclusionCheck(view,delay){
-    if(!view||view!==primaryView)return;
+    if(!view)return;
     clearTimeout(view.occlusionTimer);
-    if(!occlusionEnabled){view.occlusionTimer=null;return;}
+    view.occlusionTimer=null;
+    if(!isOcclusionTarget(view))return;
     view.occlusionTimer=setTimeout(()=>runOcclusionCheck(view,{auto:true}),delay);
+  }
+
+  /* 대상이 아닌 view 정리(타이머 · 강조 · 결과 · 표시 레이어) — 모드 전환 · 검사 끔 · 카드 제거 */
+  function resetOcclusionView(view){
+    if(!view)return;
+    clearTimeout(view.occlusionTimer);view.occlusionTimer=null;
+    clearTimeout(view.occlusionFocusTimer);
+    if(view.occlusionFocus){view.occlusionFocus.remove();view.occlusionFocus=null;}
+    view.occlusion=null;
+    if(view.dom)renderOcclusionLayer(view,[],null);
+    updateCompareOcclusion(view);
+  }
+
+  /* 모드 전환 뒤: 보이지 않는 view 는 정리하고 보이는 view 는 검사를 예약 */
+  function syncOcclusionViews(){
+    allViews().forEach(view=>{if(!isOcclusionTarget(view)&&(view.occlusion||view.occlusionTimer||view.occlusionFocus))resetOcclusionView(view);});
+    visibleViews().forEach(view=>scheduleOcclusionCheck(view,OCCLUSION_RENDER_DELAY));
+    updateOcclusionStatus();
+  }
+
+  /* 카드 메타 끝의 작은 결과 표시(다중 비교 카드만). 스크롤 접근 안내 .compare_badge 와 별개 요소 */
+  function updateCompareOcclusion(view){
+    const el=view&&view.dom&&view.dom.occlusion;
+    if(!el)return;
+    const state=view.occlusion;
+    let text='',title='',hit=false;
+    if(isOcclusionTarget(view)&&currentUrl){
+      if(!state||state.status==='not-loaded'){text='검사 중';}
+      else if(state.status==='ok'){text='가림 '+state.results.length;hit=state.results.some(result=>result.reasons.some(kind=>kind!=='safe'));title='가림 요소 '+state.results.length+'개';}
+      else if(state.status==='manual'){text='다시 검사 필요';title='큰 페이지라 자동 재검사를 껐습니다';}
+      else if(state.status!=='no-url'){text='검사 불가';title='가림 자동 검사 불가 · '+(scrollAccessReasons[state.status]||state.status).split(' · ')[0];}
+    }
+    el.hidden=!text;
+    el.textContent=text;
+    el.title=title;
+    if(hit)el.dataset.hit='true';else delete el.dataset.hit;
   }
 
   /* 위험 영역(화면 좌표 CSS px) */
@@ -2619,7 +2661,7 @@
   function runOcclusionCheck(view,options){
     const settings=options||{};
     if(view.occlusionTimer){clearTimeout(view.occlusionTimer);view.occlusionTimer=null;}
-    if(!isOcclusionTarget(view)){renderOcclusionLayer(view,[],null);updateOcclusionStatus();return;}
+    if(!isOcclusionTarget(view)){renderOcclusionLayer(view,[],null);updateCompareOcclusion(view);updateOcclusionStatus();return;}
     /* 화면 크기 전환(.24s — 회전 · 기기 변경) 이 끝나기 전이면 띠 위치가 중간값이라 자동 검사를 미룬다(수동 검사는 그대로 실행) */
     const wrap=view.dom.screenWrap;
     if(settings.auto&&wrap.offsetWidth&&(Math.abs(wrap.offsetWidth-view.currentWidth)>1||Math.abs(wrap.offsetHeight-view.currentHeight)>1)){scheduleOcclusionCheck(view,OCCLUSION_RENDER_DELAY);return;}
@@ -2648,6 +2690,7 @@
     }
     view.occlusion=state;
     renderOcclusionLayer(view,zones,state);
+    updateCompareOcclusion(view);
     updateOcclusionStatus();
   }
 
@@ -2706,11 +2749,11 @@
     wrap.hidden=!occlusionEnabled;
     elements.occlusionBtn.setAttribute('aria-pressed',occlusionEnabled?'true':'false');
     if(!occlusionEnabled){renderOcclusionList(null);setOcclusionListOpen(false);setOcclusionCopyBox(null);return;}
-    const state=primaryView&&primaryView.occlusion;
     const note='safe-area 는 주의 판정입니다 — iframe 안 사이트에는 실제 env(safe-area-inset-*) 값이 전달되지 않습니다. fixed / 지금 붙어 있는 sticky 요소만 검사하며, 메뉴 열기 등 화면이 바뀌면 다시 검사를 눌러 주세요.';
+    if(viewMode!=='single'){updateCompareOcclusionStatus(note);return;}
+    const state=primaryView&&primaryView.occlusion;
     let text,recheck=true;
-    if(viewMode!=='single'){text='가림 검사 · 단일 보기에서 사용할 수 있습니다';recheck=false;}
-    else if(!state||state.status==='no-url'){text='가림 검사 · 검사할 페이지 없음 (위험 영역만 표시)';recheck=false;}
+    if(!state||state.status==='no-url'){text='가림 검사 · 검사할 페이지 없음 (위험 영역만 표시)';recheck=false;}
     else if(state.status==='not-loaded')text='가림 검사 · 불러오는 중';
     else if(state.status==='cross-origin')text='가림 검사 · 자동 검사 불가 · 다른 출처 (위험 영역만 표시)';
     else if(state.status==='file-origin')text='가림 검사 · 자동 검사 불가 · file:// 로 열린 도구 (위험 영역만 표시)';
@@ -2725,7 +2768,31 @@
     elements.occlusionRecheck.hidden=!recheck;
     /* 리포트 복사: 검사를 켠 단일 보기에서만. URL 없음 · 로딩 중 · 다중 비교면 비활성(다른 출처 · file:// 은 환경 리포트 허용) */
     elements.occlusionCopy.disabled=viewMode!=='single'||!state||state.status==='no-url'||state.status==='not-loaded';
-    renderOcclusionList(viewMode==='single'&&state&&state.status==='ok'?state:null);
+    renderOcclusionList(state&&state.status==='ok'?[{view:primaryView,state}]:null);
+  }
+
+  /* 다중 비교 푸터 요약: "가림 검사 · 검사 완료 카드/전체 · 총 N개 · 자동 검사 불가 n개" (카드별 결과는 각 카드 메타) */
+  function updateCompareOcclusionStatus(note){
+    const views=Array.from(compareViews.values());
+    const states=views.map(view=>view.occlusion);
+    const count=status=>states.filter(state=>state&&state.status===status).length;
+    const ok=views.filter(view=>view.occlusion&&view.occlusion.status==='ok');
+    const blocked=count('cross-origin')+count('file-origin');
+    const manual=count('manual');
+    const pending=views.length-ok.length-blocked-manual;
+    let text,recheck=true;
+    if(!views.length){text='가림 검사 · 비교 기기 없음';recheck=false;}
+    else if(!currentUrl){text='가림 검사 · 검사할 페이지 없음 (위험 영역만 표시)';recheck=false;}
+    else{
+      const total=ok.reduce((sum,view)=>sum+view.occlusion.results.length,0);
+      text='가림 검사 · '+ok.length+'/'+views.length+' 검사 · 총 '+total+'개'
+        +(blocked?' · '+blocked+'개 자동 검사 불가':'')+(manual?' · '+manual+'개 큰 페이지(다시 검사)':'')+(pending>0?' · '+pending+'개 검사 중':'');
+    }
+    elements.occlusionText.textContent=text;
+    elements.occlusionStatus.title=note;
+    elements.occlusionRecheck.hidden=!recheck;
+    elements.occlusionCopy.disabled=!currentUrl||!states.some(state=>state&&state.status!=='no-url'&&state.status!=='not-loaded');
+    renderOcclusionList(ok.length?views.map(view=>({view,state:view.occlusion})):null);
   }
 
   /* ------------------------------------------------------------------
@@ -2779,6 +2846,7 @@
       safari:hasMeasuredViewport(view)?{layout:safariLayout==='top'?'Top':'Compact',viewportFit:viewportFit}:null,
       mode:!bands.side&&(presence.url||presence.toolbar)?uiMode:null,
       viewport:{width:viewport.width,height:viewport.height,visibleHeight:viewport.overlay?viewport.visibleHeight:null},
+      breakpoint:getBreakpointRange(viewport.width).label,   /* 다중 비교 리포트에서만 출력 */
       check:{status:check.status}
     };
     if(check.status==='ok'){
@@ -2797,10 +2865,40 @@
     return report;
   }
 
+  /* 단일 리포트 = 제목 · 페이지 · 환경 · 결과 · 안내 · 시각. 다중 비교 리포트는 같은 환경 · 결과 줄을 기기마다 반복(formatCompareOcclusionReportText) */
   function formatOcclusionReportText(report){
     const lines=['[Device Preview 가림 검사]'];
     if(report.page)lines.push('페이지: '+report.page.text+(report.page.trimmed?' (쿼리·해시 생략)':''));
-    lines.push('기기: '+report.device+' ('+report.screen.width+' × '+report.screen.height+(report.screen.dpr?' · DPR '+report.screen.dpr:'')+')');
+    lines.push(...formatReportEnvLines(report,'기기: '));
+    lines.push('');
+    lines.push(...formatReportCheckLines(report.check,true));
+    lines.push('');
+    lines.push('검사 시각: '+formatReportTime(report.createdAt));
+    return lines.join('\n');
+  }
+
+  function formatCompareOcclusionReportText(reports){
+    const lines=['[Device Preview 가림 검사 · 다중 비교]'];
+    if(reports[0]&&reports[0].page)lines.push('페이지: '+reports[0].page.text+(reports[0].page.trimmed?' (쿼리·해시 생략)':''));
+    lines.push('비교 기기: '+reports.length+'개');
+    reports.forEach((report,index)=>{
+      lines.push('');
+      lines.push(...formatReportEnvLines(report,'['+(index+1)+'] '));
+      lines.push('Breakpoint QA: '+report.breakpoint);
+      lines.push(...formatReportCheckLines(report.check,false));
+    });
+    lines.push('');
+    lines.push('검사 범위: position:fixed · 지금 붙어 있는 position:sticky');
+    lines.push('※ safe-area 는 주의 판정입니다.');
+    lines.push('※ iframe 안 사이트에는 실제 env(safe-area-inset-*) 가 완전히 재현되지 않습니다.');
+    lines.push('');
+    lines.push('검사 시각: '+formatReportTime(reports[0]?reports[0].createdAt:new Date()));
+    return lines.join('\n');
+  }
+
+  function formatReportEnvLines(report,devicePrefix){
+    const lines=[];
+    lines.push(devicePrefix+report.device+' ('+report.screen.width+' × '+report.screen.height+(report.screen.dpr?' · DPR '+report.screen.dpr:'')+')');
     lines.push('방향: '+report.orientation);
     const browser=[report.browser.label+(report.browser.side?' · 측면 컨트롤':'')];
     if(report.browser.addressBar)browser.push(report.browser.addressBar.visible?'주소창 표시('+report.browser.addressBar.position+')':'주소창 숨김');
@@ -2809,8 +2907,13 @@
     if(report.safari){lines.push('Safari 레이아웃: '+report.safari.layout);lines.push('viewport-fit: '+report.safari.viewportFit);}
     if(report.mode)lines.push('모드: '+(report.mode==='overlay'?'UI 겹침(lvh)':'축소(svh)'));
     lines.push('사이트 viewport: '+report.viewport.width+' × '+report.viewport.height+(report.mode==='overlay'&&report.viewport.visibleHeight!=null?' (가시 높이 '+report.viewport.visibleHeight+')':''));   /* 가시 높이는 UI 겹침 모드 줄이 있을 때만 */
-    lines.push('');
-    const check=report.check;
+    return lines;
+  }
+
+  /* 결과 줄. notes = 검사 범위 · ※ 안내(단일 리포트만 — 다중 비교는 끝에 한 번) */
+  function formatReportCheckLines(check,notes){
+    const lines=[];
+    if(!notes&&(check.status==='not-loaded'||check.status==='no-url')){lines.push('가림 검사: 결과 없음 — '+(check.status==='no-url'?'페이지 없음':'불러오는 중'));return lines;}
     if(check.status==='ok'){
       lines.push('가림 요소: '+check.items.length+' (실제 가림 '+check.actual+' · 주의 '+check.caution+')');
       if(!check.items.length)lines.push('(fixed / 현재 붙어 있는 sticky 중 위험 영역과 겹친 요소 없음)');
@@ -2820,18 +2923,18 @@
         lines.push('   '+item.position+' · '+formatOcclusionReasons(item.reasons)+(item.actual?'':' (주의)'));
         lines.push('   위치(viewport 기준): x '+item.rect.x+', y '+item.rect.y+', '+item.rect.w+' × '+item.rect.h);
       });
-      lines.push('');
-      lines.push('검사 범위: position:fixed · 지금 붙어 있는 position:sticky');
-      lines.push('※ safe-area 는 주의 판정입니다.');
-      lines.push('※ iframe 안 사이트에는 실제 env(safe-area-inset-*) 가 완전히 재현되지 않습니다.');
+      if(notes){
+        lines.push('');
+        lines.push('검사 범위: position:fixed · 지금 붙어 있는 position:sticky');
+        lines.push('※ safe-area 는 주의 판정입니다.');
+        lines.push('※ iframe 안 사이트에는 실제 env(safe-area-inset-*) 가 완전히 재현되지 않습니다.');
+      }
     }else{
       lines.push('자동 가림 검사: 불가 — '+check.reason);
       lines.push(check.status==='file-origin'?'도구를 file:// 로 열어 페이지 내부 DOM 을 읽을 수 없습니다(Live Server 등 서버로 열어야 검사 가능).':'브라우저 보안 정책상 페이지 내부 DOM 을 읽을 수 없습니다.');
       lines.push('위험 영역은 Device Preview 화면에서 직접 확인하세요.');
     }
-    lines.push('');
-    lines.push('검사 시각: '+formatReportTime(report.createdAt));
-    return lines.join('\n');
+    return lines;
   }
 
   /* 클립보드: API → execCommand → 직접 복사 상자. execCommand 용 임시 textarea 는 도구 문서에만 만들고 원래 포커스로 되돌린다(iframe 은 건드리지 않음) */
@@ -2861,12 +2964,22 @@
   }
 
   function copyOcclusionReport(){
-    const view=primaryView;
-    if(!view||!isOcclusionTarget(view))return;
-    runOcclusionCheck(view,{manual:true});   /* 복사 직전 최신 검사 한 번 — 화면 · 목록 · 리포트가 같은 snapshot */
-    const status=view.occlusion&&view.occlusion.status;
-    if(!status||status==='no-url'||status==='not-loaded')return;
-    const text=formatOcclusionReportText(buildOcclusionReport(view));
+    let text;
+    if(viewMode!=='single'){
+      /* 다중 비교: 보이는 카드 각각 최신 검사 한 번 → 카드 순서대로 하나의 리포트 */
+      const views=Array.from(compareViews.values()).filter(isOcclusionTarget);
+      if(!views.length||!currentUrl)return;
+      views.forEach(view=>runOcclusionCheck(view,{manual:true}));
+      if(!views.some(view=>view.occlusion&&view.occlusion.status!=='no-url'&&view.occlusion.status!=='not-loaded'))return;
+      text=formatCompareOcclusionReportText(views.map(buildOcclusionReport));
+    }else{
+      const view=primaryView;
+      if(!view||!isOcclusionTarget(view))return;
+      runOcclusionCheck(view,{manual:true});   /* 복사 직전 최신 검사 한 번 — 화면 · 목록 · 리포트가 같은 snapshot */
+      const status=view.occlusion&&view.occlusion.status;
+      if(!status||status==='no-url'||status==='not-loaded')return;
+      text=formatOcclusionReportText(buildOcclusionReport(view));
+    }
     const button=elements.occlusionCopy;
     copyTextWithFallback(text).then(result=>{
       if(result==='blocked'){setOcclusionCopyBox(text);announce('자동 복사가 막혔습니다. 표시된 리포트를 직접 복사해 주세요.');return;}
@@ -2883,27 +2996,51 @@
   function formatOcclusionReasons(reasons){return OCCLUSION_KINDS.filter(kind=>reasons.indexOf(kind)>=0).map(kind=>OCCLUSION_LIST_LABELS[kind]).join(' + ');}
 
   /* 결과 목록: 같은 출처 검사 성공일 때만 버튼 표시(0개면 비활성). 검사마다 통째로 다시 만든다(이전 요소 참조를 남기지 않음) */
-  function renderOcclusionList(state){
-    const results=state?state.results:[];
+  /* entries = [{view, state}] — 단일 보기는 1개(그룹 제목 없음, 이전과 같은 목록), 다중 비교는 카드 순서대로 기기별 그룹.
+   * 결과 0개인 카드는 그룹을 만들지 않고, 자동 검사 불가 · 큰 페이지 카드는 목록 끝에 이유만 한 줄 */
+  function renderOcclusionList(entries){
+    const grouped=Boolean(entries)&&viewMode!=='single';
+    const okEntries=entries?entries.filter(entry=>entry.state&&entry.state.status==='ok'):[];
+    const total=okEntries.reduce((sum,entry)=>sum+entry.state.results.length,0);
     const button=elements.occlusionListBtn;
-    button.hidden=!state;
-    button.disabled=!results.length;
-    const items=results.map((result,index)=>{
+    button.hidden=!okEntries.length;
+    button.disabled=!total;
+    const items=[];
+    okEntries.forEach(({view,state})=>{
+      if(!state.results.length)return;
+      const name=getDeviceName(view);
+      if(grouped){
+        const li=document.createElement('li');
+        const title=document.createElement('p');title.className='oi_group';title.textContent=name;
+        li.appendChild(title);
+        items.push(li);
+      }
+      state.results.forEach((result,index)=>{
+        const li=document.createElement('li');
+        const item=document.createElement('button');
+        item.type='button';
+        item.dataset.index=String(index);
+        if(grouped)item.dataset.view=view.deviceId;
+        item.setAttribute('aria-label',(grouped?name+' ':'')+(index+1)+'번 '+result.label+', '+result.position+', '+formatOcclusionReasons(result.reasons)+' — 미리보기에서 강조');
+        const num=document.createElement('span');num.className='oi_num';num.textContent=String(index+1);
+        const label=document.createElement('span');label.className='oi_name';label.textContent=result.label;
+        const meta=document.createElement('span');meta.className='oi_meta';meta.textContent=result.position+' · '+formatOcclusionReasons(result.reasons);
+        item.append(num,label,meta);
+        li.appendChild(item);
+        items.push(li);
+      });
+    });
+    if(grouped)entries.forEach(({view,state})=>{
+      if(!state||state.status==='ok'||state.status==='no-url'||state.status==='not-loaded')return;
       const li=document.createElement('li');
-      const item=document.createElement('button');
-      item.type='button';
-      item.dataset.index=String(index);
-      item.setAttribute('aria-label',(index+1)+'번 '+result.label+', '+result.position+', '+formatOcclusionReasons(result.reasons)+' — 미리보기에서 강조');
-      const num=document.createElement('span');num.className='oi_num';num.textContent=String(index+1);
-      const name=document.createElement('span');name.className='oi_name';name.textContent=result.label;
-      const meta=document.createElement('span');meta.className='oi_meta';meta.textContent=result.position+' · '+formatOcclusionReasons(result.reasons);
-      item.append(num,name,meta);
-      li.appendChild(item);
-      return li;
+      const skip=document.createElement('p');skip.className='oi_skip';
+      skip.textContent=getDeviceName(view)+' — '+(state.status==='manual'?'큰 페이지 · 다시 검사 필요':'자동 검사 불가 · '+(scrollAccessReasons[state.status]||state.status).split(' · ')[0]);
+      li.appendChild(skip);
+      items.push(li);
     });
     elements.occlusionItems.replaceChildren(...items);
     elements.occlusionListNote.textContent='';
-    if(!results.length)setOcclusionListOpen(false);
+    if(!total)setOcclusionListOpen(false);
   }
 
   function setOcclusionListOpen(open,focusButton){
@@ -2916,21 +3053,22 @@
 
   /* 목록 항목 강조: 요소의 "현재" rect 를 다시 읽어 가림 레이어 위에 약 1.8초 표시. iframe 안은 건드리지 않고 스크롤도 하지 않는다 */
   const OCCLUSION_FOCUS_MS=1800;
-  function highlightOcclusionResult(index){
-    const view=primaryView;
+  function highlightOcclusionResult(view,index){
     const state=view&&view.occlusion;
     const result=state&&state.status==='ok'?state.results[index]:null;
     const note=elements.occlusionListNote;
-    if(view){clearTimeout(view.occlusionFocusTimer);if(view.occlusionFocus){view.occlusionFocus.remove();view.occlusionFocus=null;}}
+    /* 강조는 한 번에 하나: 다른 카드에 남은 강조도 지운다 */
+    allViews().forEach(other=>{clearTimeout(other.occlusionFocusTimer);if(other.occlusionFocus){other.occlusionFocus.remove();other.occlusionFocus=null;}});
+    const prefix=view&&viewMode!=='single'?getDeviceName(view)+' ':'';
     if(!result||!isOcclusionTarget(view)){note.textContent='요소가 변경됨 · 다시 검사 필요';return;}
     const access=getScrollAccess(view);
     const el=result.el;
-    if(!access.accessible||!el||!el.isConnected||el.ownerDocument!==access.win.document){note.textContent=(index+1)+'번 요소가 변경됨 · 다시 검사 필요';return;}
+    if(!access.accessible||!el||!el.isConnected||el.ownerDocument!==access.win.document){note.textContent=prefix+(index+1)+'번 요소가 변경됨 · 다시 검사 필요';return;}
     const win=access.win,doc=win.document;
     const r=el.getBoundingClientRect();
     const vw=doc.documentElement.clientWidth,vh=doc.documentElement.clientHeight;
     const x0=Math.max(0,r.left),y0=Math.max(0,r.top),x1=Math.min(vw,r.right),y1=Math.min(vh,r.bottom);
-    if(r.width<=0||r.height<=0||x1-x0<1||y1-y0<1){note.textContent=(index+1)+'번 요소가 지금 화면에 보이지 않음 · 다시 검사 필요';return;}
+    if(r.width<=0||r.height<=0||x1-x0<1||y1-y0<1){note.textContent=prefix+(index+1)+'번 요소가 지금 화면에 보이지 않음 · 다시 검사 필요';return;}
     const viewport=getSiteViewport(view);
     const rect={x:x0+viewport.left,y:y0+viewport.top,w:x1-x0,h:y1-y0};
     const moved=Math.abs(rect.x-result.rect.x)>1||Math.abs(rect.y-result.rect.y)>1||Math.abs(rect.w-result.rect.w)>1||Math.abs(rect.h-result.rect.h)>1;
@@ -2942,15 +3080,15 @@
     view.dom.occlusionLayer.appendChild(span);
     view.occlusionFocus=span;
     view.occlusionFocusTimer=setTimeout(()=>{span.remove();if(view.occlusionFocus===span)view.occlusionFocus=null;},OCCLUSION_FOCUS_MS);
-    note.textContent=unstuck?(index+1)+'번 sticky 가 지금은 붙어 있지 않음(현재 위치 표시) · 결과가 오래됨 — 다시 검사 필요'
-      :moved?(index+1)+'번 요소 위치가 검사 이후 바뀜(현재 위치 표시) · 다시 검사 필요':'';
+    note.textContent=unstuck?prefix+(index+1)+'번 sticky 가 지금은 붙어 있지 않음(현재 위치 표시) · 결과가 오래됨 — 다시 검사 필요'
+      :moved?prefix+(index+1)+'번 요소 위치가 검사 이후 바뀜(현재 위치 표시) · 다시 검사 필요':'';
   }
 
   function setOcclusionEnabled(enabled){
     occlusionEnabled=Boolean(enabled);
     if(primaryView){
-      if(occlusionEnabled)runOcclusionCheck(primaryView,{});
-      else{clearTimeout(primaryView.occlusionTimer);primaryView.occlusion=null;renderOcclusionLayer(primaryView,[],null);}
+      if(occlusionEnabled)visibleViews().forEach(view=>runOcclusionCheck(view,{}));   /* 단일 = primaryView, 다중 비교 = 보이는 카드 각각 */
+      else allViews().forEach(resetOcclusionView);
     }
     updateOcclusionStatus();
   }
@@ -3950,7 +4088,8 @@
       item,head:item.querySelector('.compare_head'),body:item.querySelector('.compare_body'),
       name:item.querySelector('.compare_name'),meta:item.querySelector('.compare_meta_text'),
       stateSelect:item.querySelector('.compare_state'),rotate:item.querySelector('.compare_rotate'),
-      refresh:item.querySelector('.compare_refresh'),remove:item.querySelector('.compare_remove'),badge:item.querySelector('.compare_badge')
+      refresh:item.querySelector('.compare_refresh'),remove:item.querySelector('.compare_remove'),badge:item.querySelector('.compare_badge'),
+      occlusion:item.querySelector('.compare_occlusion')
     });
     const view=createView(dom,{compare:true});
     setViewDevice(view,deviceId,settings.stateId,settings.rotated);
@@ -4016,6 +4155,8 @@
     view.dom.item.remove();          /* iframe 도 함께 제거되어 언로드 */
     stopScrollBridge(view);          /* 다른 출처 카드의 브리지 재시도 타이머 정리 */
     compareViews.delete(deviceId);
+    resetOcclusionView(view);        /* 가림 검사 타이머 · 강조 정리 */
+    updateOcclusionStatus();
     updateNavWatch();
     compareViews.forEach(updateScale);
     updateSyncAvailability();
@@ -4032,7 +4173,9 @@
 
   function clearCompareViews(){
     compareViews.forEach(view=>view.dom.item.remove());
+    const removed=Array.from(compareViews.values());
     compareViews.clear();
+    removed.forEach(resetOcclusionView);   /* 가림 검사 타이머 · 강조 정리 */
   }
 
   function setViewMode(mode,options){
@@ -4066,6 +4209,7 @@
     }
     if(currentUrl)updateLoadStatus();
     updateNavWatch();
+    syncOcclusionViews();   /* 가림 검사: 숨겨진 view 정리 · 보이는 view 검사 예약 */
     saveComparePreference();
     return true;
   }
@@ -4305,12 +4449,12 @@
     saveDisplayPreference();
     announce('가림 검사를 '+(occlusionEnabled?'켰습니다.':'껐습니다.'));
   });
-  elements.occlusionRecheck.addEventListener('click',()=>{if(primaryView)runOcclusionCheck(primaryView,{manual:true});});
+  elements.occlusionRecheck.addEventListener('click',()=>{if(primaryView)visibleViews().forEach(view=>runOcclusionCheck(view,{manual:true}));});   /* 다중 비교 = 보이는 카드 전부(숨은 primaryView 제외) */
   elements.occlusionListBtn.addEventListener('click',()=>{setOcclusionCopyBox(null);setOcclusionListOpen(elements.occlusionList.hidden);});
   elements.occlusionCopy.addEventListener('click',copyOcclusionReport);
   elements.occlusionCopyClose.addEventListener('click',()=>{setOcclusionCopyBox(null);elements.occlusionCopy.focus();});
   elements.occlusionCopyBox.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();setOcclusionCopyBox(null);elements.occlusionCopy.focus();}});
-  elements.occlusionItems.addEventListener('click',event=>{const item=event.target.closest('button[data-index]');if(item)highlightOcclusionResult(Number(item.dataset.index));});
+  elements.occlusionItems.addEventListener('click',event=>{const item=event.target.closest('button[data-index]');if(item)highlightOcclusionResult(item.dataset.view?compareViews.get(item.dataset.view):primaryView,Number(item.dataset.index));});
   /* Esc: 목록을 닫고 결과 보기 버튼으로 포커스 복귀 */
   [elements.occlusionList,elements.occlusionListBtn].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&!elements.occlusionList.hidden){event.preventDefault();setOcclusionListOpen(false,true);}}));
   /* safe-area 가이드 켜기 / 끄기(버튼 · 테스트 상태 프리셋 공통) */
