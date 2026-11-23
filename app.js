@@ -3229,6 +3229,7 @@
       const siteLabel=siteViewport.width+' × '+(keyboardInset&&keyboardMode==='resize'?(siteViewport.height-keyboardInset)+' (가상 키보드 '+keyboardInset+')':siteViewport.height+(siteViewport.overlay?' (가시 '+siteViewport.visibleHeight+')':'')+(keyboardInset?' (가상 키보드 '+keyboardInset+' 겹침)':''));
       elements.currentDevice.textContent=getDeviceName(view);
       elements.currentMeta.textContent='사이트 '+siteLabel+(getDpr(view)?' · DPR '+getDpr(view):'')+' · '+getOrientationLabel(view);
+      appendBreakpointRange(elements.currentMeta,siteViewport.width);
       elements.presetNote.title=device&&device.noteDetail||'';   /* 상세 근거(근사값 조건) 는 tooltip 으로만 — footer 는 짧은 값(2026-10-16, 현재 MacBook) */
       elements.presetNote.textContent=(physical?'물리 '+physical.width+' × '+physical.height+' · ':'')+(state&&state.note?state.note:device?device.note:'직접 입력한 CSS 화면 · 기기 가림 없음');
       elements.rotateBtn.setAttribute('aria-pressed',view.rotated?'true':'false');
@@ -3899,12 +3900,32 @@
     updateCompareNote();
   }
 
+  /* Breakpoint QA 구간(2026-11-23): 사이트 viewport 폭을 프로젝트 QA 기준(Breakpoint 테스트 프리셋의 360 / 768 경계) 에 대어 본 구간.
+   * 사이트 자체 CSS media query 가 아니다. label = 화면 표시, speech = 스크린 리더 설명 */
+  function getBreakpointRange(width){
+    if(width<=360)return{label:'≤360',speech:'Breakpoint 테스트 구간: 360픽셀 이하'};
+    if(width<768)return{label:'361–767',speech:'Breakpoint 테스트 구간: 361~767픽셀'};
+    return{label:'≥768',speech:'Breakpoint 테스트 구간: 768픽셀 이상'};
+  }
+  /* 메타 글자 뒤에 " · 구간" 을 붙인다 — 보이는 기호는 aria-hidden, 의미는 sr_only 문장으로 */
+  function appendBreakpointRange(el,width){
+    const range=getBreakpointRange(width);
+    const shown=document.createElement('span');
+    shown.setAttribute('aria-hidden','true');
+    shown.textContent=' · '+range.label;
+    const spoken=document.createElement('span');
+    spoken.className='sr_only';
+    spoken.textContent=' · '+range.speech;
+    el.append(shown,spoken);
+  }
+
   function updateCompareItem(view,siteViewport){
     const name=getDeviceName(view);
     const state=getState(view);
     const device=getDevice(view);
     view.dom.name.textContent=name;
     view.dom.meta.textContent='사이트 '+siteViewport.width+' × '+siteViewport.height+' · '+getOrientationLabel(view)+(device&&device.states.length>1&&state?' · '+state.label:'');
+    appendBreakpointRange(view.dom.meta,siteViewport.width);
     view.dom.rotate.setAttribute('aria-label',name+' 가로·세로 회전');
     view.dom.rotate.title=name+' 가로·세로 회전';
     view.dom.rotate.setAttribute('aria-pressed',view.rotated?'true':'false');
