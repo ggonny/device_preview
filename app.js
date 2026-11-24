@@ -314,7 +314,9 @@
    *   표준 모드 기준값(photo-measured): Apple 뉴스룸 iOS 15 SE 이미지(1.712px/pt) 숫자 8.8pt · Commons iOS 18 4.7" 실기기 캡처(2px/pt) 숫자 8.5pt · 셀룰러 16.5×10.5 · 배터리 외곽 24×11.5 · 여백 좌 6.5 / 우 5.5 · %↔배터리 5.5 · 세로 중심 10(20pt 바 중앙)
    *   → Windows 대체 글꼴(Arial 600) 렌더 기준 fontSize 12.5(숫자 8.95px) · 자간 −.1 · 아이콘 11 · 배터리 1.05(24×11.6) · 여백 6.5/5.5 · iconGap 5 · centerY 미지정(밴드 20 중앙 10 = 가이드 중앙).
    *   사용자 제공 reference(user-provided reference image, images/1.png, 375 좌표계로 정규화 — 표준 기준보다 약 1.17배 크게 측정됨, Display Zoom '확대' 여부는 설정 정보 미확인·미확정): 숫자 10.7 · "10:00" 폭 37 · 셀룰러 19.5×12.7 · 배터리 27×13.6 · 여백 8/8 · 중심 11.7(바 23.4 상당) · Wi-Fi·% 없음.
-   *   ×1.17 은 Display Zoom 확대(CSS 뷰포트 320×568) 의 비율과 일치하는 '가능성' 이며, 확대 모드라면 뷰포트도 달라지므로 기본 프로필에 섞지 않는다. 향후 확장 메모: iPhone SE 에 '표준 375×667' / '확대 320×568' state 를 두고 확대 state 에서만 위 참고값(15/13/1.05/8/8) 을 쓰는 방식으로 분리 가능(이번 작업에서는 미추가). */
+   *   ×1.17 은 Display Zoom 확대(CSS 뷰포트 320×568) 의 비율과 일치하는 '가능성' 이며, 확대 모드라면 뷰포트도 달라지므로 기본 프로필에 섞지 않는다.
+   *   2026-11-23 확대 state(zoomed 320×568) 추가 — 이 프로필을 그대로 쓴다(state 전용 override 없음): 같은 CSS 값이 실기기 배율에서 96×4.7/hypot(320,568) ÷ 96×4.7/hypot(375,667) = 1.1737배로 그려져
+   *   reference 의 약 1.17배(375/320 = 1.1719) 가 viewport 변화만으로 설명된다. 15/13/8/8 을 다시 곱하면 이중 확대라 쓰지 않는다. Wi-Fi · % 구성도 그대로(reference 의 부재 원인 미확인). */
   frameProfiles['iphone-se'].statusBar={compact:true,fixedSize:true,layout:'legacy',time:'9:41 AM',icons:['cellular','wifi','battery'],batteryText:true,batteryLevel:1,fontSize:12.5,iconSize:11,wifiScale:1,batteryScale:1.05,padding:{left:6.9,right:4.9},iconGap:4.2,letterSpacing:-.1,
     source:'2026-10-07 재검증(Apple 뉴스룸 iOS 15 SE 이미지 1.712px/pt, 잉크 실측): 시간 "9:41 AM" 164.9~210.8 = 프리뷰와 같음 · 셀룰러 7.0~23.4(16.4, 피치 4.5) = 프리뷰 일치 · 배터리 346.0~369.5 일치 → 셀룰러↔Wi-Fi 간격 4.9(프리뷰 5.6) 에 맞춰 iconGap 5 → 4.2 · 좌 잉크 7.0 → 여백 6.9 · 우 잉크 5.5 → 4.9 · %↔배터리 간격은 이 이미지 3.3 / Commons iOS 18 캡처 5.5 로 자료가 서로 달라 별도 보정 없음(현재 약 5.1) · photo-measured(표준 모드): Apple 뉴스룸 iOS 15 SE 이미지 숫자 8.8pt · Commons "Onion Browser 2.8.1 on iPhone.png"(iOS 18 4.7" 실기기 캡처 2px/pt) 숫자 8.5 · 셀룰러 16.5×10.5 · 배터리 24×11.5 · 여백 6.5/5.5 · %↔배터리 5.5 · 중심 10 → 12.5/11/1.05/6.5/5.5 · reference(user-provided reference image images/1.png — 표준 기준보다 약 1.17배 크게 측정된 사용자 제공 reference, Display Zoom 확대 여부 미확정): 숫자 10.7 · 셀룰러 19.5×12.7 · 배터리 27×13.6 · 여백 8/8 · 중심 11.7 — 확대 모드(뷰포트 320×568) 가능성이 있어 기본 프로필 미적용'};
   /* 노치·아일랜드 iPhone: 상태 항목이 노치/아일랜드 양옆 "귀" 의 중앙에 놓인다 → 시간 좌측 여백 = 귀 중심 − 시간 폭/2, 우측 여백 = 귀 중심 − 아이콘 묶음 폭/2 (derived: 컷아웃 폭 기준).
@@ -459,10 +461,16 @@
     'tablet-generic-768':{name:'768px Tablet 경계',group:'base',subtitle:'767 ↔ 768px breakpoint 전환 점검',note:'768 × 1024 가상 CSS 화면(실기기 아님) · 기본은 브라우저 UI 없이 iframe 뷰포트 = 768 × 1024 (회전 1024 × 768) · 767 ↔ 768px breakpoint 전환 점검',source:'approximation: 범용 프리셋(실기기 아님) — 768 × 1024 CSS · DPR 2 · 9.7형 상당 대각선은 실기기 배율 참고용',
       frame:'neutral-tablet',browser:'none',dpr:2,states:[{id:'default',label:'기본',width:768,height:1024,diagonal:9.7,physicalWidth:1536,physicalHeight:2048}]},
     /* 대표 모델 = iPhone SE (3세대, 2022). 2세대(2020) 와 바디·4.7" 1334×750·CSS 375×667·홈 버튼 구조가 같아 외형/뷰포트 테스트 목적에서는 중복이라 별도 프리셋을 두지 않는다(공식 이미지·상태바 검증 자료가 2022년 SE 기준). */
-    'iphone-se':{name:'iPhone SE (3세대)',group:'phone',subtitle:'홈 버튼형 · 2022',note:'홈 버튼·상하단 베젤을 포함한 iPhone SE (3세대) 프레임 — 2세대와 외형·해상도 동일',source:'official: iPhone SE (3세대, 2022) 4.7" 1334 × 750 326ppi, DPR 2 · 바디 138.4 × 67.3mm (Apple tech specs 111866) · 2세대(2020) 도 동일 수치라 대표 모델로 3세대만 등록',
-      frame:'iphone-se',browser:'ios-safari',dpr:2,states:[{id:'default',label:'기본',width:375,height:667,diagonal:4.7,physicalWidth:750,physicalHeight:1334}]},
-    'iphone-pro':{name:'iPhone 18 Pro',group:'phone',subtitle:'Dynamic Island',note:'402 × 874 CSS 화면 · 다이내믹 아일랜드 가림 포함',source:'official: 6.3" 2622 × 1206, DPR 3 → 402 × 874 (Apple iPhone 18 Pro tech specs)',
-      frame:'iphone-dynamic-pro',browser:'ios-safari',dpr:3,states:[{id:'default',label:'기본',width:402,height:874,diagonal:6.3,physicalWidth:1206,physicalHeight:2622,
+    'iphone-se':{name:'iPhone SE (3세대)',group:'phone',subtitle:'홈 버튼형 · 2022',note:'홈 버튼·상하단 베젤을 포함한 iPhone SE (3세대) 프레임 — 2세대와 외형·해상도 동일',source:'official: iPhone SE (3세대, 2022) 4.7" 1334 × 750 326ppi, DPR 2 · 바디 138.4 × 67.3mm (Apple tech specs 111866) · 2세대(2020) 도 동일 수치라 대표 모델로 3세대만 등록 · Display Zoom 지원 official(Apple) · 확대 state 320 × 568 CSS 는 verified-derived(SE 3세대 사양표 직접 수치 아님 — 4.7" 계열 Display Zoom 확대 해상도 준용, 실기기 innerWidth/innerHeight 미측정) · 확대 Safari UI unverified',
+      frame:'iphone-se',browser:'ios-safari',dpr:2,states:[
+        {id:'default',label:'표준',width:375,height:667,diagonal:4.7,physicalWidth:750,physicalHeight:1334},
+        /* Display Zoom 확대(2026-11-23): 같은 4.7" 패널(750 × 1334) 에 320 × 568 pt 를 그린다 — CSS viewport 만 좁아지고 물리 화면 · DPR 2 는 그대로.
+         * frameScale = 320/375: frame 프로필 px(표준 375 좌표계) 를 이 state 의 좌표계로 환산해 바디 · 베젤 · 홈 버튼의 물리 크기를 유지(getFrameProfile → zoomFrameProfile).
+         * 상태바 · safe-area 20 · Safari UI 는 pt 값이라 환산하지 않는다 → 실기기 배율에서 같은 CSS 값이 약 1.17배 크게 보이는 것이 Display Zoom 자체의 효과 */
+        {id:'zoomed',label:'확대',width:320,height:568,diagonal:4.7,physicalWidth:750,physicalHeight:1334,frameScale:320/375,
+          note:'Display Zoom 확대 320 × 568 CSS 화면(같은 750 × 1334 패널, DPR 2) · 표준 대비 화면 요소가 약 1.17배 크게 보임 · 확대 상태 Safari UI 높이는 실기기 미측정(표준과 같은 값, unverified)'}]},
+    'iphone-pro':{name:'iPhone 18 Pro',group:'phone',subtitle:'Dynamic Island',note:'402 × 874 CSS 화면 · 다이내믹 아일랜드 가림 포함',source:'official: 6.27"(표준 사각형, 마케팅 표기 6.3") 2622 × 1206, DPR 3 → 402 × 874 (Apple iPhone 18 Pro tech specs) · 실기기 배율 diagonal = 6.27(2026-11-23: 6.3 은 반올림 표기라 바디 72.19 × 150.70mm 로 +0.4% 크게 표시 — 6.27 에서 71.85 × 149.98mm, 공식 71.9 × 150.0)',
+      frame:'iphone-dynamic-pro',browser:'ios-safari',dpr:3,states:[{id:'default',label:'기본',width:402,height:874,diagonal:6.27,physicalWidth:1206,physicalHeight:2622,
         /* iOS Safari 실측 CSS viewport(2026-10-12) — 화면에 그리는 Safari UI 높이(browserProfiles 'ios-safari' · 아래 chrome) 와 iframe 크기를 분리한다.
          * [Safari 탭 레이아웃 compact|top][대상 사이트 viewport-fit auto|cover][portrait|landscape] = {small(svh), dynamic(스크롤 중 최대 innerHeight), large(lvh), *Top(화면상 viewport 위 끝 y), widthMode}
          *   shrink = small · overlay = large(getSiteViewport). dynamic 은 데이터로만 보존(현재 UI 모드 없음). widthMode 'safe' = 가로 폭에서 좌우 safe-area 제외(auto 750) · 'full' = 화면 전체(cover 874)
@@ -487,14 +495,14 @@
           +'chrome: Top 세로 주소창 60(= 122 − 상태바 62) · 툴바 58(= 874 − 782 − 홈 34) · 가로 상단 110 은 marker 위치 photo-measured / Compact 세로 주소창 50 은 기존 ios-safari 시각값(approximation) · 툴바 없음 · 가로 110 은 Top 준용 approximation'}]},
     'mobile-360':{name:'Galaxy S25',group:'phone',subtitle:'Galaxy 바형 · 중앙 펀치홀',note:'360 × 780 CSS 화면 · 펀치홀 가림 포함',source:'official: 6.2" 2340 × 1080 · 바디 146.9 × 70.5mm (Samsung) · verified: Android density 480(DPR 3) · logical 360 × 780dp — windowinsets.info "Galaxy S25"(Samsung RTL SM-S931N, 2026-09-24) · 사용자 RTL Chrome 캡처(2026-10-07) 의 본문 줄 간격·박스 폭·줄바꿈 위치가 360 프리뷰와 픽셀 단위 일치',
       frame:'galaxy-bar',browser:'android-chrome',dpr:3,states:[{id:'default',label:'기본',width:360,height:780,diagonal:6.2,physicalWidth:1080,physicalHeight:2340}]},
-    'z-flip8':{name:'Galaxy Z Flip8',group:'fold',subtitle:'커버·펼침·Flex',note:'Galaxy Z Flip8 공개 디스플레이 사양 기준',source:'official: 커버 4.1형(104.8mm) native 1048 × 948 342ppi · 메인 6.9형(174.1mm) native 2520 × 1080 400ppi · 바디 펼침 75.4 × 166.9 × 6.1 / 접힘 75.4 × 85.7 × 13.1mm (Samsung 뉴스룸 2026-07-22) · 프로그램 세로 기준 948 × 1048 / 1080 × 2520 은 derived-orientation · verified: Android density 커버 380(DPR 2.375) → 399.16 × 441.26dp · 메인 480(DPR 3) → 360 × 840dp — Samsung RTL 기기 정보(1080 × 2520 480dpi / 948 × 1048 380dpi) + windowinsets.info "Galaxy Z Flip8"(InsetsProbe 1.2.1, SM-F776B, 2026-09-23) 일치 · 사용자 RTL Chrome 캡처(2026-10-07) 의 펼침 줄 간격·박스 폭·줄바꿈이 360 과 일치 · CSS 크기는 정수 반올림',
+    'z-flip8':{name:'Galaxy Z Flip8',group:'fold',subtitle:'커버·펼침·Flex',note:'Galaxy Z Flip8 공개 디스플레이 사양 기준',source:'official: 커버 4.1형(104.8mm) native 1048 × 948 342ppi · 메인 6.9형(174.1mm) native 2520 × 1080 400ppi · 실기기 배율 diagonal 은 반올림 형 표기가 아니라 공식 mm 값(커버 104.8mm = 4.126 · 메인 · Flex 174.1mm = 6.854, 2026-11-23) · 바디 펼침 75.4 × 166.9 × 6.1 / 접힘 75.4 × 85.7 × 13.1mm (Samsung 뉴스룸 2026-07-22) · 프로그램 세로 기준 948 × 1048 / 1080 × 2520 은 derived-orientation · verified: Android density 커버 380(DPR 2.375) → 399.16 × 441.26dp · 메인 480(DPR 3) → 360 × 840dp — Samsung RTL 기기 정보(1080 × 2520 480dpi / 948 × 1048 380dpi) + windowinsets.info "Galaxy Z Flip8"(InsetsProbe 1.2.1, SM-F776B, 2026-09-23) 일치 · 사용자 RTL Chrome 캡처(2026-10-07) 의 펼침 줄 간격·박스 폭·줄바꿈이 360 과 일치 · CSS 크기는 정수 반올림',
       browser:'android-chrome',dpr:3,states:[
       /* physicalWidth/Height 는 세로 기준 정규화 값(derived-orientation). Samsung 공식 native 표기는 1048×948 → frameProfiles['flip8-cover'].source 참조 */
-      {id:'cover',label:'커버 화면',width:399,height:441,dpr:2.375,diagonal:4.1,physicalWidth:948,physicalHeight:1048,frame:'flip8-cover',note:'FlexWindow 399 × 441 CSS 화면(948 × 1048 ÷ DPR 2.375, density 380 verified) · 힌지 위 · 우하단 듀얼 카메라·플래시 홀 · 하단 내비게이션 밴드'},
+      {id:'cover',label:'커버 화면',width:399,height:441,dpr:2.375,diagonal:4.126,physicalWidth:948,physicalHeight:1048,frame:'flip8-cover',note:'FlexWindow 399 × 441 CSS 화면(948 × 1048 ÷ DPR 2.375, density 380 verified) · 힌지 위 · 우하단 듀얼 카메라·플래시 홀 · 하단 내비게이션 밴드'},
       /* physicalWidth/Height 는 세로 기준 정규화 값(derived-orientation). Samsung 공식 native 표기는 2520×1080 → frameProfiles['flip8-open'].source 참조 */
-      {id:'open',label:'펼침',width:360,height:840,diagonal:6.9,physicalWidth:1080,physicalHeight:2520,frame:'flip8-open',hinge:'horizontal',hingeSize:3,note:'메인 화면 360 × 840 CSS 화면(native 2520 × 1080 → 세로 정규화 1080 × 2520 ÷ DPR 3, derived) · 펀치홀과 접힘선 포함'},
+      {id:'open',label:'펼침',width:360,height:840,diagonal:6.854,physicalWidth:1080,physicalHeight:2520,frame:'flip8-open',hinge:'horizontal',hingeSize:3,note:'메인 화면 360 × 840 CSS 화면(native 2520 × 1080 → 세로 정규화 1080 × 2520 ÷ DPR 3, derived) · 펀치홀과 접힘선 포함'},
       /* Flex: 펼친 화면의 상단 절반. 물리값은 width×dpr 로 자동 계산(1080 × 1260), 실기기 배율은 전체 화면 기준(scaleWidth/Height). */
-      {id:'flex',label:'Flex 90°',width:360,height:420,diagonal:6.9,scaleWidth:360,scaleHeight:840,frame:'flip8-flex',hinge:'horizontal',hingeSize:8,hingePosition:99,note:'펼친 화면 상단 절반 점검용 360 × 420(approximation) · 실제 Flex Mode 의 브라우저 영역은 실기기 확인 필요'}
+      {id:'flex',label:'Flex 90°',width:360,height:420,diagonal:6.854,scaleWidth:360,scaleHeight:840,frame:'flip8-flex',hinge:'horizontal',hingeSize:8,hingePosition:99,note:'펼친 화면 상단 절반 점검용 360 × 420(approximation) · 실제 Flex Mode 의 브라우저 영역은 실기기 확인 필요'}
     ]},
     /* Galaxy Z Fold8 — 실기기 프로필 하나(2026-10-07 확정). 사용자 실제 Fold8 의 Chrome 캡처로 검증한 상태(effective DPR 2.25) 를 그대로 쓴다.
      * Device Preview 는 설정 조합 시뮬레이터가 아니라 실제 기기 프리뷰라, 화면 확대/축소 단계별 프로필을 따로 두지 않는다. CSS 크기 = 물리 px ÷ 2.25 의 정수 반올림 */
@@ -626,7 +634,7 @@
       browserUrl:shell.querySelector('.browser_url'),tchromeTitle:shell.querySelector('.tchrome_title'),hingeLine:shell.querySelector('.hinge_line'),
       statusCluster:shell.querySelector('.status_cluster'),clusterTime:shell.querySelector('.cluster_time'),clusterRing:shell.querySelector('.cluster_ring'),
       dynamicIsland:shell.querySelector('.dynamic_island'),sideControls:shell.querySelector('.side_controls'),
-      duoUrl:shell.querySelector('.duo_url'),duoTop:shell.querySelector('.duo_top'),duoTabs:shell.querySelector('.duo_tabs'),duoUrlTexts:Array.from(shell.querySelectorAll('.duo_field_text')),occlusionLayer:shell.querySelector('.occlusion_layer'),
+      duoUrl:shell.querySelector('.duo_url'),duoTop:shell.querySelector('.duo_top'),duoTabs:shell.querySelector('.duo_tabs'),duoUrlTexts:Array.from(shell.querySelectorAll('.duo_field_text')),occlusionLayer:shell.querySelector('.occlusion_layer'),touchLayer:shell.querySelector('.touch_layer'),
       kbSim:shell.querySelector('.kb_sim'),kbValue:shell.querySelector('.kb_value'),kbHandle:shell.querySelector('.kb_handle'),
       statusTime:shell.querySelector('.status_time'),batteryFill:shell.querySelector('.battery_fill'),statusPercent:shell.querySelector('.status_percent'),statusPill:shell.querySelector('.status_pill'),
       keyVolume:shell.querySelector('.key_volume'),keyVolumeB:shell.querySelector('.key_volume_b'),keyPower:shell.querySelector('.key_power'),keyAction:shell.querySelector('.key_action'),
@@ -713,7 +721,40 @@
     const device=getDevice(view);
     const state=getState(view);
     const profile=frameProfiles[state&&state.frame||device&&device.frame]||getGenericFrame(view);
-    return scaleFrameProfile(profile,getDpr(view),getMeasuredInsets(view));
+    return zoomFrameProfile(scaleFrameProfile(profile,getDpr(view),getMeasuredInsets(view)),state&&state.frameScale);
+  }
+
+  /* Display Zoom state(state.frameScale — 현재 iPhone SE 확대 320/375): 같은 하드웨어를 좁아진 CSS 좌표계로 옮긴다.
+   * 환산: 베젤 · 링 · 바디/글래스/화면 코너 · 컷아웃 · 힌지 · controls(홈 버튼 · 스피커 · 카메라 · 센서 · 측면 키 · 포트).
+   * 유지: OS UI pt 값(safeArea · statusBarHeight · statusBar · homeIndicatorWidth) — Display Zoom 에서 이 값은 같은 pt 로 그려져 물리적으로 커지는 것이 실제 동작 */
+  const zoomedFrameCache=new Map();
+  function zoomFrameProfile(profile,k){
+    if(!k||k===1)return profile;
+    const key=(profile.id||profile.family)+'@'+k+'|'+(profile.frameReferenceDpr||'');
+    if(zoomedFrameCache.has(key)&&zoomedFrameCache.get(key).base===profile)return zoomedFrameCache.get(key).scaled;
+    const px=value=>typeof value==='number'?Math.round(value*k*100)/100:value;
+    const scaleKeys=(obj,keys)=>{
+      if(!obj||typeof obj!=='object')return obj;
+      const out=Object.assign({},obj);
+      keys.forEach(name=>{if(typeof out[name]==='number')out[name]=px(out[name]);});
+      return out;
+    };
+    const corners=value=>value&&typeof value==='object'&&!('ratio' in value)?scaleKeys(value,['tl','tr','br','bl']):px(value);
+    const part=['size','ring','bottom','top','width','height','offsetX','offset','inset'];
+    const controls=profile.controls?Object.assign({},profile.controls,{
+      homeButton:scaleKeys(profile.controls.homeButton,part),speaker:scaleKeys(profile.controls.speaker,part),
+      camera:scaleKeys(profile.controls.camera,part),sensor:scaleKeys(profile.controls.sensor,part),port:scaleKeys(profile.controls.port,part),
+      keys:Array.isArray(profile.controls.keys)?profile.controls.keys.map(item=>scaleKeys(item,['start','length','protrusion'])):profile.controls.keys
+    }):profile.controls;
+    const scaled=Object.assign({},profile,{
+      top:px(profile.top),right:px(profile.right),bottom:px(profile.bottom),left:px(profile.left),
+      ring:px(profile.ring),radius:corners(profile.radius),glassRadius:corners(profile.glassRadius),screenRadius:corners(profile.screenRadius),
+      cutout:scaleKeys(profile.cutout,['width','height','top','bottom','offset','depth','length','lens','ring','lensGap','flash','flashGap']),
+      hingeBody:scaleKeys(profile.hingeBody,['width','inset','radius','size']),
+      controls
+    });
+    zoomedFrameCache.set(key,{base:profile,scaled});
+    return scaled;
   }
 
   /* 직접 설정(custom) 처럼 프레임이 없는 view 의 범용 프레임(2026-10-22): 짧은 변이 768px Tablet 경계 이상이면 neutral-tablet, 미만이면 neutral.
@@ -1058,6 +1099,7 @@
     syncKeyboardControls();
     updateControls();
     visibleViews().forEach(view=>scheduleOcclusionCheck(view,OCCLUSION_RENDER_DELAY));
+    visibleViews().forEach(view=>scheduleTouchCheck(view,OCCLUSION_RENDER_DELAY));
   }
 
   function getKeyboardDom(){
@@ -1939,7 +1981,8 @@
       if(url)observeNav(view,url,{loading:false});
       attachScrollSync(view);
     }
-    view.occlusionSlow=false;scheduleOcclusionCheck(view,OCCLUSION_LOAD_DELAY);   /* 새 문서: 큰 페이지 판정 초기화(view 마다 따로, 대상이 아니면 예약하지 않음) */
+    view.occlusionSlow=false;scheduleOcclusionCheck(view,OCCLUSION_LOAD_DELAY);
+    view.touchSlow=false;scheduleTouchCheck(view,OCCLUSION_LOAD_DELAY);   /* 터치 타깃 검사(켜져 있을 때만) — 새 문서 */   /* 새 문서: 큰 페이지 판정 초기화(view 마다 따로, 대상이 아니면 예약하지 않음) */
     if(view===primaryView&&compatEnabled)setTimeout(runCompatCheck,80);   /* Safari 호환성 검사: 새 문서면 다시 검사 */
     updateLoadStatus();
   }
@@ -3093,6 +3136,558 @@
     updateOcclusionStatus();
   }
 
+  /* ------------------------------------------------------------------
+   * 터치 타깃 검사(Touch Target Inspector, 2026-11-23) — 가림 검사와 별개 기능 · 독립 ON/OFF, 같은 view 단위 구조를 쓴다.
+   * 기준: WCAG 2.2 SC 2.5.8 Target Size (Minimum, AA) 24 × 24 CSS px · SC 2.5.5 Target Size (Enhanced, AAA) 44 × 44 CSS px.
+   *   오류      = 폭 또는 높이 24 미만 + 간격 예외 실패(타깃 중심의 지름 24 원이 다른 타깃 · 다른 24 미만 타깃의 원과 겹침)
+   *   권장 미달 = 오류가 아니면서 폭 또는 높이 44 미만(24 미만이지만 간격 예외를 통과한 타깃 포함) — AA 오류가 아니다
+   *   예외 후보 = 본문 문장 안의 inline 텍스트 링크(heuristic: display inline · 같은 부모에 일반 텍스트 노드) — 오류 · 권장 미달 개수에서 제외
+   *   Equivalent · Essential · User Agent Control 예외는 DOM 으로 확정할 수 없어 판정하지 않는다(리포트에 수동 확인 안내).
+   * 대상 = TOUCH_SELECTOR 로 고른 요소만(문서 전체 순회 없음) — disabled · inert · 보이지 않음(checkVisibility: display · visibility · opacity 0, 조상 포함) ·
+   *   pointer-events none · 크기 0 · viewport 밖 완전히 벗어난 요소 제외. 크기 = 그 요소의 getBoundingClientRect()(아이콘 크기가 아니라 실제 이벤트 타깃 상자).
+   *   같은 상자를 가진 바깥 타깃 안의 타깃(링크 안 버튼 등) 은 바깥 하나로 본다.
+   * 같은 출처에서만 자동 검사(getScrollAccess) — 다른 출처 · file:// 은 "검사 불가"(Scroll Bridge 에 기능을 넣지 않음).
+   * 재검사 = 가림 검사와 같은 시점(renderView 뒤 · iframe load 뒤 · 같은 출처 스크롤이 멈춘 뒤 · 다시 검사). MutationObserver · ResizeObserver · rAF 루프 없음.
+   *   탐색이 TOUCH_SLOW_MS 를 넘으면 그 문서는 자동 재검사를 끄고 수동 검사만(결과는 자르지 않는다).
+   * 크기 판정은 element bounding box 기준 — border-radius · clip-path · 비정형 SVG hit area · transform / skew · 실제 hit region 은 판정하지 않는다(수동 확인, polygon / hit-test 엔진 없음). 자동 QA 결과이며 WCAG 적합성 확정이 아니다.
+   * 이름 = 요소 종류 + 짧은 접근 가능한 이름(aria-label 또는 글자 앞 12자, 폼 컨트롤은 이름 없음 · @ / 숫자 4자리 이상이면 생략). value · placeholder · title · 전체 본문은 쓰지 않는다
+   * ------------------------------------------------------------------ */
+  let touchEnabled=false;
+  const TOUCH_MIN=24,TOUCH_ENHANCED=44,TOUCH_SLOW_MS=60,TOUCH_FOCUS_MS=1800;
+  const TOUCH_SELECTOR='a[href],button,input:not([type="hidden"]),select,textarea,[role="button"],[role="link"],[role="checkbox"],[role="radio"],[role="switch"],[role="tab"],[tabindex]:not([tabindex="-1"])';
+  const TOUCH_STATUS_ORDER={error:0,warn:1,inline:2};
+  const TOUCH_STATUS_LABELS={error:'오류',warn:'권장 미달',inline:'예외 후보'};
+  let touchDomCache=null;
+  function getTouchDom(){
+    if(!touchDomCache){
+      const $=id=>document.getElementById(id);
+      touchDomCache={btn:$('touchBtn'),status:$('touchStatus'),text:$('touchText'),listBtn:$('touchListBtn'),recheck:$('touchRecheck'),copy:$('touchCopy'),
+        list:$('touchList'),items:$('touchItems'),note:$('touchListNote'),copyBox:$('touchCopyBox'),copyText:$('touchCopyText'),copyClose:$('touchCopyClose')};
+    }
+    return touchDomCache;
+  }
+
+  /* 검사 대상 view = 가림 검사와 같은 규칙(단일 → primaryView, 다중 비교 → 보이는 카드). 모바일 · 태블릿 · breakpoint 프리셋용이라
+   * WCAG 2.5.8 은 터치뿐 아니라 마우스 · 트랙패드 · 스타일러스 등 pointer input 전체가 대상이라 MacBook 을 포함한 모든 실기기 view 에 같은 기준으로 적용한다(2026-11-24) */
+  function touchApplies(view){return Boolean(view&&view.frameProfile);}
+  function isTouchCheckView(view){
+    if(!touchEnabled||!view||!touchApplies(view))return false;
+    return viewMode==='single'?view===primaryView:Boolean(view.compare)&&compareViews.get(view.deviceId)===view;
+  }
+
+  function scheduleTouchCheck(view,delay){
+    if(!view)return;
+    clearTimeout(view.touchTimer);
+    view.touchTimer=null;
+    if(!isTouchCheckView(view)){
+      if(view.touch||view.touchFocus||(view.dom&&view.dom.shell.dataset.touch==='true'))resetTouchView(view);   /* 대상에서 빠진 view(MacBook 으로 바뀐 단일 셸 등) 정리 */
+      if(touchEnabled)updateTouchStatus();
+      return;
+    }
+    view.touchTimer=setTimeout(()=>runTouchCheck(view,{auto:true}),delay);
+  }
+
+  function clearTouchFocus(view){
+    clearTimeout(view.touchFocusTimer);
+    if(view.touchFocus){view.touchFocus.remove();view.touchFocus=null;}
+  }
+
+  function resetTouchView(view){
+    if(!view)return;
+    clearTimeout(view.touchTimer);view.touchTimer=null;
+    clearTouchFocus(view);
+    view.touch=null;
+    if(view.dom)renderTouchLayer(view,null);
+    updateCompareTouch(view);
+  }
+
+  function syncTouchViews(){
+    allViews().forEach(view=>{if(!isTouchCheckView(view)&&(view.touch||view.touchTimer||view.touchFocus))resetTouchView(view);});
+    visibleViews().forEach(view=>scheduleTouchCheck(view,OCCLUSION_RENDER_DELAY));
+    updateTouchStatus();
+  }
+
+  function countTouch(state){
+    const count={error:0,warn:0,inline:0};
+    if(state&&state.status==='ok')state.results.forEach(result=>{count[result.status]++;});
+    return count;
+  }
+
+  /* 카드 메타 끝의 작은 표시(다중 비교 카드만) — .compare_badge · .compare_occlusion 과 별개 요소 */
+  function updateCompareTouch(view){
+    const el=view&&view.dom&&view.dom.touch;
+    if(!el)return;
+    const state=view.touch;
+    let text='',title='',level='';
+    if(isTouchCheckView(view)&&currentUrl){
+      if(!state||state.status==='not-loaded')text='터치 검사 중';
+      else if(state.status==='ok'){
+        const count=countTouch(state);
+        if(count.error){text='터치 오류 '+count.error+(count.warn?' · 주의 '+count.warn:'');level='error';}
+        else if(count.warn){text='터치 주의 '+count.warn;level='warn';}
+        else text='터치 정상';
+        title='터치 타깃 '+state.scanned+'개 검사 · 오류 '+count.error+' · 권장 미달 '+count.warn+' · 예외 후보 '+count.inline;
+      }
+      else if(state.status==='manual'){text='터치 다시 검사 필요';title='큰 페이지라 자동 재검사를 껐습니다';}
+      else if(state.status!=='no-url'){text='터치 검사 불가';title='터치 타깃 자동 검사 불가 · '+(scrollAccessReasons[state.status]||state.status).split(' · ')[0];}
+    }
+    el.hidden=!text;
+    el.textContent=text;
+    el.title=title;
+    if(level)el.dataset.level=level;else delete el.dataset.level;
+  }
+
+  /* 요소 종류: button · a · input[checkbox] · select · textarea · div[role=tab] · span[tabindex] */
+  function touchKind(el){
+    const tag=el.tagName.toLowerCase();
+    if(tag==='input')return 'input['+String(el.type||'text').slice(0,16)+']';
+    const role=el.getAttribute('role');
+    if(role&&!(tag==='button'&&role==='button')&&!(tag==='a'&&role==='link'))return tag+'[role='+role.slice(0,12)+']';
+    if(!/^(a|button|select|textarea)$/.test(tag)&&el.hasAttribute('tabindex'))return tag+'[tabindex]';
+    return tag;
+  }
+
+  /* 짧은 접근 가능한 이름(목록 · 리포트 표시용, 최대 12자). 폼 컨트롤(input · select · textarea) 은 값이 드러날 수 있어 이름을 쓰지 않는다.
+   * aria-label → 글자 앞부분 순서. 전체 본문을 저장하지 않고 앞 40자만 읽어 12자로 자른다. 이메일(@) · 숫자 4자리 이상(전화 · 계좌 등) 이 보이면 생략 */
+  function touchName(el){
+    const tag=el.tagName.toLowerCase();
+    if(/^(input|select|textarea)$/.test(tag))return '';
+    let source=(el.getAttribute('aria-label')||'').slice(0,40);
+    if(!source.trim())source=String(el.textContent||'').slice(0,40);
+    const name=source.replace(/\s+/g,' ').trim();
+    if(!name||/@|\d{4,}/.test(name))return '';
+    return name.length>12?name.slice(0,12)+'…':name;
+  }
+
+  /* inline 예외 후보(heuristic): 링크 · display inline · 같은 부모 안에 공백이 아닌 텍스트 노드(문장 흐름 안의 링크). 글자 내용은 저장하지 않는다 */
+  function isInlineTextLink(el,win){
+    if(el.tagName!=='A'&&el.getAttribute('role')!=='link')return false;
+    if(win.getComputedStyle(el).display!=='inline')return false;
+    const parent=el.parentNode;
+    if(!parent)return false;
+    for(const node of parent.childNodes){if(node!==el&&node.nodeType===3&&/\S/.test(node.nodeValue))return true;}
+    return false;
+  }
+
+  function isTouchVisible(el,win){
+    if(typeof el.checkVisibility==='function')return el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true});
+    for(let node=el;node&&node.nodeType===1;node=node.parentElement){
+      const style=win.getComputedStyle(node);
+      if(style.display==='none'||parseFloat(style.opacity)===0)return false;
+      if(node===el&&style.visibility!=='visible')return false;
+    }
+    return true;
+  }
+
+  /* 같은 출처 문서의 터치 타깃 탐색 + 판정. 좌표는 iframe CSS px(문서 viewport 기준) */
+  function scanTouchTargets(win){
+    const doc=win.document;
+    const started=performance.now();
+    const vw=doc.documentElement.clientWidth,vh=doc.documentElement.clientHeight;
+    const nodes=doc.querySelectorAll(TOUCH_SELECTOR);
+    const targets=[];
+    const byElement=new Map();
+    for(let i=0;i<nodes.length;i++){
+      const el=nodes[i];
+      const r=el.getBoundingClientRect();   /* 상자부터: 크기 0 · viewport 밖은 스타일 계산 없이 건너뛴다(큰 페이지 비용) */
+      if(r.width<=0||r.height<=0)continue;
+      if(r.right<=0||r.bottom<=0||r.left>=vw||r.top>=vh)continue;   /* viewport 밖에 완전히 있는 요소 */
+      if(el.matches(':disabled')||el.getAttribute('aria-disabled')==='true'||el.closest('[inert]'))continue;
+      if(!isTouchVisible(el,win))continue;
+      if(win.getComputedStyle(el).pointerEvents==='none')continue;
+      const target={el,x:r.left,y:r.top,w:r.width,h:r.height,cx:r.left+r.width/2,cy:r.top+r.height/2};
+      target.small=target.w<TOUCH_MIN||target.h<TOUCH_MIN;
+      targets.push(target);byElement.set(el,target);
+    }
+    /* 같은 상자의 바깥 타깃 안에 있는 타깃(예: a 안의 button) 은 바깥 하나로 */
+    const same=(a,b)=>Math.abs(a.x-b.x)<=1&&Math.abs(a.y-b.y)<=1&&Math.abs(a.w-b.w)<=1&&Math.abs(a.h-b.h)<=1;
+    const list=targets.filter(target=>{
+      for(let parent=target.el.parentElement;parent;parent=parent.parentElement){
+        const outer=byElement.get(parent);
+        if(outer)return !same(outer,target);
+      }
+      return true;
+    });
+    /* 간격 예외 판정용 격자(64px 칸) — 타깃 상자가 걸치는 칸마다 등록 */
+    const CELL=64,grid=new Map();
+    const key=(gx,gy)=>gx+','+gy;
+    list.forEach(target=>{
+      const x0=Math.floor(target.x/CELL),x1=Math.floor((target.x+target.w)/CELL),y0=Math.floor(target.y/CELL),y1=Math.floor((target.y+target.h)/CELL);
+      for(let gx=x0;gx<=x1;gx++)for(let gy=y0;gy<=y1;gy++){const k=key(gx,gy);if(!grid.has(k))grid.set(k,[]);grid.get(k).push(target);}
+    });
+    const R=TOUCH_MIN/2,EPS=.01;
+    const spacingFails=target=>{
+      const gx=Math.floor(target.cx/CELL),gy=Math.floor(target.cy/CELL);
+      const seen=new Set();
+      for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+        const bucket=grid.get(key(gx+dx,gy+dy));
+        if(!bucket)continue;
+        for(const other of bucket){
+          if(other===target||seen.has(other))continue;
+          seen.add(other);
+          /* 이 타깃의 24 원 × 다른 타깃 상자 */
+          const nx=Math.max(other.x,Math.min(target.cx,other.x+other.w)),ny=Math.max(other.y,Math.min(target.cy,other.y+other.h));
+          if(Math.hypot(target.cx-nx,target.cy-ny)<R-EPS)return true;
+          /* 이 타깃의 24 원 × 다른 24 미만 타깃의 24 원 */
+          if(other.small&&Math.hypot(target.cx-other.cx,target.cy-other.cy)<2*R-EPS)return true;
+        }
+      }
+      return false;
+    };
+    const items=[];
+    list.forEach(target=>{
+      const enhanced=target.w>=TOUCH_ENHANCED&&target.h>=TOUCH_ENHANCED;
+      if(enhanced)return;
+      let status,reason;
+      if(isInlineTextLink(target.el,win)){status='inline';reason='예외 후보 · 본문 내 인라인 링크';}
+      else if(target.small&&spacingFails(target)){status='error';reason='24px 미만 · 간격 부족(24px 원 겹침)';}
+      else if(target.small){status='warn';reason='24px 미만 · 간격 예외 통과 · 권장 44px 미만';}
+      else{status='warn';reason='권장 44px 미만';}
+      const x0=Math.max(0,target.x),y0=Math.max(0,target.y),x1=Math.min(vw,target.x+target.w),y1=Math.min(vh,target.y+target.h);
+      items.push({el:target.el,status,reason,size:{w:target.w,h:target.h},rect:{x:x0,y:y0,w:x1-x0,h:y1-y0},full:{x:target.x,y:target.y},
+        kind:touchKind(target.el),name:touchName(target.el),label:describeOcclusionElement(target.el)});
+    });
+    items.sort((a,b)=>TOUCH_STATUS_ORDER[a.status]-TOUCH_STATUS_ORDER[b.status]||a.full.y-b.full.y||a.full.x-b.full.x);
+    return{items,scanned:list.length,elapsed:performance.now()-started};
+  }
+
+  function runTouchCheck(view,options){
+    const settings=options||{};
+    if(view.touchTimer){clearTimeout(view.touchTimer);view.touchTimer=null;}
+    if(!isTouchCheckView(view)){renderTouchLayer(view,null);updateCompareTouch(view);updateTouchStatus();return;}
+    const wrap=view.dom.screenWrap;
+    if(settings.auto&&wrap.offsetWidth&&(Math.abs(wrap.offsetWidth-view.currentWidth)>1||Math.abs(wrap.offsetHeight-view.currentHeight)>1)){scheduleTouchCheck(view,OCCLUSION_RENDER_DELAY);return;}
+    let state;
+    if(!currentUrl)state={status:'no-url'};
+    else{
+      const access=getScrollAccess(view);
+      if(!access.accessible)state={status:access.reason};
+      else{
+        attachTouchScroll(view,access.win);
+        if(settings.auto&&view.touchSlow)state={status:'manual'};
+        else{
+          const scan=scanTouchTargets(access.win);
+          view.touchSlow=scan.elapsed>TOUCH_SLOW_MS;
+          const viewport=getSiteViewport(view);
+          scan.items.forEach(item=>{item.rect.x+=viewport.left;item.rect.y+=viewport.top;item.viewport={x:item.full.x,y:item.full.y};});
+          state={status:'ok',results:scan.items,scanned:scan.scanned,elapsed:scan.elapsed,slow:view.touchSlow};
+        }
+      }
+    }
+    clearTouchFocus(view);
+    view.touch=state;
+    renderTouchLayer(view,state);
+    updateCompareTouch(view);
+    updateTouchStatus();
+  }
+
+  function attachTouchScroll(view,win){
+    if(view.touchDocument===win.document)return;
+    view.touchDocument=win.document;
+    win.addEventListener('scroll',()=>{
+      if(!isTouchCheckView(view)||view.touchSlow)return;
+      scheduleTouchCheck(view,OCCLUSION_SCROLL_DELAY);
+    },{passive:true});
+  }
+
+  /* 결과가 있는 요소만(오류 · 권장 미달) 얇은 테두리 — 정상 · 예외 후보는 그리지 않는다. 위치 표시는 가림 검사와 같은 화면 안 자르기(placeOcclusionBox) */
+  function renderTouchLayer(view,state){
+    const layer=view.dom.touchLayer;
+    view.dom.shell.dataset.touch=isTouchCheckView(view)?'true':'false';
+    if(!layer)return;
+    const fragment=document.createDocumentFragment();
+    if(isTouchCheckView(view)&&state&&state.status==='ok')state.results.forEach((result,index)=>{
+      if(result.status==='inline')return;
+      const span=document.createElement('span');
+      span.className=result.status==='error'?'te_error':'te_warn';
+      placeOcclusionBox(view,span,result.rect.x,result.rect.y,result.rect.w,result.rect.h);
+      span.title=(index+1)+'. '+result.kind+(result.name?' · '+result.name:'')+' — '+formatTouchSize(result.size)+' · '+result.reason;
+      fragment.appendChild(span);
+    });
+    layer.replaceChildren(fragment);
+  }
+
+  /* 크기 표시: 정수면 그대로, 아니면 소수 1자리(23.6 을 24 로 반올림해 기준을 넘는 것처럼 보이지 않게) */
+  function formatTouchNumber(value){const rounded=Math.round(value*10)/10;return String(Number.isInteger(rounded)?rounded:rounded.toFixed(1));}
+  function formatTouchSize(size){return formatTouchNumber(size.w)+' × '+formatTouchNumber(size.h);}
+
+  function updateTouchStatus(){
+    const dom=getTouchDom();
+    if(!dom.status)return;
+    const applies=viewMode==='single'?touchApplies(primaryView):Array.from(compareViews.values()).some(touchApplies);
+    dom.status.hidden=!touchEnabled||!applies;
+    dom.btn.setAttribute('aria-pressed',touchEnabled?'true':'false');
+    if(!touchEnabled||!applies){renderTouchList(null);setTouchListOpen(false);setTouchCopyBox(null);return;}
+    const note='WCAG 2.2 SC 2.5.8(최소 24 CSS px, 간격 예외 포함) 기준 자동 검사 · 44 CSS px 미만은 SC 2.5.5 권장 미달(AA 오류 아님) · 본문 인라인 링크는 예외 후보 · Equivalent / Essential / User Agent Control 예외는 수동 확인 필요 · 터치뿐 아니라 마우스 · 트랙패드 · 스타일러스 등 pointer input 전체 대상 · 크기는 element bounding box 기준(비정형 · 잘린 target 은 수동 확인)';
+    if(viewMode!=='single'){updateCompareTouchStatus(note);return;}
+    const state=primaryView&&primaryView.touch;
+    let text,recheck=true;
+    if(!state||state.status==='no-url'){text='터치 타깃 · 검사할 페이지 없음';recheck=false;}
+    else if(state.status==='not-loaded')text='터치 타깃 · 불러오는 중';
+    else if(state.status==='cross-origin')text='터치 타깃 · 검사 불가 · 다른 출처';
+    else if(state.status==='file-origin')text='터치 타깃 · 검사 불가 · file:// 로 열린 도구';
+    else if(state.status==='manual')text='터치 타깃 · 큰 페이지라 자동 재검사를 껐습니다 — 다시 검사를 눌러 주세요';
+    else{
+      const count=countTouch(state);
+      text='터치 타깃 · 오류 '+count.error+' · 권장 미달 '+count.warn+(count.inline?' · 예외 후보 '+count.inline:'')+(state.slow?' · 큰 페이지: 자동 재검사 꺼짐':'');
+    }
+    dom.text.textContent=text;
+    dom.status.title=note;
+    dom.recheck.hidden=!recheck;
+    dom.copy.disabled=!state||state.status==='no-url'||state.status==='not-loaded';
+    renderTouchList(state&&state.status==='ok'?[{view:primaryView,state}]:null);
+  }
+
+  function updateCompareTouchStatus(note){
+    const dom=getTouchDom();
+    const views=Array.from(compareViews.values()).filter(touchApplies);
+    const states=views.map(view=>view.touch);
+    const count=status=>states.filter(state=>state&&state.status===status).length;
+    const ok=views.filter(view=>view.touch&&view.touch.status==='ok');
+    const blocked=count('cross-origin')+count('file-origin');
+    const manual=count('manual');
+    const pending=views.length-ok.length-blocked-manual;
+    let text,recheck=true;
+    if(!views.length){text='터치 타깃 · 비교 기기 없음';recheck=false;}
+    else if(!currentUrl){text='터치 타깃 · 검사할 페이지 없음';recheck=false;}
+    else{
+      const total={error:0,warn:0};
+      ok.forEach(view=>{const c=countTouch(view.touch);total.error+=c.error;total.warn+=c.warn;});
+      text='터치 타깃 · '+ok.length+'/'+views.length+' 검사 · 오류 '+total.error+' · 권장 미달 '+total.warn
+        +(blocked?' · '+blocked+'개 자동 검사 불가':'')+(manual?' · '+manual+'개 큰 페이지(다시 검사)':'')+(pending>0?' · '+pending+'개 검사 중':'');
+    }
+    dom.text.textContent=text;
+    dom.status.title=note;
+    dom.recheck.hidden=!recheck;
+    dom.copy.disabled=!currentUrl||!states.some(state=>state&&state.status!=='no-url'&&state.status!=='not-loaded');
+    renderTouchList(views.length?views.map(view=>({view,state:view.touch})):null);
+  }
+
+  /* 결과 목록: 오류 → 권장 미달 → 예외 후보(view 마다 이미 정렬됨). 다중 비교는 카드 순서대로 기기별 그룹 + 검사 불가 카드 이유 한 줄 */
+  function renderTouchList(entries){
+    const dom=getTouchDom();
+    const grouped=Boolean(entries)&&viewMode!=='single';
+    const okEntries=entries?entries.filter(entry=>entry.state&&entry.state.status==='ok'):[];
+    const total=okEntries.reduce((sum,entry)=>sum+entry.state.results.length,0);
+    const skipped=grouped?entries.filter(({state})=>state&&state.status!=='ok'&&state.status!=='no-url'&&state.status!=='not-loaded'):[];
+    dom.listBtn.hidden=!okEntries.length&&!skipped.length;
+    dom.listBtn.disabled=!total&&!skipped.length;
+    const items=[];
+    okEntries.forEach(({view,state})=>{
+      if(!state.results.length)return;
+      const name=getDeviceName(view);
+      if(grouped){
+        const li=document.createElement('li');
+        const title=document.createElement('p');title.className='oi_group';title.textContent=name;
+        li.appendChild(title);items.push(li);
+      }
+      state.results.forEach((result,index)=>{
+        const li=document.createElement('li');
+        const item=document.createElement('button');
+        item.type='button';
+        item.dataset.index=String(index);
+        item.dataset.status=result.status;
+        if(grouped)item.dataset.view=view.deviceId;
+        const head=result.kind+(result.name?' · '+result.name:'');
+        const meta=formatTouchSize(result.size)+' · '+result.reason+' · x '+Math.round(result.viewport.x)+', y '+Math.round(result.viewport.y);
+        item.title=result.label;
+        item.setAttribute('aria-label',(grouped?name+' ':'')+(index+1)+'번 '+TOUCH_STATUS_LABELS[result.status]+', '+head+', '+meta+' — 미리보기에서 강조');
+        const num=document.createElement('span');num.className='oi_num';num.textContent=String(index+1);
+        const label=document.createElement('span');label.className='oi_name';label.textContent=TOUCH_STATUS_LABELS[result.status]+' · '+head;
+        const info=document.createElement('span');info.className='oi_meta';info.textContent=meta;
+        item.append(num,label,info);
+        li.appendChild(item);items.push(li);
+      });
+    });
+    skipped.forEach(({view,state})=>{
+      const li=document.createElement('li');
+      const skip=document.createElement('p');skip.className='oi_skip';
+      skip.textContent=getDeviceName(view)+' — '+(state.status==='manual'?'큰 페이지 · 다시 검사 필요':'검사 불가 · '+(scrollAccessReasons[state.status]||state.status).split(' · ')[0]);
+      li.appendChild(skip);items.push(li);
+    });
+    dom.items.replaceChildren(...items);
+    dom.note.textContent='';
+    if(!items.length)setTouchListOpen(false);
+  }
+
+  function setTouchListOpen(open,focusButton){
+    const dom=getTouchDom();
+    if(!dom.list)return;
+    const show=Boolean(open)&&!dom.listBtn.hidden&&!dom.listBtn.disabled;
+    dom.list.hidden=!show;
+    dom.listBtn.setAttribute('aria-expanded',show?'true':'false');
+    dom.listBtn.textContent=show?'결과 닫기':'결과 보기';
+    if(!show&&focusButton&&!dom.listBtn.hidden)dom.listBtn.focus();
+  }
+
+  /* 목록 항목 강조: 그 view 의 터치 레이어에만, 현재 rect 를 다시 읽어 약 1.8초. iframe 은 스크롤하지 않고 다른 카드의 강조는 지운다 */
+  function highlightTouchResult(view,index){
+    const dom=getTouchDom();
+    const state=view&&view.touch;
+    const result=state&&state.status==='ok'?state.results[index]:null;
+    allViews().forEach(clearTouchFocus);
+    const prefix=view&&viewMode!=='single'?getDeviceName(view)+' ':'';
+    if(!result||!isTouchCheckView(view)){dom.note.textContent='요소가 변경됨 · 다시 검사 필요';return;}
+    const access=getScrollAccess(view);
+    const el=result.el;
+    if(!access.accessible||!el||!el.isConnected||el.ownerDocument!==access.win.document){dom.note.textContent=prefix+(index+1)+'번 요소가 변경됨 · 다시 검사 필요';return;}
+    const doc=access.win.document;
+    const r=el.getBoundingClientRect();
+    const vw=doc.documentElement.clientWidth,vh=doc.documentElement.clientHeight;
+    const x0=Math.max(0,r.left),y0=Math.max(0,r.top),x1=Math.min(vw,r.right),y1=Math.min(vh,r.bottom);
+    if(r.width<=0||r.height<=0||x1-x0<1||y1-y0<1){dom.note.textContent=prefix+(index+1)+'번 요소가 지금 화면에 보이지 않음 · 다시 검사 필요';return;}
+    const viewport=getSiteViewport(view);
+    const rect={x:x0+viewport.left,y:y0+viewport.top,w:x1-x0,h:y1-y0};
+    const moved=Math.abs(rect.x-result.rect.x)>1||Math.abs(rect.y-result.rect.y)>1||Math.abs(rect.w-result.rect.w)>1||Math.abs(rect.h-result.rect.h)>1;
+    const span=document.createElement('span');
+    span.className='te_focus'+(moved?' is_stale':'');
+    placeOcclusionBox(view,span,rect.x,rect.y,rect.w,rect.h);
+    view.dom.touchLayer.appendChild(span);
+    view.touchFocus=span;
+    view.touchFocusTimer=setTimeout(()=>{span.remove();if(view.touchFocus===span)view.touchFocus=null;},TOUCH_FOCUS_MS);
+    dom.note.textContent=moved?prefix+(index+1)+'번 요소 위치가 검사 이후 바뀜(현재 위치 표시) · 다시 검사 필요':'';
+  }
+
+  /* 리포트: 환경 줄은 가림 검사 리포트와 같은 데이터 · 출력 함수(buildOcclusionReport · formatReportEnvLines) 를 쓰고 결과만 터치 검사 값으로 바꾼다 */
+  function buildTouchReport(view){
+    const report=buildOcclusionReport(view);
+    const check=view.touch||{status:'no-url'};
+    report.check={status:check.status};
+    if(check.status==='ok'){
+      const count=countTouch(check);
+      Object.assign(report.check,{scanned:check.scanned,error:count.error,warn:count.warn,inline:count.inline,
+        items:check.results.map(result=>({status:result.status,kind:result.kind,name:result.name,label:result.label,reason:result.reason,size:formatTouchSize(result.size),
+          x:Math.round(result.viewport.x),y:Math.round(result.viewport.y)}))});
+    }else if(check.status!=='no-url'&&check.status!=='not-loaded'){
+      report.check.reason=(scrollAccessReasons[check.status]||check.status).split(' · ')[0];
+    }
+    return report;
+  }
+
+  function formatTouchCheckLines(check){
+    const lines=[];
+    if(check.status==='no-url'||check.status==='not-loaded'){lines.push('터치 타깃 검사: 결과 없음 — '+(check.status==='no-url'?'페이지 없음':'불러오는 중'));return lines;}
+    if(check.status==='manual'){lines.push('터치 타깃 검사: 큰 페이지 · 다시 검사 필요');return lines;}
+    if(check.status!=='ok'){
+      lines.push('자동 터치 타깃 검사: 불가 — '+check.reason);
+      lines.push(check.status==='file-origin'?'도구를 file:// 로 열어 페이지 내부 DOM 을 읽을 수 없습니다(Live Server 등 서버로 열어야 검사 가능).':'브라우저 보안 정책상 페이지 내부 DOM 을 읽을 수 없습니다.');
+      return lines;
+    }
+    lines.push('검사 target 수: '+check.scanned);
+    lines.push('Minimum 오류: '+check.error);
+    lines.push('Enhanced 권장 미달: '+check.warn);
+    lines.push('인라인 예외 후보: '+check.inline);
+    if(!check.items.length)lines.push('(지금 화면의 타깃 모두 44 × 44 CSS px 이상)');
+    check.items.forEach((item,index)=>{
+      lines.push('');
+      lines.push((index+1)+'. ['+TOUCH_STATUS_LABELS[item.status]+'] '+item.kind+(item.name?' · '+item.name:'')+' ('+item.label+')');
+      lines.push('   '+item.size+' · '+item.reason);
+      lines.push('   위치(viewport 기준): x '+item.x+', y '+item.y);
+    });
+    return lines;
+  }
+
+  function formatTouchReportFooter(){
+    return['기준: WCAG 2.2 SC 2.5.8 Target Size (Minimum) 24 CSS px','참고: SC 2.5.5 Target Size (Enhanced) 44 CSS px',
+      '※ 자동 검사로 확정할 수 없는 예외는 수동 확인이 필요합니다.','※ 자동 검사 결과이며 WCAG 예외(Equivalent · Essential · User Agent Control) 여부는 수동 확인 필요 · 인라인 링크 예외 후보는 heuristic 판정입니다.',
+      '※ 검사 범위: 지금 사이트 viewport 에 보이는 타깃(스크롤하면 다시 검사). WCAG 기준상 터치뿐 아니라 마우스 · 트랙패드 · 스타일러스 등 pointer input 전체를 대상으로 합니다.',
+      '※ 크기 자동 검사는 element bounding box 기준이며, 비정형·잘린 target은 수동 확인이 필요합니다.',
+      '※ 이 리포트는 자동 QA 검사 결과이며 WCAG 적합성 확정이 아닙니다.'];
+  }
+
+  function formatTouchReportText(report){
+    const lines=['[Device Preview 터치 타깃 검사]'];
+    if(report.page)lines.push('페이지: '+report.page.text+(report.page.trimmed?' (쿼리·해시 생략)':''));
+    lines.push(...formatReportEnvLines(report,'기기: '));
+    lines.push('Breakpoint QA: '+report.breakpoint);
+    lines.push('');
+    lines.push(...formatTouchCheckLines(report.check));
+    lines.push('');
+    lines.push(...formatTouchReportFooter());
+    lines.push('');
+    lines.push('검사 시각: '+formatReportTime(report.createdAt));
+    return lines.join('\n');
+  }
+
+  function formatCompareTouchReportText(reports){
+    const lines=['[Device Preview 터치 타깃 검사 · 다중 비교]'];
+    if(reports[0]&&reports[0].page)lines.push('페이지: '+reports[0].page.text+(reports[0].page.trimmed?' (쿼리·해시 생략)':''));
+    lines.push('비교 기기: '+reports.length+'개');
+    reports.forEach((report,index)=>{
+      lines.push('');
+      lines.push(...formatReportEnvLines(report,'['+(index+1)+'] '));
+      lines.push('Breakpoint QA: '+report.breakpoint);
+      lines.push(...formatTouchCheckLines(report.check));
+    });
+    lines.push('');
+    lines.push(...formatTouchReportFooter());
+    lines.push('');
+    lines.push('검사 시각: '+formatReportTime(reports[0]?reports[0].createdAt:new Date()));
+    return lines.join('\n');
+  }
+
+  function setTouchCopyBox(text){
+    const dom=getTouchDom();
+    if(!dom.copyBox)return;
+    dom.copyBox.hidden=text==null;
+    dom.copyText.value=text||'';
+    if(text!=null){setTouchListOpen(false);dom.copyText.focus();dom.copyText.select();}
+  }
+
+  function copyTouchReport(){
+    const views=visibleViews().filter(isTouchCheckView);
+    if(!views.length||!currentUrl)return;
+    views.forEach(view=>runTouchCheck(view,{manual:true}));   /* 복사 직전 최신 검사 한 번 — 화면 · 목록 · 리포트가 같은 snapshot */
+    if(!views.some(view=>view.touch&&view.touch.status!=='no-url'&&view.touch.status!=='not-loaded'))return;
+    const text=viewMode==='single'?formatTouchReportText(buildTouchReport(views[0])):formatCompareTouchReportText(views.map(buildTouchReport));
+    const button=getTouchDom().copy;
+    copyTextWithFallback(text).then(result=>{
+      if(result==='blocked'){setTouchCopyBox(text);announce('자동 복사가 막혔습니다. 표시된 리포트를 직접 복사해 주세요.');return;}
+      setTouchCopyBox(null);
+      clearTimeout(button.copiedTimer);
+      button.textContent='복사됨';
+      button.copiedTimer=setTimeout(()=>{button.textContent='리포트 복사';},2000);
+      announce('터치 타깃 검사 결과를 복사했습니다');
+    });
+  }
+
+  function setTouchEnabled(enabled){
+    touchEnabled=Boolean(enabled);
+    if(primaryView){
+      if(touchEnabled)visibleViews().forEach(view=>runTouchCheck(view,{}));
+      else allViews().forEach(resetTouchView);
+    }
+    updateTouchStatus();
+  }
+
+  function bindTouchControls(){
+    const dom=getTouchDom();
+    if(!dom.btn)return;
+    dom.btn.addEventListener('click',()=>{
+      setTouchEnabled(!touchEnabled);
+      saveDisplayPreference();
+      announce('터치 타깃 검사를 '+(touchEnabled?'켰습니다.':'껐습니다.'));
+    });
+    dom.recheck.addEventListener('click',()=>{if(primaryView)visibleViews().forEach(view=>runTouchCheck(view,{manual:true}));});
+    dom.listBtn.addEventListener('click',()=>{
+      setTouchCopyBox(null);
+      const open=dom.list.hidden;
+      if(open){setOcclusionListOpen(false);setOcclusionCopyBox(null);setCompatListOpen(false);}   /* 같은 자리의 목록이 겹치지 않게 */
+      setTouchListOpen(open);
+    });
+    elements.occlusionListBtn.addEventListener('click',()=>{setTouchListOpen(false);setTouchCopyBox(null);});
+    dom.copy.addEventListener('click',copyTouchReport);
+    dom.copyClose.addEventListener('click',()=>{setTouchCopyBox(null);dom.copy.focus();});
+    dom.copyBox.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();setTouchCopyBox(null);dom.copy.focus();}});
+    const pick=event=>{const item=event.target.closest('button[data-index]');if(item)highlightTouchResult(item.dataset.view?compareViews.get(item.dataset.view):primaryView,Number(item.dataset.index));};
+    dom.items.addEventListener('click',pick);
+    dom.items.addEventListener('focusin',pick);   /* 키보드로 항목에 들어가면 같은 강조 */
+    dom.items.addEventListener('pointerover',event=>{const item=event.target.closest('button[data-index]');if(item&&item!==dom.items.lastHover){dom.items.lastHover=item;pick(event);}});
+    dom.items.addEventListener('pointerleave',()=>{dom.items.lastHover=null;});
+    [dom.list,dom.listBtn].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&!dom.list.hidden){event.preventDefault();setTouchListOpen(false,true);}}));
+    updateTouchStatus();
+  }
+
   /* 동기화 스위치를 켤 때: 첫 접근 가능 카드 기준으로 즉시 정렬 */
   function realignScrollSync(){
     const reference=Array.from(compareViews.values()).find(view=>getSyncAccess(view).mode);
@@ -3338,6 +3933,7 @@
     view.dom.siteFrame.title=getDeviceName(view)+' 사이트 표시 영역 '+siteViewport.width+' × '+siteViewport.height+' 미리보기';
     if(view.compare)updateCompareItem(view,siteViewport);
     scheduleOcclusionCheck(view,OCCLUSION_RENDER_DELAY);   /* 가림 검사(켜져 있을 때만): iframe 크기 전환이 끝난 뒤 최종 rect 로 */
+    scheduleTouchCheck(view,OCCLUSION_RENDER_DELAY);   /* 터치 타깃 검사(켜져 있을 때만): 같은 시점 */
     return siteViewport;
   }
 
@@ -4089,7 +4685,7 @@
       name:item.querySelector('.compare_name'),meta:item.querySelector('.compare_meta_text'),
       stateSelect:item.querySelector('.compare_state'),rotate:item.querySelector('.compare_rotate'),
       refresh:item.querySelector('.compare_refresh'),remove:item.querySelector('.compare_remove'),badge:item.querySelector('.compare_badge'),
-      occlusion:item.querySelector('.compare_occlusion')
+      occlusion:item.querySelector('.compare_occlusion'),touch:item.querySelector('.compare_touch')
     });
     const view=createView(dom,{compare:true});
     setViewDevice(view,deviceId,settings.stateId,settings.rotated);
@@ -4157,6 +4753,8 @@
     compareViews.delete(deviceId);
     resetOcclusionView(view);        /* 가림 검사 타이머 · 강조 정리 */
     updateOcclusionStatus();
+    resetTouchView(view);            /* 터치 타깃 검사 타이머 · 강조 정리 */
+    updateTouchStatus();
     updateNavWatch();
     compareViews.forEach(updateScale);
     updateSyncAvailability();
@@ -4176,6 +4774,7 @@
     const removed=Array.from(compareViews.values());
     compareViews.clear();
     removed.forEach(resetOcclusionView);   /* 가림 검사 타이머 · 강조 정리 */
+    removed.forEach(resetTouchView);       /* 터치 타깃 검사도 같은 정리 */
   }
 
   function setViewMode(mode,options){
@@ -4210,6 +4809,7 @@
     if(currentUrl)updateLoadStatus();
     updateNavWatch();
     syncOcclusionViews();   /* 가림 검사: 숨겨진 view 정리 · 보이는 view 검사 예약 */
+    syncTouchViews();       /* 터치 타깃 검사: 같은 정리 · 예약 */
     saveComparePreference();
     return true;
   }
@@ -4225,7 +4825,7 @@
 
   function saveDisplayPreference(){
     try{
-      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,manualScale,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser,safariLayout,viewportFit,occlusionCheck:occlusionEnabled,safariVersion,keyboardMode,keyboardHeight}));
+      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,manualScale,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser,safariLayout,viewportFit,occlusionCheck:occlusionEnabled,touchCheck:touchEnabled,safariVersion,keyboardMode,keyboardHeight}));
     }catch(error){}
   }
 
@@ -4252,6 +4852,7 @@
       if(saved&&SAFARI_LAYOUTS.includes(saved.safariLayout))safariLayout=saved.safariLayout;
       if(saved&&VIEWPORT_FITS.includes(saved.viewportFit))viewportFit=saved.viewportFit;
       if(saved&&typeof saved.occlusionCheck==='boolean')occlusionEnabled=saved.occlusionCheck;
+      if(saved&&typeof saved.touchCheck==='boolean')touchEnabled=saved.touchCheck;
       if(saved&&KEYBOARD_MODES.includes(saved.keyboardMode))keyboardMode=saved.keyboardMode;
       if(saved&&typeof saved.keyboardHeight==='number'&&Number.isFinite(saved.keyboardHeight))keyboardHeight=Math.max(KEYBOARD_MIN,Math.min(900,Math.round(saved.keyboardHeight)));
       if(saved&&typeof saved.safariVersion==='string'&&/^\d+(\.\d+)?$/.test(saved.safariVersion))safariVersion=saved.safariVersion;
@@ -4493,6 +5094,8 @@
   deviceOnlyBtn.addEventListener('click',()=>setDeviceOnly(!document.body.classList.contains('is_device_only')));
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.defaultPrevented&&document.body.classList.contains('is_device_only')){event.preventDefault();setDeviceOnly(false);deviceOnlyBtn.focus();}});
   bindCompatControls();
+  bindTouchControls();
+  getCompatDom().listBtn.addEventListener('click',()=>{setTouchListOpen(false);setTouchCopyBox(null);});   /* Safari 호환성 목록과 겹치지 않게 */
   bindBrowserSettings();
   bindKeyboardControls();
   bindTestPresets();

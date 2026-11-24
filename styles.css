@@ -549,17 +549,17 @@ svg {
 .switch_control input:checked::before { transform: translateX(12px); }
 .switch_control input:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 2px; }
 
-/* 도구: 제목 / 아이콘 8개(회전 · safe-area · 가림 검사 · 가상 키보드 | Safari 호환성 검사 · 테스트 상태 프리셋 · 스크린샷 · 새로고침 · 새 창) */
+/* 도구: 제목 / 아이콘 9개(회전 · safe-area · 가림 검사 · 터치 타깃 검사 · 가상 키보드 | Safari 호환성 검사 · 테스트 상태 프리셋 · 스크린샷 · 새로고침 · 새 창) */
 .tool_actions {
   grid-area: tools;
   position: relative;   /* 테스트 상태 프리셋 popover(.preset_menu, absolute) 기준 */
   display: grid;
-  grid-template-columns: repeat(8, 36px);   /* 회전 · safe-area · 가림 검사 · 가상 키보드 · 테스트 상태 프리셋 · 스크린샷 · 새로고침 · 새 창 (MacBook + Safari 는 가상 키보드 대신 Safari 호환성 검사 — 둘 다 8열, 2026-11-09 프리셋 버튼으로 7 → 8) */
+  grid-template-columns: repeat(9, 36px);   /* 2026-11-23 터치 타깃 검사 버튼으로 8 → 9 · 회전 · safe-area · 가림 검사 · 가상 키보드 · 테스트 상태 프리셋 · 스크린샷 · 새로고침 · 새 창 (MacBook + Safari 는 가상 키보드 대신 Safari 호환성 검사 — 둘 다 8열, 2026-11-09 프리셋 버튼으로 7 → 8) */
   gap: 6px 2px;   /* 세로 6 = 제목 ↔ 아이콘, 가로 2 = 아이콘 사이(2026-10-21 6 → 4, 2026-11-02 4 → 2 — 스크린샷 버튼 자리) */
 }
 /* Safari 호환성 검사 버튼(2026-10-16): MacBook + Safari(macOS) 단일 보기일 때만 보인다 — 기존 JS 가 그 조건에서만 브라우저 그룹에 붙이는 data-mac-safari 를 따른다(JS 변경 없음). 다른 기기의 도구 그룹은 5열 그대로 */
 .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) .compat_btn { display: none; }
-.control_panel:has(.browser_controls[data-mac-safari="true"]) .keyboard_btn { display: none; }   /* 가상 키보드는 모바일 · 태블릿 · breakpoint 프리셋용 — MacBook 에서는 숨김(2026-10-21) */
+.control_panel:has(.browser_controls[data-mac-safari="true"]) .keyboard_btn { display: none; }   /* 가상 키보드는 모바일 · 태블릿 · breakpoint 프리셋용 — MacBook 에서는 숨김(2026-10-21). 터치 타깃 검사는 pointer input 전체 대상이라 MacBook 에서도 표시(2026-11-24) — 보이는 아이콘 9개 = 기본 repeat(9) */
 .tool_actions .ctrl_title { grid-column: 1 / -1; margin-bottom: 0; }   /* gap 6 이 제목 ↔ 아이콘 간격 */
 /* 테스트 상태 프리셋 popover(2026-11-09): 버튼 아래 작은 목록. 닫혀 있으면(hidden) 공간 없음, 열려도 패널 높이 그대로(absolute).
  * 브라우저 설정 popover 와 같은 모양(흰 배경 · border 1 · radius 8 · 옅은 그림자). 선택 표시 = aria-current(실제 현재 설정과 일치) */
@@ -1834,6 +1834,21 @@ svg {
 }
 .occlusion_layer .oe_focus { border: 4px solid var(--focus-color); outline: 2px solid #fff; outline-offset: -6px; }   /* 굵은 테두리 + 안쪽 흰 선(음수 outline-offset). 이전 바깥 box-shadow 링은 화면 가장자리에서 밖으로 나갔음 — 이제 모두 요소 rect 안에 그려지고 가장자리 변은 data-edge 로 생략 */
 .occlusion_layer .oe_focus.is_stale { border-style: dashed; }
+/* 터치 타깃 검사 레이어(2026-11-23, 가림 레이어와 별개): 오류 = 경고색 실선 · 권장 미달 = 약한 점선(색 외에 선 모양으로도 구분) · 정상 · 예외 후보는 그리지 않음 */
+.touch_layer { position: absolute; inset: 0; z-index: 6; display: none; pointer-events: none; }
+.device_shell[data-touch="true"] .touch_layer { display: block; }
+.touch_layer > span { position: absolute; box-sizing: border-box; pointer-events: none; }
+.touch_layer .te_error { border: 1.5px solid #dc2626; background: rgba(220, 38, 38, .08); }
+.touch_layer .te_warn { border: 1px dashed rgba(180, 83, 9, .75); }
+.touch_layer .te_focus { border: 3px solid var(--focus-color); outline: 1.5px solid #fff; outline-offset: -4.5px; }
+.touch_layer .te_focus.is_stale { border-style: dashed; }
+.touch_layer [data-edge~="l"] { border-left-width: 0; }
+.touch_layer [data-edge~="t"] { border-top-width: 0; }
+.touch_layer [data-edge~="r"] { border-right-width: 0; }
+.touch_layer [data-edge~="b"] { border-bottom-width: 0; }
+.touch_status { color: #344054; }
+.occlusion_items button[data-status="warn"] .oi_num { background: #b45309; }
+.occlusion_items button[data-status="inline"] .oi_num { background: #536071; }
 .occlusion_layer .oe_focus .oe_num { background: var(--focus-color); }
 /* 가림 요소 목록: 푸터 위에 뜨는 작은 목록(레이아웃 자리를 차지하지 않음) */
 .preview_footer { position: relative; }
@@ -2052,6 +2067,11 @@ svg {
 .compare_occlusion { flex: 0 0 auto; white-space: nowrap; }
 .compare_occlusion[data-hit="true"] { color: #c2410c; font-weight: 700; }
 .compare_occlusion[hidden] { display: none; }
+/* 카드별 터치 타깃 검사 결과(2026-11-23): 메타 글자 수준의 작은 표시 · 오류만 경고 색 */
+.compare_touch { flex: 0 0 auto; white-space: nowrap; }
+.compare_touch[data-level="error"] { color: #b42318; font-weight: 700; }
+.compare_touch[data-level="warn"] { color: #9a3412; }
+.compare_touch[hidden] { display: none; }
 .occlusion_items .oi_group { margin: 6px 8px 2px; color: #111827; font-size: 12px; font-weight: 700; }
 .occlusion_items li:first-child .oi_group { margin-top: 0; }
 .occlusion_items .oi_skip { margin: 4px 8px 0; color: #536071; font-size: 12px; }
@@ -2096,7 +2116,7 @@ svg {
  * 아이콘을 5개씩 두 줄로 놓아 도구 열을 화면 상태 열(--fold-col) 폭 안에 둔다 — 버튼 크기 · 순서 그대로, 이 폭에서만 패널이 16px 높아짐(브라우저 그룹이 4행인 18 Pro · Duo 는 그대로).
  * 이전(6개) 에도 1181~1214 · 901~934 에서는 주소창 위치 버튼이 회전 버튼과 겹쳐 있었다.
  * 2026-11-09 테스트 상태 프리셋 버튼(8개, 한 줄 302px) 으로 위 범위를 1249 → 1279 로 넓혔다 — 아래 줄 260 + 302 + 331 + 간격 24 = 917px 이 패널 폭(창 − 약 362) 에 들어가는 창 1280 부터 한 줄 */
-@media (min-width: 1181px) and (max-width: 1279px), (min-width: 901px) and (max-width: 980px) {
+@media (min-width: 1181px) and (max-width: 1319px), (min-width: 901px) and (max-width: 980px) {
   .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) .tool_actions { grid-template-columns: repeat(5, 36px); }   /* MacBook + Safari 는 별도 배치(아래)에서 한 줄로 들어간다 */
 }
 /* 1행(창 1920 이상, 2026-11-09): 테스트 상태 프리셋 버튼(+38px) 으로 6영역 합계가 약 1596px 가 되어 창 1920 의 패널 폭(1558) 을 넘으므로(보기 그룹이 줄바꿈되며 패널 112 → 122)
@@ -2104,6 +2124,9 @@ svg {
  * MacBook + Safari 는 화면 상태 열이 없는 별도 배치라 제외 */
 @media (min-width: 1920px) {
   .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) { --fold-col: 181px; column-gap: 8px; }
+  /* 2026-11-23 터치 타깃 검사 버튼(+38px): 1행에서는 화면 상태 열을 고정 폭(181) 으로 예약하지 않고 실제 내용 폭으로 둔다(단일 화면 기기는 0 — 그 자리를 기기 정보가 씀,
+   * Flip8 은 내용 폭이 181 이라 같음) · 기기 정보 최소 폭 200 → 168(기기 설명이 두 줄로 접힐 수 있음, 패널 높이는 그대로) */
+  .control_panel:not(:has(.browser_controls[data-mac-safari="true"])) { --fold-col: 0px; grid-template-columns: minmax(168px, 1fr) minmax(var(--fold-col), auto) auto auto auto auto; }
 }
 /* 2행에서 아래 줄(브라우저 · 도구 · 보기 ≈ 830px) 이 넘치는 폭에서만 4행 — 980 이하는 좌측 목록이 위로 올라가 패널이 다시 넓어지므로 2행으로 돌아가고, 900 이하에서 다시 4행 */
 @media (min-width: 981px) and (max-width: 1180px), (max-width: 900px) {
@@ -2216,6 +2239,25 @@ svg {
   .browser_controls[data-mac-safari="true"] .safari_version_select { width: 100%; }
   .browser_controls[data-mac-safari="true"] .safari_version { min-width: 0; }
 }
+/* MacBook + Safari 도구 9칸(2026-11-24, 터치 타깃 검사 버튼 표시로 도구 302 → 340): 기존 배치 경계 안에서만 열 · 간격을 조정한다(행 수 · 높이 그대로).
+ * ① 2행(1440~1919) 아래 줄 브라우저 408 + 도구 340 + 보기 331 이 창 1440 의 패널 폭(1097) 에 들어가게 그룹 사이 12 → 8
+ * ② 3행(1081~1439 · 781~980): 1열이 화면(244) 과 도구(340) 중 넓은 쪽이 되어 같은 열 오른쪽 브라우저 그룹이 패널 밖으로 밀렸다 → 3열로 나눠 도구가 1 · 2열에 걸치게(1열 = 화면 폭)
+ * ③ 4행(981~1080 · 701~780) 도구 · 보기 줄: 간격 14 → 10(창 1024 에서 340 + 10 + 331 = 패널 폭 681) */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .control_panel:has(.browser_controls[data-mac-safari="true"]) { column-gap: 8px; }
+}
+@media (min-width: 1081px) and (max-width: 1439px), (min-width: 781px) and (max-width: 980px) {
+  .control_panel:has(.browser_controls[data-mac-safari="true"]) {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "device device device"
+      "size   browser browser"
+      "tools  tools   view";
+  }
+}
+@media (min-width: 981px) and (max-width: 1080px), (min-width: 701px) and (max-width: 780px) {
+  .control_panel:has(.browser_controls[data-mac-safari="true"]) { column-gap: 10px; }
+}
 /* ---------- 기기만 보기(body.is_device_only, 2026-10-15) ----------
  * 기기 확인에 필요 없는 UI 를 숨기고 미리보기 스테이지가 창 전체를 쓴다. 배율 계산 · 기기 · 브라우저 · safe-area · 가림 검사 로직은 그대로이며,
  * 스테이지 크기가 바뀌면 기존 ResizeObserver → updateAllScales() 가 현재 배율 모드(화면 맞춤 · 수동 · 실기기) 를 그대로 다시 적용한다.
@@ -2269,6 +2311,7 @@ svg {
 .device_shell[data-capture="site"] .hinge_line,
 .device_shell[data-capture="site"] .safe_guides,
 .device_shell[data-capture="site"] .occlusion_layer,
+.device_shell[data-capture="site"] .touch_layer,
 .device_shell[data-capture="site"] .kb_sim,
 .device_shell[data-capture="site"] .status_cluster,
 .device_shell[data-capture="site"] .dynamic_island,
