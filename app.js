@@ -634,7 +634,7 @@
       browserUrl:shell.querySelector('.browser_url'),tchromeTitle:shell.querySelector('.tchrome_title'),hingeLine:shell.querySelector('.hinge_line'),
       statusCluster:shell.querySelector('.status_cluster'),clusterTime:shell.querySelector('.cluster_time'),clusterRing:shell.querySelector('.cluster_ring'),
       dynamicIsland:shell.querySelector('.dynamic_island'),sideControls:shell.querySelector('.side_controls'),
-      duoUrl:shell.querySelector('.duo_url'),duoTop:shell.querySelector('.duo_top'),duoTabs:shell.querySelector('.duo_tabs'),duoUrlTexts:Array.from(shell.querySelectorAll('.duo_field_text')),occlusionLayer:shell.querySelector('.occlusion_layer'),touchLayer:shell.querySelector('.touch_layer'),
+      duoUrl:shell.querySelector('.duo_url'),duoTop:shell.querySelector('.duo_top'),duoTabs:shell.querySelector('.duo_tabs'),duoUrlTexts:Array.from(shell.querySelectorAll('.duo_field_text')),occlusionLayer:shell.querySelector('.occlusion_layer'),touchLayer:shell.querySelector('.touch_layer'),focusLayer:shell.querySelector('.focus_layer'),layoutLayer:shell.querySelector('.layout_layer'),
       kbSim:shell.querySelector('.kb_sim'),kbValue:shell.querySelector('.kb_value'),kbHandle:shell.querySelector('.kb_handle'),
       statusTime:shell.querySelector('.status_time'),batteryFill:shell.querySelector('.battery_fill'),statusPercent:shell.querySelector('.status_percent'),statusPill:shell.querySelector('.status_pill'),
       keyVolume:shell.querySelector('.key_volume'),keyVolumeB:shell.querySelector('.key_volume_b'),keyPower:shell.querySelector('.key_power'),keyAction:shell.querySelector('.key_action'),
@@ -1100,6 +1100,8 @@
     updateControls();
     visibleViews().forEach(view=>scheduleOcclusionCheck(view,OCCLUSION_RENDER_DELAY));
     visibleViews().forEach(view=>scheduleTouchCheck(view,OCCLUSION_RENDER_DELAY));
+    visibleViews().forEach(view=>scheduleFocusCheck(view,OCCLUSION_RENDER_DELAY));
+    visibleViews().forEach(view=>scheduleLayoutCheck(view,OCCLUSION_RENDER_DELAY));
   }
 
   function getKeyboardDom(){
@@ -1982,7 +1984,9 @@
       attachScrollSync(view);
     }
     view.occlusionSlow=false;scheduleOcclusionCheck(view,OCCLUSION_LOAD_DELAY);
-    view.touchSlow=false;scheduleTouchCheck(view,OCCLUSION_LOAD_DELAY);   /* 터치 타깃 검사(켜져 있을 때만) — 새 문서 */   /* 새 문서: 큰 페이지 판정 초기화(view 마다 따로, 대상이 아니면 예약하지 않음) */
+    view.touchSlow=false;scheduleTouchCheck(view,OCCLUSION_LOAD_DELAY);   /* 터치 타깃 검사(켜져 있을 때만) — 새 문서 */
+    view.layoutSlow=false;scheduleLayoutCheck(view,OCCLUSION_LOAD_DELAY);   /* 레이아웃 깨짐 검사(켜져 있을 때만) — 새 문서 */
+    view.focusSlow=false;scheduleFocusCheck(view,OCCLUSION_LOAD_DELAY);   /* 키보드·포커스 검사(켜져 있을 때만) — 새 문서(Tab 기록은 문서마다 새로) */   /* 새 문서: 큰 페이지 판정 초기화(view 마다 따로, 대상이 아니면 예약하지 않음) */
     if(view===primaryView&&compatEnabled)setTimeout(runCompatCheck,80);   /* Safari 호환성 검사: 새 문서면 다시 검사 */
     updateLoadStatus();
   }
@@ -3688,6 +3692,1300 @@
     updateTouchStatus();
   }
 
+  /* ------------------------------------------------------------------
+   * 키보드·포커스 검사(Keyboard & Focus QA Inspector, 2026-11-24) — 가림 · 터치 검사와 별개 기능 · 독립 ON/OFF, 같은 view 단위 구조.
+   * 세 단계를 분리한다.
+   *   ① 정적 검사(자동): 같은 출처 문서의 sequential focus 대상(FOCUS_SELECTOR) 수집 → 양수 tabindex · 중첩 포커스 대상 · aria-hidden 안의 포커스 요소 ·
+   *      큰 좌표 점프(순서 확인 필요, heuristic). 요소에 .focus() 를 호출하지 않는다.
+   *   ② 실제 Tab 관찰: 사용자가 미리보기 iframe 안에서 직접 누른 Tab / Shift+Tab 직후의 focusin 만 기록(자동 Tab 전송 없음) →
+   *      순서 · 방향 · 포커스 표시 · 가림 · 화면 밖 · 반복 패턴(키보드 트랩 가능성).
+   *   ③ 수동 확인: Focus Order 의미 보존 · 포커스 표시의 실제 시인성 · 의도된 dialog trap 등 — 자동으로 적합 / 부적합을 확정하지 않는다.
+   * 기준: WCAG 2.2 SC 2.1.1 · 2.1.2 · 2.4.3 · 2.4.7 · 2.4.11(Minimum) — 참고 2.4.12(Enhanced) · 2.4.13(Focus Appearance).
+   * 재검사: 정적 검사는 가림 검사와 같은 시점(renderView · load · 키보드 갱신 · 다시 검사), 스크롤로는 다시 계산하지 않고 표시 위치만 갱신.
+   *   가림 · 화면 밖 · 표시 판정은 Tab 으로 포커스가 옮겨진 시점에만(브라우저 자동 스크롤을 기다려 FOCUS_SETTLE_MS 뒤). MutationObserver · ResizeObserver · rAF 루프 없음.
+   * 다른 출처 · file:// = "검사 불가"(Scroll Bridge 에 기능을 넣지 않음). 가상 키보드 시뮬레이션과 상태를 공유하지 않는다.
+   * ------------------------------------------------------------------ */
+  let focusEnabled=false,focusOrderShown=false;
+  const FOCUS_SETTLE_MS=250,FOCUS_KEY_WINDOW_MS=700,FOCUS_SLOW_MS=60,FOCUS_HISTORY_MAX=200,FOCUS_ORDER_MAX=300;
+  const FOCUS_SELECTOR='a[href],button,input:not([type="hidden"]),select,textarea,summary,[contenteditable]:not([contenteditable="false"]),[tabindex]';
+  const FOCUS_ISSUES={
+    'aria-hidden':{level:'error',text:'오류 후보 · aria-hidden 영역의 포커스 요소'},
+    'obscured-author':{level:'error',text:'오류 후보 · 포커스 완전 가림(사이트 콘텐츠)'},
+    'positive':{level:'warn',text:'주의 · 양수 tabindex'},
+    'nested':{level:'warn',text:'주의 · 중첩 포커스 대상'},
+    'order':{level:'warn',text:'순서 확인 필요 · 큰 위치 이동(heuristic)'},
+    'visible':{level:'warn',text:'포커스 표시 확인 필요'},
+    'obscured-ui':{level:'warn',text:'주의 · 포커스가 OS · 브라우저 UI 에 가림'},
+    'obscured-partial':{level:'warn',text:'주의 · 포커스 일부 가림'},
+    'safe':{level:'warn',text:'주의 · 포커스가 safe-area 안'},
+    'offscreen':{level:'warn',text:'주의 · 포커스 화면 밖'},
+    'trap':{level:'warn',text:'키보드 트랩 가능성 · 수동 확인'}
+  };
+  let focusDomCache=null,parentTabKey=null;
+  function getFocusDom(){
+    if(!focusDomCache){
+      const $=id=>document.getElementById(id);
+      focusDomCache={btn:$('focusBtn'),status:$('focusStatus'),text:$('focusText'),orderBtn:$('focusOrderBtn'),listBtn:$('focusListBtn'),recheck:$('focusRecheck'),copy:$('focusCopy'),
+        list:$('focusList'),items:$('focusItems'),note:$('focusListNote'),copyBox:$('focusCopyBox'),copyText:$('focusCopyText'),copyClose:$('focusCopyClose')};
+    }
+    return focusDomCache;
+  }
+
+  /* 검사 대상 view = 가림 · 터치 검사와 같은 규칙. 스마트폰 · 폴더블 · 태블릿 · MacBook 모두 같은 기준 */
+  function isFocusCheckView(view){
+    if(!focusEnabled||!view||!view.frameProfile)return false;
+    return viewMode==='single'?view===primaryView:Boolean(view.compare)&&compareViews.get(view.deviceId)===view;
+  }
+
+  function scheduleFocusCheck(view,delay){
+    if(!view)return;
+    clearTimeout(view.focusTimer);
+    view.focusTimer=null;
+    if(!isFocusCheckView(view)){
+      if(view.focusState||view.focusPick||(view.dom&&view.dom.shell.dataset.focus==='true'))resetFocusView(view);
+      if(focusEnabled)updateFocusStatus();
+      return;
+    }
+    view.focusTimer=setTimeout(()=>runFocusCheck(view,{auto:true}),delay);
+  }
+
+  function clearFocusPick(view){
+    clearTimeout(view.focusPickTimer);
+    if(view.focusPick){view.focusPick.remove();view.focusPick=null;}
+  }
+
+  function resetFocusView(view){
+    if(!view)return;
+    clearTimeout(view.focusTimer);view.focusTimer=null;
+    clearTimeout(view.focusSettleTimer);
+    clearFocusPick(view);
+    view.focusState=null;
+    view.focusTab=null;
+    if(view.dom)renderFocusLayer(view);
+    updateCompareFocus(view);
+  }
+
+  function syncFocusViews(){
+    allViews().forEach(view=>{if(!isFocusCheckView(view)&&(view.focusState||view.focusTimer||view.focusPick))resetFocusView(view);});
+    visibleViews().forEach(view=>scheduleFocusCheck(view,OCCLUSION_RENDER_DELAY));
+    updateFocusStatus();
+  }
+
+  /* 요소 이름: 터치 검사와 같은 privacy 규칙(touchKind · touchName — 폼 컨트롤은 이름 없음, 12자, @ · 숫자 4자리 이상 생략) + contenteditable 표시 */
+  function focusKind(el){
+    const kind=touchKind(el);
+    return el.isContentEditable&&!el.hasAttribute('tabindex')&&!/^(input|textarea)/.test(kind)?el.tagName.toLowerCase()+'[contenteditable]':kind;
+  }
+
+  /* sequential focus 대상인지(정적 판단 — 요소를 focus 하지 않는다) */
+  function isSequentialFocusable(el){
+    if(el.matches(':disabled')||el.closest('[inert]'))return false;
+    const attr=el.getAttribute('tabindex');
+    if(attr!=null&&attr.trim()!==''&&el.tabIndex<0)return false;   /* tabindex="-1" 등 */
+    if(el.isContentEditable&&el.parentElement&&el.parentElement.isContentEditable&&attr==null)return false;   /* 편집 영역 안쪽 노드는 편집 호스트 하나로 */
+    if(el.tagName==='SUMMARY'&&!(el.parentElement&&el.parentElement.tagName==='DETAILS'&&el.parentElement.querySelector(':scope > summary')===el))return attr!=null;
+    if(typeof el.checkVisibility==='function'){if(!el.checkVisibility({checkVisibilityCSS:true}))return false;}   /* opacity 0 은 여전히 포커스되므로 보지 않는다 */
+    else{const style=el.ownerDocument.defaultView.getComputedStyle(el);if(style.display==='none'||style.visibility!=='visible')return false;}
+    const rect=el.getBoundingClientRect();
+    return rect.width>0&&rect.height>0;
+  }
+
+  /* 포커스 표시 비교용 기준 스타일(포커스되지 않은 상태). 정적 검사 때 한 번 읽는다 */
+  function focusStyleSignature(win,el){
+    const s=win.getComputedStyle(el);
+    const p=(pseudo)=>{const q=win.getComputedStyle(el,pseudo);return q.content+'|'+q.outlineStyle+q.outlineWidth+'|'+q.boxShadow+'|'+q.backgroundColor+'|'+q.borderTopColor+q.borderBottomColor+q.borderBottomWidth+'|'+q.opacity;};
+    return [s.boxShadow,s.borderTopColor,s.borderRightColor,s.borderBottomColor,s.borderLeftColor,s.borderTopWidth,s.borderBottomWidth,s.backgroundColor,s.backgroundImage,s.color,s.textDecorationLine,s.textDecorationColor,s.outlineStyle,s.outlineWidth,s.outlineColor,s.transform,p('::before'),p('::after')].join('§');
+  }
+
+  function scanFocusTargets(win){
+    const doc=win.document;
+    const started=performance.now();
+    const nodes=doc.querySelectorAll(FOCUS_SELECTOR);
+    const list=[];
+    for(let i=0;i<nodes.length;i++)if(isSequentialFocusable(nodes[i]))list.push(nodes[i]);
+    /* sequential 순서: 양수 tabindex(작은 값부터, 같으면 문서 순서) → 0 · 기본(문서 순서) */
+    const positive=list.filter(el=>el.tabIndex>0&&el.hasAttribute('tabindex')).sort((a,b)=>a.tabIndex-b.tabIndex);
+    const ordered=positive.concat(list.filter(el=>!(el.tabIndex>0&&el.hasAttribute('tabindex'))));
+    const sx=win.scrollX,sy=win.scrollY,vh=doc.documentElement.clientHeight||win.innerHeight;
+    const set=new Set(ordered);
+    const baseline=new WeakMap();
+    const targets=ordered.map((el,index)=>{
+      const r=el.getBoundingClientRect();
+      baseline.set(el,focusStyleSignature(win,el));
+      return{el,index,x:r.left+sx,y:r.top+sy,w:r.width,h:r.height,kind:focusKind(el),name:touchName(el),label:describeOcclusionElement(el)};
+    });
+    const byEl=new Map(targets.map(t=>[t.el,t]));
+    const issues=[];
+    const add=(type,target,detail)=>issues.push({type,level:FOCUS_ISSUES[type].level,text:FOCUS_ISSUES[type].text,el:target.el,index:target.index,kind:target.kind,name:target.name,label:target.label,detail:detail||''});
+    targets.forEach(target=>{
+      const el=target.el;
+      if(el.closest('[aria-hidden="true"]'))add('aria-hidden',target,'aria-hidden="true" 영역 안에서 Tab 으로 포커스 가능');
+      if(el.tabIndex>0&&el.hasAttribute('tabindex'))add('positive',target,'tabindex='+el.tabIndex+' · 양수 tabindex는 비자연적인 키보드 이동 순서를 만들 수 있어 수동 확인이 필요합니다.');
+      for(let parent=el.parentElement;parent;parent=parent.parentElement){
+        if(set.has(parent)){const outer=byEl.get(parent);add('nested',target,(outer.index+1)+'번 '+outer.kind+' 안의 포커스 대상');break;}
+      }
+    });
+    /* 순서 heuristic: 앞 대상보다 위로 크게(화면 높이 75% 초과) 돌아가는 이동만 후보. grid · flex order · 다단 · RTL · 독립 영역에서는 합리적일 수 있어 오류가 아니다 */
+    for(let i=1;i<targets.length;i++){
+      const prev=targets[i-1],cur=targets[i];
+      if(prev.y-cur.y>vh*.75)add('order',cur,(prev.index+1)+'번 → '+(cur.index+1)+'번에서 위로 약 '+Math.round(prev.y-cur.y)+'px 이동');
+    }
+    issues.sort((a,b)=>(a.level==='error'?0:1)-(b.level==='error'?0:1)||a.index-b.index);
+    return{targets,issues,baseline,elapsed:performance.now()-started};
+  }
+
+  function runFocusCheck(view,options){
+    const settings=options||{};
+    if(view.focusTimer){clearTimeout(view.focusTimer);view.focusTimer=null;}
+    if(!isFocusCheckView(view)){renderFocusLayer(view);updateCompareFocus(view);updateFocusStatus();return;}
+    const wrap=view.dom.screenWrap;
+    if(settings.auto&&wrap.offsetWidth&&(Math.abs(wrap.offsetWidth-view.currentWidth)>1||Math.abs(wrap.offsetHeight-view.currentHeight)>1)){scheduleFocusCheck(view,OCCLUSION_RENDER_DELAY);return;}
+    let state;
+    if(!currentUrl)state={status:'no-url'};
+    else{
+      const access=getScrollAccess(view);
+      if(!access.accessible)state={status:access.reason};
+      else{
+        attachFocusTracking(view,access.win);
+        if(settings.auto&&view.focusSlow&&view.focusState&&view.focusState.status==='ok')state=view.focusState;   /* 큰 페이지: 자동 재검사 끔(이전 결과 유지, 다시 검사로 갱신) */
+        else{
+          const scan=scanFocusTargets(access.win);
+          view.focusSlow=scan.elapsed>FOCUS_SLOW_MS;
+          state={status:'ok',targets:scan.targets,issues:scan.issues,baseline:scan.baseline,elapsed:scan.elapsed,slow:view.focusSlow,doc:access.win.document};
+          /* Tab 기록의 순서 번호는 새 목록 기준으로 다시 맞춘다(기록 자체는 유지) */
+          const tab=view.focusTab;
+          if(tab&&tab.doc===access.win.document){const idx=new Map(scan.targets.map(t=>[t.el,t.index]));tab.history.forEach(entry=>{entry.index=idx.has(entry.el)?idx.get(entry.el):-1;});}
+        }
+      }
+    }
+    clearFocusPick(view);
+    view.focusState=state;
+    renderFocusLayer(view);
+    updateCompareFocus(view);
+    updateFocusStatus();
+  }
+
+  /* iframe 문서마다 한 번: Tab keydown → 직후 focusin 만 기록. 스크롤이 멈추면 표시 위치만 갱신(정적 결과는 다시 계산하지 않음) */
+  function attachFocusTracking(view,win){
+    if(view.focusDocument===win.document)return;
+    view.focusDocument=win.document;
+    view.focusTab={doc:win.document,history:[],dyn:new Map(),current:null};
+    const doc=win.document;
+    doc.addEventListener('keydown',event=>{if(event.key==='Tab'&&!event.ctrlKey&&!event.altKey&&!event.metaKey)view.focusKey={dir:event.shiftKey?'backward':'forward',t:performance.now()};},true);
+    doc.addEventListener('focusin',event=>{
+      if(!isFocusCheckView(view)||view.focusDocument!==doc)return;
+      const now=performance.now();
+      const key=view.focusKey&&now-view.focusKey.t<FOCUS_KEY_WINDOW_MS?view.focusKey:(parentTabKey&&now-parentTabKey.t<FOCUS_KEY_WINDOW_MS?parentTabKey:null);
+      if(!key)return;   /* 마우스 클릭 · 스크립트 focus 는 기록하지 않는다 */
+      view.focusKey=null;parentTabKey=null;
+      recordFocusTab(view,win,event.target,key.dir);
+    },true);
+    let scrollTimer=null;
+    win.addEventListener('scroll',()=>{
+      if(!isFocusCheckView(view))return;
+      clearTimeout(scrollTimer);
+      scrollTimer=setTimeout(()=>renderFocusLayer(view),OCCLUSION_SCROLL_DELAY);
+    },{passive:true});
+  }
+
+  function recordFocusTab(view,win,el,dir){
+    const tab=view.focusTab;
+    if(!tab||!el||el.nodeType!==1)return;
+    const state=view.focusState;
+    const target=state&&state.status==='ok'?state.targets.find(t=>t.el===el):null;
+    const prev=tab.history.length?tab.history[tab.history.length-1]:null;
+    const entry={n:tab.history.length+1,el,dir,index:target?target.index:-1,prevIndex:prev?prev.index:null,kind:focusKind(el),name:touchName(el),label:describeOcclusionElement(el),
+      scroll:{x:Math.round(win.scrollX),y:Math.round(win.scrollY)},rect:null,findings:[]};
+    tab.history.push(entry);
+    if(tab.history.length>FOCUS_HISTORY_MAX)tab.history.shift();
+    tab.current=entry;
+    clearTimeout(view.focusSettleTimer);
+    view.focusSettleTimer=setTimeout(()=>{evaluateFocusEntry(view,win,entry);renderFocusLayer(view);updateCompareFocus(view);updateFocusStatus();},FOCUS_SETTLE_MS);   /* 브라우저 자동 스크롤이 끝난 뒤 판정(강제 스크롤 없음) */
+  }
+
+  /* 포커스된 요소 판정: 화면 밖 · 가림(사이트 콘텐츠 = elementFromPoint 표본점, OS · 브라우저 · 하드웨어 · safe-area = 가림 검사 위험 영역) · 포커스 표시 · 반복 패턴 */
+  function evaluateFocusEntry(view,win,entry){
+    const tab=view.focusTab;
+    const el=entry.el;
+    if(!tab||!el.isConnected||el.ownerDocument!==tab.doc)return;
+    const doc=win.document;
+    const r=el.getBoundingClientRect();
+    const vw=doc.documentElement.clientWidth,vh=doc.documentElement.clientHeight;
+    entry.rect={x:r.left,y:r.top,w:r.width,h:r.height};
+    entry.scroll={x:Math.round(win.scrollX),y:Math.round(win.scrollY)};
+    const findings=[];
+    const key=type=>type+'|'+(entry.index>=0?entry.index:entry.label);
+    const note=(type,detail)=>{findings.push(type);tab.dyn.set(key(type),{type,level:FOCUS_ISSUES[type].level,text:FOCUS_ISSUES[type].text,el,index:entry.index,kind:entry.kind,name:entry.name,label:entry.label,detail:detail||'',tab:entry.n});};
+    ['offscreen','obscured-author','obscured-ui','obscured-partial','safe','visible'].forEach(type=>tab.dyn.delete(key(type)));   /* 같은 요소의 이전 판정은 이번 판정으로 교체 */
+    const inView=r.right>0&&r.bottom>0&&r.left<vw&&r.top<vh&&r.width>0&&r.height>0;
+    if(!inView)note('offscreen','Tab 이동 뒤 '+FOCUS_SETTLE_MS+'ms 가 지나도 사이트 viewport 밖');
+    else{
+      /* 5 × 5 표본점(요소 상자 안쪽, viewport 안 점만) */
+      const viewport=getSiteViewport(view);
+      const zones=getOcclusionZones(view);
+      let total=0,author=0,ui=0,safe=0,clear=0;
+      for(let i=0;i<5;i++)for(let j=0;j<5;j++){
+        const x=r.left+r.width*(i+.5)/5,y=r.top+r.height*(j+.5)/5;
+        if(x<0||y<0||x>=vw||y>=vh)continue;
+        total++;
+        const top=doc.elementFromPoint(x,y);
+        const byAuthor=Boolean(top)&&top!==el&&!el.contains(top)&&!top.contains(el);
+        const sx=x+viewport.left,sy=y+viewport.top;
+        const hit=kind=>zones.some(zone=>zone.kind===kind&&(zone.shape==='circle'?Math.hypot(zone.cx-sx,zone.cy-sy)<zone.r:sx>=zone.x&&sx<zone.x+zone.w&&sy>=zone.y&&sy<zone.y+zone.h));
+        const byUi=hit('hardware')||hit('os')||hit('browser');
+        if(byAuthor)author++;
+        else if(byUi)ui++;
+        else{clear++;if(hit('safe'))safe++;}
+      }
+      if(total&&!clear&&author)note('obscured-author','표본점 '+total+'개 모두 가림(사이트 콘텐츠 '+author+' · OS · 브라우저 '+ui+')');
+      else if(total&&!clear)note('obscured-ui','표본점 '+total+'개 모두 OS · 브라우저 · 하드웨어 영역');
+      else if(author||ui)note('obscured-partial','표본점 '+total+'개 중 '+(author+ui)+'개 가림 · AA(2.4.11) 는 일부 가림을 바로 실패로 보지 않음(AAA 2.4.12 는 전체 노출)');
+      else if(safe)note('safe','safe-area 안(주의 판정 — iframe 에는 실제 env(safe-area-inset-*) 가 전달되지 않음)');
+    }
+    /* 포커스 표시: outline · box-shadow 가 없고 포커스 전 기준 스타일과 달라진 것이 없을 때만 "확인 필요"(브라우저 기본 표시 · 복잡한 CSS 는 판정 못함) */
+    const state=view.focusState;
+    const s=win.getComputedStyle(el);
+    const outline=s.outlineStyle!=='none'&&(s.outlineStyle==='auto'||parseFloat(s.outlineWidth)>0);
+    const shadow=s.boxShadow&&s.boxShadow!=='none';
+    const base=state&&state.status==='ok'&&state.baseline?state.baseline.get(el):null;
+    const changed=base!=null&&focusStyleSignature(win,el)!==base;
+    if(!outline&&!shadow&&!changed)note('visible',base==null?'outline · box-shadow 없음(포커스 전 기준 스타일 없음)':'outline · box-shadow 없음 · 포커스 전과 같은 스타일');
+    entry.findings=findings;
+    /* 반복 패턴: 최근 forward Tab 10회 중 8회 이상이 2~5개 요소만 각각 2번 이상 반복 */
+    const forward=tab.history.filter(item=>item.dir==='forward').slice(-10);
+    if(forward.length>=8){
+      const counts=new Map();forward.forEach(item=>counts.set(item.el,(counts.get(item.el)||0)+1));
+      if(counts.size>=2&&counts.size<=5&&Array.from(counts.values()).every(c=>c>=2)){
+        const first=forward[forward.length-1];
+        tab.dyn.set('trap',{type:'trap',level:'warn',text:FOCUS_ISSUES.trap.text,el:first.el,index:first.index,kind:first.kind,name:first.name,label:first.label,
+          detail:'최근 forward Tab '+forward.length+'회가 '+counts.size+'개 요소에서만 반복 — 의도된 dialog focus trap 일 수 있어 수동 확인',tab:first.n});
+      }
+    }
+  }
+
+  function getFocusIssues(view){
+    const state=view&&view.focusState;
+    if(!state||state.status!=='ok')return[];
+    const dyn=view.focusTab&&view.focusTab.doc===state.doc?Array.from(view.focusTab.dyn.values()):[];
+    return state.issues.concat(dyn).sort((a,b)=>(a.level==='error'?0:1)-(b.level==='error'?0:1)||(a.index<0?1e9:a.index)-(b.index<0?1e9:b.index));
+  }
+  function countFocus(view){
+    const issues=getFocusIssues(view);
+    const tab=view.focusTab&&view.focusState&&view.focusTab.doc===view.focusState.doc?view.focusTab:null;
+    const visited=tab?new Set(tab.history.map(item=>item.el)).size:0;
+    return{error:issues.filter(i=>i.level==='error').length,warn:issues.filter(i=>i.level!=='error').length,targets:view.focusState&&view.focusState.status==='ok'?view.focusState.targets.length:0,tabs:tab?tab.history.length:0,visited};
+  }
+
+  function updateCompareFocus(view){
+    const el=view&&view.dom&&view.dom.focus;
+    if(!el)return;
+    const state=view.focusState;
+    let text='',title='',level='';
+    if(isFocusCheckView(view)&&currentUrl){
+      if(!state||state.status==='not-loaded')text='포커스 검사 중';
+      else if(state.status==='ok'){
+        const c=countFocus(view);
+        if(c.error){text='포커스 오류 후보 '+c.error+(c.warn?' · 주의 '+c.warn:'');level='error';}
+        else if(c.warn){text='포커스 주의 '+c.warn;level='warn';}
+        else text='포커스 정상';
+        if(c.tabs)text+=' · Tab '+c.visited+'/'+c.targets;
+        title='Tab 대상 '+c.targets+'개 · 오류 후보 '+c.error+' · 주의 '+c.warn+' · 실제 Tab '+c.tabs+'회';
+      }
+      else if(state.status!=='no-url'){text='포커스 검사 불가';title='키보드·포커스 자동 검사 불가 · '+(scrollAccessReasons[state.status]||state.status).split(' · ')[0];}
+    }
+    el.hidden=!text;
+    el.textContent=text;
+    el.title=title;
+    if(level)el.dataset.level=level;else delete el.dataset.level;
+  }
+
+  /* 표시: 정적 문제 대상(오류 후보 점선 · 주의 점선) · 순서 번호(순서 보기 켬일 때만, viewport 안 최대 FOCUS_ORDER_MAX) · 현재 포커스(굵은 테두리 + "Tab n · 이름") — 위치는 지금 rect */
+  function renderFocusLayer(view){
+    const layer=view.dom&&view.dom.focusLayer;
+    if(!view.dom)return;
+    view.dom.shell.dataset.focus=isFocusCheckView(view)?'true':'false';
+    if(!layer)return;
+    const fragment=document.createDocumentFragment();
+    const state=view.focusState;
+    if(isFocusCheckView(view)&&state&&state.status==='ok'&&state.doc&&state.doc.defaultView){
+      const vw=state.doc.documentElement.clientWidth,vh=state.doc.documentElement.clientHeight;
+      const viewport=getSiteViewport(view);
+      const place=(el,className)=>{
+        if(!el.isConnected)return null;
+        const r=el.getBoundingClientRect();
+        const x0=Math.max(0,r.left),y0=Math.max(0,r.top),x1=Math.min(vw,r.right),y1=Math.min(vh,r.bottom);
+        if(r.width<=0||r.height<=0||x1-x0<1||y1-y0<1)return null;
+        const span=document.createElement('span');span.className=className;
+        placeOcclusionBox(view,span,x0+viewport.left,y0+viewport.top,x1-x0,y1-y0);
+        fragment.appendChild(span);
+        return span;
+      };
+      const marked=new Set();
+      state.issues.forEach(issue=>{
+        if(marked.has(issue.el))return;
+        marked.add(issue.el);
+        const span=place(issue.el,issue.level==='error'?'fo_error':'fo_warn');
+        if(span)span.title=(issue.index+1)+'. '+issue.kind+(issue.name?' · '+issue.name:'')+' — '+issue.text;
+      });
+      if(focusOrderShown){
+        let shown=0;
+        for(const target of state.targets){
+          if(shown>=FOCUS_ORDER_MAX)break;
+          const r=target.el.isConnected?target.el.getBoundingClientRect():null;
+          if(!r||r.right<=0||r.bottom<=0||r.left>=vw||r.top>=vh)continue;
+          const badge=document.createElement('i');badge.className='fo_num';badge.textContent=String(target.index+1);
+          badge.style.left=Math.min(view.currentWidth-4,Math.max(0,r.left)+viewport.left)+'px';
+          badge.style.top=Math.min(view.currentHeight-4,Math.max(0,r.top)+viewport.top)+'px';
+          fragment.appendChild(badge);shown++;
+        }
+      }
+      const tab=view.focusTab;
+      const current=tab&&tab.doc===state.doc?tab.current:null;
+      if(current&&current.el.isConnected&&current.el.ownerDocument.activeElement===current.el){
+        const span=place(current.el,'fo_current'+(current.findings.some(type=>FOCUS_ISSUES[type].level==='error')?' is_error':current.findings.length?' is_warn':''));
+        if(span){
+          const label=document.createElement('i');label.className='fo_label';
+          label.textContent='Tab '+(current.index>=0?current.index+1:'?')+(current.dir==='backward'?' ←':'')+' · '+current.kind+(current.name?' · '+current.name:'');
+          span.appendChild(label);
+        }
+      }
+    }
+    if(view.focusPick&&view.focusPick.isConnected)fragment.appendChild(view.focusPick);
+    layer.replaceChildren(fragment);
+  }
+
+  function updateFocusStatus(){
+    const dom=getFocusDom();
+    if(!dom.status)return;
+    dom.status.hidden=!focusEnabled;
+    dom.btn.setAttribute('aria-pressed',focusEnabled?'true':'false');
+    dom.orderBtn.setAttribute('aria-pressed',focusOrderShown?'true':'false');
+    if(!focusEnabled){renderFocusList(null);setFocusListOpen(false);setFocusCopyBox(null);return;}
+    const note='WCAG 2.2 SC 2.1.1 · 2.1.2 · 2.4.3 · 2.4.7 · 2.4.11 기준 자동 QA 검사 · 정적 검사 + 미리보기 안에서 직접 누른 Tab 관찰(자동 Tab · 강제 focus 없음) · Focus Order 는 시각 순서와 다르다는 이유만으로 실패가 아님 · 포커스 표시와 키보드 트랩은 수동 확인 필요';
+    if(viewMode!=='single'){updateCompareFocusStatus(note);return;}
+    const view=primaryView;
+    const state=view&&view.focusState;
+    let text,recheck=true;
+    if(!state||state.status==='no-url'){text='포커스 · 검사할 페이지 없음';recheck=false;}
+    else if(state.status==='not-loaded')text='포커스 · 불러오는 중';
+    else if(state.status==='cross-origin')text='포커스 · 검사 불가 · 다른 출처';
+    else if(state.status==='file-origin')text='포커스 · 검사 불가 · file:// 로 열린 도구';
+    else{
+      const c=countFocus(view);
+      text=c.tabs?'포커스 · 오류 후보 '+c.error+' · 주의 '+c.warn+' · Tab '+c.visited+'/'+c.targets
+        :'포커스 · '+c.targets+'개 대상'+(c.error?' · 오류 후보 '+c.error:'')+' · 주의 '+c.warn;
+      if(state.slow)text+=' · 큰 페이지: 자동 재검사 꺼짐';
+    }
+    dom.text.textContent=text;
+    dom.status.title=note;
+    dom.recheck.hidden=!recheck;
+    dom.copy.disabled=!state||state.status==='no-url'||state.status==='not-loaded';
+    renderFocusList(state&&state.status==='ok'?[{view,state}]:null);
+  }
+
+  function updateCompareFocusStatus(note){
+    const dom=getFocusDom();
+    const views=Array.from(compareViews.values());
+    const states=views.map(view=>view.focusState);
+    const count=status=>states.filter(state=>state&&state.status===status).length;
+    const ok=views.filter(view=>view.focusState&&view.focusState.status==='ok');
+    const blocked=count('cross-origin')+count('file-origin');
+    const pending=views.length-ok.length-blocked;
+    let text,recheck=true;
+    if(!views.length){text='포커스 · 비교 기기 없음';recheck=false;}
+    else if(!currentUrl){text='포커스 · 검사할 페이지 없음';recheck=false;}
+    else{
+      const total={error:0,warn:0};
+      ok.forEach(view=>{const c=countFocus(view);total.error+=c.error;total.warn+=c.warn;});
+      text='포커스 · '+ok.length+'/'+views.length+' 검사 · 오류 후보 '+total.error+' · 주의 '+total.warn+(blocked?' · '+blocked+'개 자동 검사 불가':'')+(pending>0?' · '+pending+'개 검사 중':'');
+    }
+    dom.text.textContent=text;
+    dom.status.title=note;
+    dom.recheck.hidden=!recheck;
+    dom.copy.disabled=!currentUrl||!states.some(state=>state&&state.status!=='no-url'&&state.status!=='not-loaded');
+    renderFocusList(views.length?views.map(view=>({view,state:view.focusState})):null);
+  }
+
+  /* 목록: 기기마다 오류 후보 → 주의 → Tab 기록(최근 30회). 항목 = 버튼(누르면 그 view 에서만 지금 위치 강조, 스크롤 없음) */
+  function renderFocusList(entries){
+    const dom=getFocusDom();
+    const grouped=Boolean(entries)&&viewMode!=='single';
+    const okEntries=entries?entries.filter(entry=>entry.state&&entry.state.status==='ok'):[];
+    const skipped=grouped?entries.filter(({state})=>state&&state.status!=='ok'&&state.status!=='no-url'&&state.status!=='not-loaded'):[];
+    const items=[];
+    const heading=(text)=>{const li=document.createElement('li');const p=document.createElement('p');p.className='oi_group';p.textContent=text;li.appendChild(p);items.push(li);};
+    const button=(view,ref,num,status,head,meta,aria)=>{
+      const li=document.createElement('li');
+      const item=document.createElement('button');item.type='button';
+      item.dataset.focusRef=ref;item.dataset.status=status;
+      if(grouped)item.dataset.view=view.deviceId;
+      item.setAttribute('aria-label',aria);
+      const n=document.createElement('span');n.className='oi_num';n.textContent=num;
+      const name=document.createElement('span');name.className='oi_name';name.textContent=head;
+      const info=document.createElement('span');info.className='oi_meta';info.textContent=meta;
+      item.append(n,name,info);li.appendChild(item);items.push(li);
+    };
+    okEntries.forEach(({view,state})=>{
+      const issues=getFocusIssues(view);
+      const tab=view.focusTab&&view.focusTab.doc===state.doc?view.focusTab:null;
+      const history=tab?tab.history.slice(-30):[];
+      if(!issues.length&&!history.length)return;
+      const device=grouped?getDeviceName(view)+' · ':'';
+      if(grouped)heading(getDeviceName(view));
+      issues.forEach((issue,i)=>{
+        const head=(issue.level==='error'?'오류 후보':'주의')+' · '+issue.kind+(issue.name?' · '+issue.name:'');
+        const meta=issue.text.replace(/^(오류 후보|주의) · /,'')+(issue.index>=0?' · Tab 순서 '+(issue.index+1):'')+(issue.detail?' · '+issue.detail:'');
+        button(view,'issue:'+i,issue.index>=0?String(issue.index+1):'·',issue.level==='error'?'error':'warn',head,meta,device+head+', '+meta+' — 미리보기에서 강조');
+      });
+      if(history.length){
+        heading((grouped?getDeviceName(view)+' · ':'')+'Tab 기록 '+tab.history.length+'회');
+        history.forEach(entry=>{
+          const head='Tab '+entry.n+(entry.dir==='backward'?' (Shift)':'')+' · '+entry.kind+(entry.name?' · '+entry.name:'');
+          const meta='순서 '+(entry.index>=0?entry.index+1:'목록 밖')+(entry.prevIndex!=null?' ← '+(entry.prevIndex>=0?entry.prevIndex+1:'목록 밖'):'')+' · 스크롤 '+entry.scroll.y+(entry.findings.length?' · '+entry.findings.map(type=>FOCUS_ISSUES[type].text).join(' · '):'');
+          button(view,'tab:'+entry.n,String(entry.n),'inline',head,meta,device+head+', '+meta);
+        });
+      }
+    });
+    skipped.forEach(({view,state})=>{
+      const li=document.createElement('li');const p=document.createElement('p');p.className='oi_skip';
+      p.textContent=getDeviceName(view)+' — 검사 불가 · '+(scrollAccessReasons[state.status]||state.status).split(' · ')[0];
+      li.appendChild(p);items.push(li);
+    });
+    dom.listBtn.hidden=!okEntries.length&&!skipped.length;
+    dom.listBtn.disabled=!items.length;
+    dom.items.replaceChildren(...items);
+    dom.note.textContent='';
+    if(!items.length)setFocusListOpen(false);
+  }
+
+  function setFocusListOpen(open,focusButton){
+    const dom=getFocusDom();
+    if(!dom.list)return;
+    const show=Boolean(open)&&!dom.listBtn.hidden&&!dom.listBtn.disabled;
+    dom.list.hidden=!show;
+    dom.listBtn.setAttribute('aria-expanded',show?'true':'false');
+    dom.listBtn.textContent=show?'결과 닫기':'결과 보기';
+    if(!show&&focusButton&&!dom.listBtn.hidden)dom.listBtn.focus();
+  }
+
+  function highlightFocusItem(view,ref){
+    const dom=getFocusDom();
+    allViews().forEach(other=>{if(other.focusPick){clearFocusPick(other);if(other!==view&&other.dom)renderFocusLayer(other);}});
+    if(!view||!isFocusCheckView(view)){dom.note.textContent='요소가 변경됨 · 다시 검사 필요';return;}
+    let el=null;
+    const [kind,key]=String(ref).split(':');
+    if(kind==='issue'){const issue=getFocusIssues(view)[Number(key)];el=issue&&issue.el;}
+    else if(kind==='tab'&&view.focusTab){const entry=view.focusTab.history.find(item=>item.n===Number(key));el=entry&&entry.el;}
+    const state=view.focusState;
+    if(!el||!el.isConnected||!state||el.ownerDocument!==state.doc){dom.note.textContent='요소가 변경됨 · 다시 검사 필요';return;}
+    const r=el.getBoundingClientRect();
+    const vw=state.doc.documentElement.clientWidth,vh=state.doc.documentElement.clientHeight;
+    const x0=Math.max(0,r.left),y0=Math.max(0,r.top),x1=Math.min(vw,r.right),y1=Math.min(vh,r.bottom);
+    if(r.width<=0||r.height<=0||x1-x0<1||y1-y0<1){dom.note.textContent='요소가 지금 화면에 보이지 않음(스크롤하지 않음)';return;}
+    const viewport=getSiteViewport(view);
+    const span=document.createElement('span');span.className='fo_pick';
+    placeOcclusionBox(view,span,x0+viewport.left,y0+viewport.top,x1-x0,y1-y0);
+    view.focusPick=span;
+    view.dom.focusLayer.appendChild(span);
+    view.focusPickTimer=setTimeout(()=>{span.remove();if(view.focusPick===span)view.focusPick=null;},OCCLUSION_FOCUS_MS);
+    dom.note.textContent='';
+  }
+
+  /* 리포트: 환경 줄은 가림 검사와 같은 함수(buildOcclusionReport · formatReportEnvLines), 결과만 포커스 값 */
+  function buildFocusReport(view){
+    const report=buildOcclusionReport(view);
+    const state=view.focusState||{status:'no-url'};
+    report.check={status:state.status};
+    if(state.status==='ok'){
+      const issues=getFocusIssues(view);
+      const c=countFocus(view);
+      const n=type=>issues.filter(issue=>issue.type===type).length;
+      Object.assign(report.check,{targets:c.targets,tabs:c.tabs,visited:c.visited,error:c.error,warn:c.warn,
+        counts:{positive:n('positive'),nested:n('nested'),ariaHidden:n('aria-hidden'),order:n('order'),visible:n('visible'),full:n('obscured-author'),ui:n('obscured-ui'),partial:n('obscured-partial'),safe:n('safe'),offscreen:n('offscreen'),trap:n('trap')},
+        items:issues.map(issue=>({level:issue.level,text:issue.text,kind:issue.kind,name:issue.name,label:issue.label,index:issue.index,detail:issue.detail}))});
+    }else if(state.status!=='no-url'&&state.status!=='not-loaded')report.check.reason=(scrollAccessReasons[state.status]||state.status).split(' · ')[0];
+    return report;
+  }
+
+  function formatFocusCheckLines(check){
+    const lines=[];
+    if(check.status==='no-url'||check.status==='not-loaded'){lines.push('키보드·포커스 검사: 결과 없음 — '+(check.status==='no-url'?'페이지 없음':'불러오는 중'));return lines;}
+    if(check.status!=='ok'){
+      lines.push('자동 키보드·포커스 검사: 불가 — '+check.reason);
+      lines.push(check.status==='file-origin'?'도구를 file:// 로 열어 페이지 내부 DOM 을 읽을 수 없습니다(Live Server 등 서버로 열어야 검사 가능).':'브라우저 보안 정책상 페이지 내부 DOM 을 읽을 수 없습니다.');
+      return lines;
+    }
+    const c=check.counts;
+    lines.push('sequential focus target 수: '+check.targets);
+    lines.push('오류 후보 '+check.error+' · 주의 '+check.warn);
+    lines.push('양수 tabindex: '+c.positive+' · 중첩 포커스 대상: '+c.nested+' · aria-hidden 영역의 포커스 요소: '+c.ariaHidden+' · 순서 확인 후보: '+c.order);
+    lines.push('실제 Tab 추적: '+check.tabs+'회(서로 다른 대상 '+check.visited+'개)');
+    lines.push('포커스 표시 확인 필요: '+c.visible+' · 완전 가림(사이트 콘텐츠): '+c.full+' · OS · 브라우저 UI 가림: '+c.ui+' · 일부 가림: '+c.partial+' · safe-area: '+c.safe+' · 화면 밖: '+c.offscreen+' · 키보드 트랩 가능성: '+c.trap);
+    check.items.forEach((item,index)=>{
+      lines.push('');
+      lines.push((index+1)+'. ['+(item.level==='error'?'오류 후보':'주의')+'] '+item.kind+(item.name?' · '+item.name:'')+' ('+item.label+')'+(item.index>=0?' · Tab 순서 '+(item.index+1):''));
+      lines.push('   '+item.text+(item.detail?' — '+item.detail:''));
+    });
+    return lines;
+  }
+
+  function formatFocusReportFooter(){
+    return['기준: WCAG 2.2 SC 2.1.1 Keyboard, 2.1.2 No Keyboard Trap, 2.4.3 Focus Order, 2.4.7 Focus Visible, 2.4.11 Focus Not Obscured (Minimum)',
+      '참고: SC 2.4.12 Focus Not Obscured (Enhanced) · 2.4.13 Focus Appearance (AAA)',
+      '※ Focus Order는 시각적 위치와 DOM 순서가 다르다는 이유만으로 실패가 아닙니다.',
+      '※ 포커스 표시와 키보드 트랩은 자동 검사만으로 적합성을 확정할 수 없어 수동 확인이 필요합니다.',
+      '※ 실제 Tab 판정은 미리보기 안에서 직접 누른 Tab 만 기록합니다(자동 Tab · 강제 focus 없음). 자동 QA 검사 결과이며 WCAG 적합성 확정이 아닙니다.'];
+  }
+
+  function formatFocusReportText(reports){
+    const compare=reports.length>1||viewMode!=='single';
+    const lines=[compare?'[Device Preview 키보드·포커스 검사 · 다중 비교]':'[Device Preview 키보드·포커스 검사]'];
+    if(reports[0]&&reports[0].page)lines.push('페이지: '+reports[0].page.text+(reports[0].page.trimmed?' (쿼리·해시 생략)':''));
+    if(compare)lines.push('비교 기기: '+reports.length+'개');
+    reports.forEach((report,index)=>{
+      lines.push('');
+      lines.push(...formatReportEnvLines(report,compare?'['+(index+1)+'] ':'기기: '));
+      lines.push('Breakpoint QA: '+report.breakpoint);
+      if(!compare)lines.push('');
+      lines.push(...formatFocusCheckLines(report.check));
+    });
+    lines.push('');
+    lines.push(...formatFocusReportFooter());
+    lines.push('');
+    lines.push('검사 시각: '+formatReportTime(reports[0]?reports[0].createdAt:new Date()));
+    return lines.join('\n');
+  }
+
+  function setFocusCopyBox(text){
+    const dom=getFocusDom();
+    if(!dom.copyBox)return;
+    dom.copyBox.hidden=text==null;
+    dom.copyText.value=text||'';
+    if(text!=null){setFocusListOpen(false);dom.copyText.focus();dom.copyText.select();}
+  }
+
+  function copyFocusReport(){
+    const views=visibleViews().filter(isFocusCheckView);
+    if(!views.length||!currentUrl)return;
+    views.forEach(view=>runFocusCheck(view,{manual:true}));
+    if(!views.some(view=>view.focusState&&view.focusState.status!=='no-url'&&view.focusState.status!=='not-loaded'))return;
+    const text=formatFocusReportText(views.map(buildFocusReport));
+    const button=getFocusDom().copy;
+    copyTextWithFallback(text).then(result=>{
+      if(result==='blocked'){setFocusCopyBox(text);announce('자동 복사가 막혔습니다. 표시된 리포트를 직접 복사해 주세요.');return;}
+      setFocusCopyBox(null);
+      clearTimeout(button.copiedTimer);
+      button.textContent='복사됨';
+      button.copiedTimer=setTimeout(()=>{button.textContent='리포트 복사';},2000);
+      announce('키보드·포커스 검사 결과를 복사했습니다');
+    });
+  }
+
+  function setFocusEnabled(enabled){
+    focusEnabled=Boolean(enabled);
+    if(primaryView){
+      if(focusEnabled)visibleViews().forEach(view=>runFocusCheck(view,{}));
+      else allViews().forEach(resetFocusView);
+    }
+    updateFocusStatus();
+  }
+
+  function bindFocusControls(){
+    const dom=getFocusDom();
+    if(!dom.btn)return;
+    /* 도구 문서에서 미리보기 iframe 으로 들어가는 첫 Tab(키가 도구 문서에서 눌림) 도 Tab 으로 본다 */
+    document.addEventListener('keydown',event=>{if(event.key==='Tab'&&!event.ctrlKey&&!event.altKey&&!event.metaKey)parentTabKey={dir:event.shiftKey?'backward':'forward',t:performance.now()};},true);
+    dom.btn.addEventListener('click',()=>{
+      setFocusEnabled(!focusEnabled);
+      saveDisplayPreference();
+      announce('키보드·포커스 검사를 '+(focusEnabled?'켰습니다.':'껐습니다.'));
+    });
+    dom.orderBtn.addEventListener('click',()=>{focusOrderShown=!focusOrderShown;visibleViews().forEach(renderFocusLayer);updateFocusStatus();});
+    dom.recheck.addEventListener('click',()=>{if(primaryView)visibleViews().forEach(view=>runFocusCheck(view,{manual:true}));});
+    dom.listBtn.addEventListener('click',()=>{
+      setFocusCopyBox(null);
+      const open=dom.list.hidden;
+      if(open){setOcclusionListOpen(false);setOcclusionCopyBox(null);setTouchListOpen(false);setTouchCopyBox(null);setCompatListOpen(false);}
+      setFocusListOpen(open);
+    });
+    [elements.occlusionListBtn,getTouchDom().listBtn,getCompatDom().listBtn].forEach(btn=>btn&&btn.addEventListener('click',()=>{setFocusListOpen(false);setFocusCopyBox(null);}));
+    dom.copy.addEventListener('click',copyFocusReport);
+    dom.copyClose.addEventListener('click',()=>{setFocusCopyBox(null);dom.copy.focus();});
+    dom.copyBox.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();setFocusCopyBox(null);dom.copy.focus();}});
+    const pick=event=>{const item=event.target.closest('button[data-focus-ref]');if(item)highlightFocusItem(item.dataset.view?compareViews.get(item.dataset.view):primaryView,item.dataset.focusRef);};
+    dom.items.addEventListener('click',pick);
+    dom.items.addEventListener('focusin',pick);
+    dom.items.addEventListener('pointerover',event=>{const item=event.target.closest('button[data-focus-ref]');if(item&&item!==dom.items.lastHover){dom.items.lastHover=item;pick(event);}});
+    dom.items.addEventListener('pointerleave',()=>{dom.items.lastHover=null;});
+    [dom.list,dom.listBtn].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&!dom.list.hidden){event.preventDefault();setFocusListOpen(false,true);}}));
+    updateFocusStatus();
+  }
+
+  /* ------------------------------------------------------------------
+   * 레이아웃 깨짐 검사(Layout Overflow Inspector, 2026-11-24) — 가림 · 터치 · 포커스 검사와 별개 기능 · 독립 ON/OFF, 같은 view 단위 구조.
+   * 문제를 찾는 QA 도구이며 사이트를 고치지 않는다: iframe 안 CSS · DOM · 스크롤 위치를 바꾸지 않고, 폭 보정 · overflow 숨김을 하지 않는다.
+   * 같은 출처에서만 자동 검사(getScrollAccess) — 다른 출처 · file:// 은 "검사 불가"(Scroll Bridge 에 기능을 넣지 않음).
+   * 1차: 문서 가로 넘침 = max(html.scrollWidth, body.scrollWidth) − html.clientWidth(layout viewport 폭, 스크롤바 제외).
+   *   허용 오차 LAYOUT_TOL 1 CSS px — scrollWidth 는 정수로 반올림되고 소수 폭 레이아웃(예 33.3% 열 3개) 은 합이 1px 안쪽으로 넘칠 수 있어, 1px 이하는 넘침으로 보지 않는다.
+   * 2차: body 아래 요소를 한 번 훑는다 — 상자(getBoundingClientRect) · scrollWidth / clientWidth 만 먼저 읽고, 후보만 계산 스타일을 읽는다.
+   *   viewport 이탈 판정은 문서 x 좌표(rect + scrollX) 를 layout viewport 폭 [0, vw] 와 비교 — 가로 스크롤 위치와 무관, 세로 위치는 보지 않는다(페이지 전체).
+   * 재검사 = 다른 검사와 같은 시점(renderView 뒤 · iframe load 뒤 · 키보드 · 다시 검사). 스크롤로는 다시 검사하지 않고 표시 위치만 갱신. MutationObserver · ResizeObserver · rAF 루프 없음.
+   *   탐색이 LAYOUT_SLOW_MS 를 넘으면 그 문서는 자동 재검사를 끄고(결과는 유지) · LAYOUT_BUDGET_MS 를 넘으면 그 자리에서 멈추고 "검사 일부 제한" 으로 표시(문제 없음으로 표시하지 않음).
+   * 결과는 자동 레이아웃 QA 후보이며 CSS 오류를 확정하지 않는다. 요소 이름은 tag / id / class 요약(describeOcclusionElement) 만 — 본문 · 입력값 · 문자열 내용은 저장하지 않는다
+   * ------------------------------------------------------------------ */
+  let layoutEnabled=false;
+  const LAYOUT_TOL=1,LAYOUT_SLOW_MS=60,LAYOUT_BUDGET_MS=1500,LAYOUT_FOCUS_MS=1800,LAYOUT_MAX_ITEMS=200;
+  const LAYOUT_LEVEL_ORDER={error:0,warn:1,info:2};
+  const LAYOUT_LEVEL_LABELS={error:'문제',warn:'주의',info:'예외 후보'};
+  const LAYOUT_MEDIA=/^(img|svg|canvas|video|picture|iframe|embed|object)$/;
+  const LAYOUT_HIDDEN_CLASS=/(^|[-_\s])(hidden|hide|closed|collapsed|offcanvas|off-canvas|drawer|sr-only|visually-hidden|inactive)([-_\s]|$)/i;
+  let layoutDomCache=null;
+  function getLayoutDom(){
+    if(!layoutDomCache){
+      const $=id=>document.getElementById(id);
+      layoutDomCache={btn:$('layoutBtn'),status:$('layoutStatus'),text:$('layoutText'),listBtn:$('layoutListBtn'),recheck:$('layoutRecheck'),copy:$('layoutCopy'),
+        list:$('layoutList'),items:$('layoutItems'),note:$('layoutListNote'),copyBox:$('layoutCopyBox'),copyText:$('layoutCopyText'),copyClose:$('layoutCopyClose')};
+    }
+    return layoutDomCache;
+  }
+
+  /* 검사 대상 view = 다른 검사와 같은 규칙(단일 → primaryView, 다중 비교 → 보이는 카드). 모든 기기(MacBook 포함) 같은 기준 */
+  function isLayoutCheckView(view){
+    if(!layoutEnabled||!view||!view.frameProfile)return false;
+    return viewMode==='single'?view===primaryView:Boolean(view.compare)&&compareViews.get(view.deviceId)===view;
+  }
+
+  function scheduleLayoutCheck(view,delay){
+    if(!view)return;
+    clearTimeout(view.layoutTimer);
+    view.layoutTimer=null;
+    if(!isLayoutCheckView(view)){
+      if(view.layout||view.layoutPick||(view.dom&&view.dom.shell.dataset.layout==='true'))resetLayoutView(view);
+      if(layoutEnabled)updateLayoutStatus();
+      return;
+    }
+    view.layoutTimer=setTimeout(()=>runLayoutCheck(view,{auto:true}),delay);
+  }
+
+  function clearLayoutPick(view){
+    clearTimeout(view.layoutPickTimer);
+    if(view.layoutPick){view.layoutPick.remove();view.layoutPick=null;}
+  }
+
+  function resetLayoutView(view){
+    if(!view)return;
+    clearTimeout(view.layoutTimer);view.layoutTimer=null;
+    clearLayoutPick(view);
+    view.layout=null;
+    if(view.dom)renderLayoutLayer(view);
+    updateCompareLayout(view);
+  }
+
+  function syncLayoutViews(){
+    allViews().forEach(view=>{if(!isLayoutCheckView(view)&&(view.layout||view.layoutTimer||view.layoutPick))resetLayoutView(view);});
+    visibleViews().forEach(view=>scheduleLayoutCheck(view,OCCLUSION_RENDER_DELAY));
+    updateLayoutStatus();
+  }
+
+  /* 같은 출처 문서의 레이아웃 넘침 탐색. 좌표: 문서 x = rect.left + scrollX(layout viewport 폭 vw 와 비교), 표시용 rect 는 검사 시점 iframe viewport 좌표 */
+  function scanLayout(win){
+    const doc=win.document,de=doc.documentElement,body=doc.body;
+    const started=performance.now();
+    const vw=de.clientWidth,sx=win.scrollX||0;
+    const docScroll=de.scrollWidth,bodyScroll=body?body.scrollWidth:0;
+    const docWidth=Math.max(docScroll,bodyScroll);
+    const overflowPx=Math.max(0,docWidth-vw);
+    const rootStyle=win.getComputedStyle(de),bodyStyle=body?win.getComputedStyle(body):null;
+    /* 문서(viewport) 의 overflow-x: html 이 visible 이면 body 값이 viewport 로 전파된다 */
+    const viewportOverflow=rootStyle.overflowX!=='visible'?rootStyle.overflowX:(bodyStyle?bodyStyle.overflowX:'visible');
+    const docClipped=viewportOverflow==='hidden'||viewportOverflow==='clip';
+    const docOverflow=overflowPx>LAYOUT_TOL;
+    const result={vw,innerWidth:win.innerWidth,docScroll,bodyScroll,docWidth,overflowPx:docOverflow&&!docClipped?overflowPx:0,clippedPx:docOverflow&&docClipped?overflowPx:0,rawOverflow:overflowPx,docClipped,items:[],scanned:0,partial:false};
+    if(!body)return Object.assign(result,{elapsed:performance.now()-started});
+    const styleCache=new Map();
+    const style=el=>{let s=styleCache.get(el);if(!s){s=win.getComputedStyle(el);styleCache.set(el,s);}return s;};
+    const boxCache=new Map();
+    const box=el=>{let b=boxCache.get(el);if(!b){const r=el.getBoundingClientRect();b={r,x0:r.left+sx,x1:r.right+sx,w:r.width,h:r.height};boxCache.set(el,b);}return b;};
+    const isRoot=el=>el===de||el===body;
+    /* 가장 가까운 "자르는" 조상(overflow-x 가 visible 이 아닌 요소, html · body 제외). absolute 는 containing block 부터 위쪽만, fixed 는 transform 조상만 자른다 */
+    const clipCache=new Map();
+    const clipAncestor=el=>{
+      const position=style(el).position;
+      let cbReached=position!=='absolute';
+      for(let node=el.parentElement;node&&!isRoot(node);node=node.parentElement){
+        const s=style(node);
+        if(position==='fixed'){if(s.transform!=='none'&&s.overflowX!=='visible')return node;continue;}
+        if(!cbReached){if(s.position!=='static'||s.transform!=='none')cbReached=true;else continue;}
+        if(clipCache.has(node)){const cached=clipCache.get(node);if(cached)return cached;continue;}
+        if(s.overflowX!=='visible'){clipCache.set(node,node);return node;}
+        clipCache.set(node,null);
+      }
+      return null;
+    };
+    const fixedAncestor=el=>{for(let node=el;node&&!isRoot(node);node=node.parentElement)if(style(node).position==='fixed')return node;return null;};
+    const hiddenState=el=>{
+      const reasons=[];
+      for(let node=el,depth=0;node&&!isRoot(node)&&depth<6;node=node.parentElement,depth++){
+        const s=style(node);
+        if(parseFloat(s.opacity)===0&&!reasons.includes('opacity 0'))reasons.push('opacity 0');
+        if(s.visibility!=='visible'&&!reasons.includes('visibility hidden'))reasons.push('visibility hidden');
+        if(node.getAttribute('aria-hidden')==='true'&&!reasons.includes('aria-hidden'))reasons.push('aria-hidden');
+        if(s.transform!=='none'&&!reasons.includes('transform'))reasons.push('transform');
+        if(typeof node.className==='string'&&LAYOUT_HIDDEN_CLASS.test(node.className)&&!reasons.includes('숨김 상태 class'))reasons.push('숨김 상태 class');
+      }
+      return reasons;
+    };
+    const layoutParent=el=>{
+      for(let node=el.parentElement;node;node=node.parentElement){
+        if(node===de)return null;
+        const d=style(node).display;
+        if(d==='contents'||d==='inline')continue;
+        return node;
+      }
+      return null;
+    };
+    const kindOf=el=>{
+      const tag=el.tagName.toLowerCase();
+      if(tag==='table')return 'table';
+      if(LAYOUT_MEDIA.test(tag))return 'media';
+      if(/^(pre|code)$/.test(tag))return 'code';
+      return 'box';
+    };
+    const all=body.getElementsByTagName('*');
+    const escapes=new Map();   /* 문서 오른쪽 넘침에 기여하는 요소(자르는 조상 · fixed 없음) */
+    const items=[];
+    const reported=new Set();
+    const offscreen=new Set();
+    const push=item=>{reported.add(item.el);items.push(item);};
+    for(let i=0;i<all.length;i++){
+      if((i&255)===0&&performance.now()-started>LAYOUT_BUDGET_MS){result.partial=true;break;}
+      const el=all[i];
+      if(el.ownerSVGElement)continue;   /* svg 안쪽 도형은 svg 하나로 본다 */
+      const b=box(el);
+      if(b.w<=0&&b.h<=0)continue;
+      result.scanned++;
+      const right=b.x1-vw,left=-b.x0;
+      const sw=el.scrollWidth,cw=el.clientWidth;
+      const contentOver=cw>0&&sw>cw+LAYOUT_TOL;
+      const escaping=right>LAYOUT_TOL||left>LAYOUT_TOL;
+      if(!escaping&&!contentOver){
+        /* 부모 상자 밖으로 나간 자식(viewport 안) — 부모 border box 기준 위치 넘침만 */
+        const parent=el.parentElement;
+        if(!parent||parent===de)continue;
+        const pb=box(parent);
+        if(b.x1<=pb.x1+LAYOUT_TOL&&b.x0>=pb.x0-LAYOUT_TOL)continue;
+      }
+      const s=style(el);
+      if(s.display==='contents')continue;
+      if(escaping){
+        const fixed=fixedAncestor(el);
+        const clip=fixed?null:clipAncestor(el);
+        if(clip)continue;   /* 자르는 / 스크롤하는 조상 안 — 그 조상의 콘텐츠 넘침으로 본다 */
+        const hidden=hiddenState(el);
+        const positioned=fixed?'fixed':s.position==='absolute'?'absolute':'';
+        if(fixed||left>LAYOUT_TOL&&right<=LAYOUT_TOL){
+          /* fixed 는 문서 폭을 늘리지 않고, 왼쪽 밖은 스크롤할 수 없다(잘려 보임) — 화면 밖 요소 · 확인 필요 */
+          let inside=false;
+          for(let node=el.parentElement;node&&!isRoot(node);node=node.parentElement)if(offscreen.has(node)){inside=true;break;}
+          if(inside)continue;   /* 이미 보고한 화면 밖 요소 안쪽 */
+          offscreen.add(el);
+          push({el,level:'warn',cat:'offscreen',amount:Math.round(Math.max(right,left)),
+            reason:'화면 밖 요소 · 확인 필요 · '+(right>LAYOUT_TOL?'오른쪽 '+Math.round(right):'왼쪽 '+Math.round(left))+'px 이탈'+(positioned?' · '+positioned:'')+(hidden.length?' · '+hidden.join(' · '):'')+(left>LAYOUT_TOL&&!fixed?' · 왼쪽 밖은 스크롤 불가(잘려 보임)':'')});
+          continue;
+        }
+        escapes.set(el,{b,right,hidden,positioned,s});
+        continue;
+      }
+      if(contentOver&&!isRoot(el)){
+        const amount=sw-cw;
+        const ox=s.overflowX;
+        if(ox==='auto'||ox==='scroll'){
+          const tag=el.tagName.toLowerCase();
+          const table=el.querySelector('table');
+          const what=table?'가로 스크롤 표 · 정상 후보':/^(pre|code)$/.test(tag)||el.querySelector('pre,code')&&!el.querySelector('img,li')?'코드 영역 가로 스크롤 · 정상 후보':el.getAttribute('role')==='tablist'||el.querySelector('[role="tab"]')?'가로 탭 목록 · 정상 후보':'의도된 가로 스크롤 후보(carousel · slider · gallery)';
+          push({el,level:'info',cat:'scroll',amount,reason:what+' · 내용 '+amount+'px 더 넓음'});
+          continue;
+        }
+        if(ox==='hidden'||ox==='clip'){
+          if(s.textOverflow==='ellipsis')continue;   /* 한 줄 말줄임(의도된 자르기) */
+          const track=Array.prototype.some.call(el.children,child=>style(child).transform!=='none');
+          if(track){push({el,level:'info',cat:'scroll',amount,reason:'carousel · slider 후보(잘린 트랙) · 내용 '+amount+'px 더 넓음'});continue;}
+          const media=el.querySelector('img,video,canvas,svg,picture');
+          push({el,level:'warn',cat:'clip',amount,reason:'잘림 확인 필요 · 내용 '+amount+'px 잘림'+(media?' · 미디어 포함(의도된 자르기 가능)':'')});
+          continue;
+        }
+        /* overflow visible: 이 요소의 글자(직속 텍스트 노드 · inline 자식) 가 내용 상자 밖으로 나갔을 때만 긴 콘텐츠로 본다 — 자손 블록 · absolute 의 넘침은 그 요소 쪽에서 보고.
+         * 글자 범위는 Range 상자(내용은 읽지 않음) 로 잰다 */
+        let textRight=-Infinity;
+        for(const node of el.childNodes){
+          if(node.nodeType===3){if(!/\S/.test(node.nodeValue))continue;const range=doc.createRange();range.selectNodeContents(node);const rr=range.getBoundingClientRect();if(rr.width>0)textRight=Math.max(textRight,rr.right+sx);}
+          else if(node.nodeType===1&&style(node).display==='inline'&&!node.ownerSVGElement){const rr=box(node);if(rr.w>0)textRight=Math.max(textRight,rr.x1);}
+        }
+        const innerRight=b.x0+el.clientLeft+cw;
+        const textOver=textRight-innerRight;
+        if(textOver>LAYOUT_TOL){
+          const tag=el.tagName.toLowerCase();
+          const ws=s.whiteSpace;
+          const type=/^(pre|code)$/.test(tag)||el.closest('pre,code')?'code/pre':/nowrap|pre/.test(ws)&&!/pre-wrap|pre-line|break-spaces/.test(ws)?'줄바꿈 없음(nowrap)':'긴 연속 문자열(URL · 긴 영문 등)';
+          const extent=textRight;
+          const pushesDoc=extent-vw>LAYOUT_TOL&&!clipAncestor(el)&&!fixedAncestor(el)&&!docClipped;
+          push({el,level:pushesDoc?'error':'warn',cat:'text',amount:Math.round(textOver),
+            reason:'긴 콘텐츠 overflow · '+type+' · '+Math.round(textOver)+'px 초과'+(pushesDoc?' · 문서 가로 넘침 원인':'')});
+        }
+        continue;
+      }
+      /* 부모 overflow(viewport 안) — 부모가 자르거나 스크롤하면 부모 쪽 보고, absolute / fixed · inline 은 제외 */
+      if(s.position==='absolute'||s.position==='fixed'||s.display==='inline')continue;
+      const parent=layoutParent(el);
+      if(!parent||isRoot(parent))continue;
+      if(style(parent).overflowX!=='visible')continue;
+      if(clipAncestor(el))continue;
+      const pb=box(parent);
+      const over=Math.max(b.x1-pb.x1,pb.x0-b.x0);
+      if(over<=LAYOUT_TOL)continue;
+      const wider=b.w-pb.w;
+      const kind=kindOf(el);
+      push({el,level:'warn',cat:kind==='media'?'media':'parent',amount:Math.round(over),
+        reason:(kind==='media'?'미디어 폭 초과 · '+el.tagName.toLowerCase()+' '+Math.round(b.w)+'px → 부모 '+Math.round(pb.w)+'px':kind==='table'?'표가 부모보다 '+Math.round(Math.max(wider,over))+'px 큼':wider>LAYOUT_TOL?'부모보다 '+Math.round(wider)+'px 큼':'부모 밖으로 '+Math.round(over)+'px')});
+    }
+    /* 문서 넘침 원인 좁히기: 넘치는 요소가 넘치는 부모 안에 꼭 맞으면(부모를 채우는 자식) 부모 쪽 원인으로 묶는다 */
+    const causes=[];
+    escapes.forEach((info,el)=>{
+      let parent=el.parentElement;
+      while(parent&&!isRoot(parent)&&!escapes.has(parent)&&style(parent).display==='contents')parent=parent.parentElement;
+      if(parent&&escapes.has(parent)){
+        const pb=escapes.get(parent).b;
+        if(info.b.x1<=pb.x1+LAYOUT_TOL&&info.b.x0>=pb.x0-LAYOUT_TOL){info.relatedTo=parent;return;}
+      }
+      causes.push(el);
+    });
+    /* 관련 요소 수: 원인 요소 안의 넘치는 자손 */
+    const relatedCount=new Map();
+    escapes.forEach((info,el)=>{
+      if(!info.relatedTo)return;
+      let top=info.relatedTo;
+      while(escapes.get(top)&&escapes.get(top).relatedTo)top=escapes.get(top).relatedTo;
+      relatedCount.set(top,(relatedCount.get(top)||0)+1);
+    });
+    /* 같은 부모의 원인 형제(예: 줄바꿈 없는 flex 항목 여러 개) 는 가장 멀리 나간 하나로 묶는다 */
+    const byParent=new Map();
+    causes.forEach(el=>{const key=el.parentElement;if(!byParent.has(key))byParent.set(key,[]);byParent.get(key).push(el);});
+    byParent.forEach(list=>{
+      list.sort((a,b)=>escapes.get(b).right-escapes.get(a).right);
+      const lead=list[0],info=escapes.get(lead);
+      const siblings=list.length-1;
+      const kind=kindOf(lead);
+      const parent=layoutParent(lead);
+      const pb=parent&&!isRoot(parent)?box(parent):null;
+      const parentOver=pb?Math.round(info.b.w-pb.w):0;
+      const details=['오른쪽 '+Math.round(info.right)+'px 이탈'];
+      if(kind==='table')details.unshift('표 때문에 문서 가로 overflow'+(parent&&!isRoot(parent)?'':' · wrapper 없음'));
+      else if(kind==='media')details.unshift('미디어 폭 초과 · '+lead.tagName.toLowerCase()+' '+Math.round(info.b.w)+'px'+(pb?' → 부모 '+Math.round(pb.w)+'px':''));
+      else if(parentOver>LAYOUT_TOL)details.push('부모보다 '+parentOver+'px 큼');
+      if(kind!=='media'&&kind!=='table'){
+        const s=info.s;
+        const padding=parseFloat(s.paddingLeft)+parseFloat(s.paddingRight)+parseFloat(s.borderLeftWidth)+parseFloat(s.borderRightWidth);
+        if(Math.abs(info.b.w-vw)<=LAYOUT_TOL&&info.b.x0>LAYOUT_TOL)details.push('viewport 폭 초과 의심(폭 ≈ viewport + 왼쪽 여백)');
+        else if(padding>0&&Math.abs(info.b.w-padding-vw)<=LAYOUT_TOL)details.push('viewport 폭 초과 의심(내용 폭 ≈ viewport + padding · border)');
+        else if(info.b.w>vw+LAYOUT_TOL&&s.maxWidth==='none')details.push('고정폭 의심(폭 '+Math.round(info.b.w)+'px > viewport · max-width 없음)');
+      }
+      if(info.positioned)details.push(info.positioned);
+      if(info.hidden.length)details.push('화면 밖 요소 · '+info.hidden.join(' · ')+' · 문서 폭을 늘림');
+      const related=(relatedCount.get(lead)||0)+siblings;
+      if(related)details.push('관련 요소 '+related);
+      if(docClipped){push({el:lead,level:'warn',cat:'clip',amount:Math.round(info.right),reason:'잘림 확인 필요 · 문서 overflow-x '+viewportOverflow+' · '+details.join(' · ')});return;}
+      push({el:lead,level:'error',cat:kind==='table'?'table':kind==='media'?'media':'escape',amount:Math.round(info.right),reason:details.join(' · '),related});
+    });
+    /* 문서 넘침이 있는데 원인 요소를 찾지 못한 경우(의사 요소 · 여백 · 글자) 도 문제로 남긴다 */
+    if(docOverflow&&!docClipped&&!items.some(item=>item.level==='error'))items.push({el:null,level:'error',cat:'doc',amount:overflowPx,reason:'문서 가로 넘침 '+overflowPx+'px · 원인 요소를 특정하지 못함(의사 요소 · 여백 · 글자 등) · 수동 확인'});
+    items.forEach(item=>{
+      if(!item.el)return;
+      const b=box(item.el);
+      item.rect={x:b.r.left,y:b.r.top,w:b.r.width,h:b.r.height};
+      item.label=describeOcclusionElement(item.el);
+      item.kind=item.el.tagName.toLowerCase()+(item.el.getAttribute('role')?'[role='+item.el.getAttribute('role').slice(0,12)+']':'');
+      item.doc={x:Math.round(b.x0),y:Math.round(b.r.top+(win.scrollY||0))};
+    });
+    items.sort((a,b)=>LAYOUT_LEVEL_ORDER[a.level]-LAYOUT_LEVEL_ORDER[b.level]||(a.cat==='doc')-(b.cat==='doc')||b.amount-a.amount);
+    if(items.length>LAYOUT_MAX_ITEMS){result.truncatedItems=items.length-LAYOUT_MAX_ITEMS;items.length=LAYOUT_MAX_ITEMS;}
+    result.items=items;
+    result.elapsed=performance.now()-started;
+    return result;
+  }
+
+  function runLayoutCheck(view,options){
+    const settings=options||{};
+    if(view.layoutTimer){clearTimeout(view.layoutTimer);view.layoutTimer=null;}
+    if(!isLayoutCheckView(view)){renderLayoutLayer(view);updateCompareLayout(view);updateLayoutStatus();return;}
+    const wrap=view.dom.screenWrap;
+    if(settings.auto&&wrap.offsetWidth&&(Math.abs(wrap.offsetWidth-view.currentWidth)>1||Math.abs(wrap.offsetHeight-view.currentHeight)>1)){scheduleLayoutCheck(view,OCCLUSION_RENDER_DELAY);return;}
+    let state;
+    if(!currentUrl)state={status:'no-url'};
+    else{
+      const access=getScrollAccess(view);
+      if(!access.accessible)state={status:access.reason};
+      else{
+        attachLayoutScroll(view,access.win);
+        if(settings.auto&&view.layoutSlow)state={status:'manual',previous:view.layout&&view.layout.status==='ok'?view.layout:null};
+        else{
+          const scan=scanLayout(access.win);
+          view.layoutSlow=scan.elapsed>LAYOUT_SLOW_MS;
+          state=Object.assign({status:'ok',doc:access.win.document,slow:view.layoutSlow,breakpoint:getBreakpointRange(getSiteViewport(view).width).label},scan);
+        }
+      }
+    }
+    if(state.status==='manual'&&state.previous)state=Object.assign({},state.previous,{slow:true});   /* 큰 페이지: 이전 결과 유지 · 자동 재검사 꺼짐 */
+    clearLayoutPick(view);
+    view.layout=state;
+    renderLayoutLayer(view);
+    updateCompareLayout(view);
+    updateLayoutStatus();
+  }
+
+  /* 스크롤: 다시 검사하지 않고 결과 요소의 지금 위치로 표시만 갱신 */
+  function attachLayoutScroll(view,win){
+    if(view.layoutDocument===win.document)return;
+    view.layoutDocument=win.document;
+    let timer=null;
+    win.addEventListener('scroll',()=>{
+      if(!isLayoutCheckView(view))return;
+      clearTimeout(timer);
+      timer=setTimeout(()=>renderLayoutLayer(view),OCCLUSION_SCROLL_DELAY);
+    },{passive:true});
+  }
+
+  function countLayout(state){
+    const count={error:0,warn:0,info:0};
+    if(state&&state.status==='ok')state.items.forEach(item=>{count[item.level]++;});
+    return count;
+  }
+
+  /* 문제(강한 실선) · 주의(옅은 점선)만 그린다 — 예외 후보는 그리지 않는다. 위치 = 결과 요소의 지금 rect(스크롤 반영), 화면 안 자르기는 placeOcclusionBox */
+  function renderLayoutLayer(view){
+    const layer=view.dom&&view.dom.layoutLayer;
+    if(!view.dom)return;
+    view.dom.shell.dataset.layout=isLayoutCheckView(view)?'true':'false';
+    if(!layer)return;
+    const state=view.layout;
+    const fragment=document.createDocumentFragment();
+    if(isLayoutCheckView(view)&&state&&state.status==='ok'&&state.doc&&state.doc.defaultView){
+      const viewport=getSiteViewport(view);
+      const vw=state.doc.documentElement.clientWidth,vh=state.doc.documentElement.clientHeight;
+      state.items.forEach((item,index)=>{
+        if(item.level==='info'||!item.el||!item.el.isConnected||item.el.ownerDocument!==state.doc)return;
+        const r=item.el.getBoundingClientRect();
+        const x0=Math.max(0,r.left),y0=Math.max(0,r.top),x1=Math.min(vw,r.right),y1=Math.min(vh,r.bottom);
+        if(x1-x0<1||y1-y0<1)return;
+        const span=document.createElement('span');
+        span.className=item.level==='error'?'lo_error':'lo_warn';
+        placeOcclusionBox(view,span,x0+viewport.left,y0+viewport.top,x1-x0,y1-y0);
+        span.title=(index+1)+'. '+item.label+' — '+item.reason;
+        fragment.appendChild(span);
+      });
+    }
+    const keep=view.layoutPick;
+    layer.replaceChildren(fragment);
+    if(keep)layer.appendChild(keep);
+  }
+
+  /* 카드 메타 끝의 작은 표시(다중 비교 카드만) — .compare_occlusion · .compare_touch · .compare_focus 와 별개 요소 */
+  function updateCompareLayout(view){
+    const el=view&&view.dom&&view.dom.layout;
+    if(!el)return;
+    const state=view.layout;
+    let text='',title='',level='';
+    if(isLayoutCheckView(view)&&currentUrl){
+      if(!state||state.status==='not-loaded')text='레이아웃 검사 중';
+      else if(state.status==='ok'){
+        const count=countLayout(state);
+        if(state.overflowPx){text='레이아웃 가로 넘침 '+state.overflowPx+'px';level='error';}
+        else if(count.error){text='레이아웃 문제 '+count.error;level='error';}
+        else if(count.warn){text='레이아웃 주의 '+count.warn;level='warn';}
+        else text='레이아웃 정상';
+        if(state.partial)text+=' · 일부';
+        title='문서 '+state.vw+'px · scrollWidth '+state.docWidth+'px · 문제 '+count.error+' · 주의 '+count.warn+' · 예외 후보 '+count.info+(state.partial?' · 검사 일부 제한':'');
+      }
+      else if(state.status==='manual'){text='레이아웃 다시 검사 필요';title='큰 페이지라 자동 재검사를 껐습니다';}
+      else if(state.status!=='no-url'){text='레이아웃 검사 불가';title='레이아웃 자동 검사 불가 · '+(scrollAccessReasons[state.status]||state.status).split(' · ')[0];}
+    }
+    el.hidden=!text;
+    el.textContent=text;
+    el.title=title;
+    if(level)el.dataset.level=level;else delete el.dataset.level;
+  }
+
+  const LAYOUT_NOTE='자동 레이아웃 QA · 문서 가로 넘침(scrollWidth − viewport 폭, 1px 이하 허용) + 요소 상자 검사 · 사이트 CSS · DOM 은 바꾸지 않음 · overflow-x auto / scroll 영역(carousel · 표 wrapper · code) 은 예외 후보 · CSS 오류 여부는 수동 확인';
+
+  function formatLayoutSummary(state){
+    const count=countLayout(state);
+    if(!state.overflowPx&&!state.clippedPx&&!count.error&&!count.warn)return '문제 없음'+(count.info?' · 예외 후보 '+count.info:'');
+    return(state.overflowPx?'가로 넘침 '+state.overflowPx+'px':'가로 넘침 없음'+(state.clippedPx?'(문서 overflow-x hidden · '+state.clippedPx+'px 잘림)':''))+' · 문제 '+count.error+' · 주의 '+count.warn+(count.info?' · 예외 후보 '+count.info:'');
+  }
+
+  function updateLayoutStatus(){
+    const dom=getLayoutDom();
+    if(!dom.status)return;
+    dom.status.hidden=!layoutEnabled;
+    dom.btn.setAttribute('aria-pressed',layoutEnabled?'true':'false');
+    if(!layoutEnabled){renderLayoutList(null);setLayoutListOpen(false);setLayoutCopyBox(null);return;}
+    if(viewMode!=='single'){updateCompareLayoutStatus();return;}
+    const state=primaryView&&primaryView.layout;
+    let text,recheck=true;
+    if(!state||state.status==='no-url'){text='레이아웃 · 검사할 페이지 없음';recheck=false;}
+    else if(state.status==='not-loaded')text='레이아웃 · 불러오는 중';
+    else if(state.status==='cross-origin')text='레이아웃 · 검사 불가 · 다른 출처';
+    else if(state.status==='file-origin')text='레이아웃 · 검사 불가 · file:// 로 열린 도구';
+    else if(state.status==='manual')text='레이아웃 · 큰 페이지라 자동 재검사를 껐습니다 — 다시 검사를 눌러 주세요';
+    else text='레이아웃 · '+formatLayoutSummary(state)+(state.partial?' · 검사 일부 제한':'')+(state.slow?' · 큰 페이지: 자동 재검사 꺼짐':'');
+    dom.text.textContent=text;
+    dom.status.title=LAYOUT_NOTE;
+    dom.recheck.hidden=!recheck;
+    dom.copy.disabled=!state||state.status==='no-url'||state.status==='not-loaded';
+    renderLayoutList(state&&state.status==='ok'?[{view:primaryView,state}]:null);
+  }
+
+  function updateCompareLayoutStatus(){
+    const dom=getLayoutDom();
+    const views=Array.from(compareViews.values());
+    const states=views.map(view=>view.layout);
+    const count=status=>states.filter(state=>state&&state.status===status).length;
+    const ok=views.filter(view=>view.layout&&view.layout.status==='ok');
+    const blocked=count('cross-origin')+count('file-origin');
+    const manual=count('manual');
+    const pending=views.length-ok.length-blocked-manual;
+    let text,recheck=true;
+    if(!views.length){text='레이아웃 · 비교 기기 없음';recheck=false;}
+    else if(!currentUrl){text='레이아웃 · 검사할 페이지 없음';recheck=false;}
+    else{
+      const total={error:0,warn:0};
+      let overflowing=0,partial=0;
+      ok.forEach(view=>{const c=countLayout(view.layout);total.error+=c.error;total.warn+=c.warn;if(view.layout.overflowPx)overflowing++;if(view.layout.partial)partial++;});
+      text='레이아웃 · '+ok.length+'/'+views.length+' 검사 · 문제 '+total.error+' · 주의 '+total.warn+(overflowing?' · '+overflowing+'개 기기 가로 넘침':'')
+        +(partial?' · '+partial+'개 검사 일부 제한':'')+(blocked?' · '+blocked+'개 자동 검사 불가':'')+(manual?' · '+manual+'개 큰 페이지(다시 검사)':'')+(pending>0?' · '+pending+'개 검사 중':'');
+    }
+    dom.text.textContent=text;
+    dom.status.title=LAYOUT_NOTE;
+    dom.recheck.hidden=!recheck;
+    dom.copy.disabled=!currentUrl||!states.some(state=>state&&state.status!=='no-url'&&state.status!=='not-loaded');
+    renderLayoutList(views.length?views.map(view=>({view,state:view.layout})):null);
+  }
+
+  /* 결과 목록: 문서 넘침 → 원인 요소(문제) → 주의 → 예외 후보. 다중 비교는 카드 순서대로 기기별 그룹 + 검사 불가 카드 이유 한 줄 */
+  function renderLayoutList(entries){
+    const dom=getLayoutDom();
+    const grouped=Boolean(entries)&&viewMode!=='single';
+    const okEntries=entries?entries.filter(entry=>entry.state&&entry.state.status==='ok'):[];
+    const skipped=grouped?entries.filter(({state})=>state&&state.status!=='ok'&&state.status!=='no-url'&&state.status!=='not-loaded'):[];
+    const total=okEntries.reduce((sum,entry)=>sum+entry.state.items.length+(entry.state.overflowPx||entry.state.clippedPx?1:0),0);
+    dom.listBtn.hidden=!okEntries.length&&!skipped.length;
+    dom.listBtn.disabled=!total&&!skipped.length;
+    const items=[];
+    const head=(text,cls)=>{const li=document.createElement('li');const p=document.createElement('p');p.className=cls;p.textContent=text;li.appendChild(p);items.push(li);};
+    okEntries.forEach(({view,state})=>{
+      if(!state.items.length&&!state.overflowPx&&!state.clippedPx)return;
+      if(grouped)head(getDeviceName(view)+' · '+state.vw+'px · '+state.breakpoint,'oi_group');
+      if(state.overflowPx)head('문서 가로 넘침 '+state.overflowPx+'px · 폭 '+state.vw+'px · scrollWidth '+state.docWidth+'px','oi_skip');
+      else if(state.clippedPx)head('문서 가로 넘침 없음 · 문서 overflow-x hidden 으로 '+state.clippedPx+'px 잘림 · scrollWidth '+state.docWidth+'px','oi_skip');
+      state.items.forEach((item,index)=>{
+        const li=document.createElement('li');
+        const button=document.createElement('button');
+        button.type='button';
+        button.dataset.layoutIndex=String(index);
+        button.dataset.level=item.level;
+        if(grouped)button.dataset.view=view.deviceId;
+        const name=item.el?item.label:'문서';
+        button.title=name;
+        button.setAttribute('aria-label',(grouped?getDeviceName(view)+' ':'')+(index+1)+'번 '+LAYOUT_LEVEL_LABELS[item.level]+', '+name+', '+item.reason+(item.el?' — 미리보기에서 강조':''));
+        const num=document.createElement('span');num.className='oi_num';num.textContent=String(index+1);
+        const label=document.createElement('span');label.className='oi_name';label.textContent=LAYOUT_LEVEL_LABELS[item.level]+' · '+name;
+        const info=document.createElement('span');info.className='oi_meta';info.textContent=item.reason+(item.doc?' · x '+item.doc.x+', 문서 y '+item.doc.y:'');
+        button.append(num,label,info);
+        li.appendChild(button);items.push(li);
+      });
+      if(state.partial)head('검사 일부 제한 · 요소 '+state.scanned+'개까지 확인(시간 한도) — 결과가 전부가 아닐 수 있음','oi_skip');
+      if(state.truncatedItems)head('목록 '+LAYOUT_MAX_ITEMS+'개까지 표시 · 그 밖 '+state.truncatedItems+'개','oi_skip');
+    });
+    skipped.forEach(({view,state})=>head(getDeviceName(view)+' — '+(state.status==='manual'?'큰 페이지 · 다시 검사 필요':'검사 불가 · '+(scrollAccessReasons[state.status]||state.status).split(' · ')[0]),'oi_skip'));
+    dom.items.replaceChildren(...items);
+    dom.note.textContent='';
+    if(!items.length)setLayoutListOpen(false);
+  }
+
+  function setLayoutListOpen(open,focusButton){
+    const dom=getLayoutDom();
+    if(!dom.list)return;
+    const show=Boolean(open)&&!dom.listBtn.hidden&&!dom.listBtn.disabled;
+    dom.list.hidden=!show;
+    dom.listBtn.setAttribute('aria-expanded',show?'true':'false');
+    dom.listBtn.textContent=show?'결과 닫기':'결과 보기';
+    if(!show&&focusButton&&!dom.listBtn.hidden)dom.listBtn.focus();
+  }
+
+  /* 목록 항목 강조: 그 view 의 레이아웃 레이어에만, 지금 rect 로 약 1.8초. iframe 은 스크롤하지 않고 다른 카드의 강조는 지운다 */
+  function highlightLayoutResult(view,index){
+    const dom=getLayoutDom();
+    const state=view&&view.layout;
+    const item=state&&state.status==='ok'?state.items[index]:null;
+    allViews().forEach(clearLayoutPick);
+    const prefix=view&&viewMode!=='single'?getDeviceName(view)+' ':'';
+    if(!item||!isLayoutCheckView(view)){dom.note.textContent='요소가 변경됨 · 다시 검사 필요';return;}
+    if(!item.el){dom.note.textContent='';return;}
+    const access=getScrollAccess(view);
+    const el=item.el;
+    if(!access.accessible||!el.isConnected||el.ownerDocument!==access.win.document){dom.note.textContent=prefix+(index+1)+'번 요소가 변경됨 · 다시 검사 필요';return;}
+    const doc=access.win.document;
+    const r=el.getBoundingClientRect();
+    const vw=doc.documentElement.clientWidth,vh=doc.documentElement.clientHeight;
+    const x0=Math.max(0,r.left),y0=Math.max(0,r.top),x1=Math.min(vw,r.right),y1=Math.min(vh,r.bottom);
+    if(r.width<=0&&r.height<=0||x1-x0<1||y1-y0<1){dom.note.textContent=prefix+(index+1)+'번 요소가 지금 화면에 보이지 않음(스크롤 위치 · 화면 밖 요소)';return;}
+    const viewport=getSiteViewport(view);
+    const span=document.createElement('span');
+    span.className='lo_pick';
+    placeOcclusionBox(view,span,x0+viewport.left,y0+viewport.top,x1-x0,y1-y0);
+    view.dom.layoutLayer.appendChild(span);
+    view.layoutPick=span;
+    view.layoutPickTimer=setTimeout(()=>{span.remove();if(view.layoutPick===span)view.layoutPick=null;},LAYOUT_FOCUS_MS);
+    dom.note.textContent='';
+  }
+
+  /* 리포트: 환경 줄은 가림 검사 리포트와 같은 데이터 · 출력 함수(buildOcclusionReport · formatReportEnvLines) 를 쓰고 결과만 레이아웃 값으로 바꾼다 */
+  function buildLayoutReport(view){
+    const report=buildOcclusionReport(view);
+    const check=view.layout||{status:'no-url'};
+    report.check={status:check.status};
+    if(check.status==='ok'){
+      const count=countLayout(check);
+      Object.assign(report.check,{vw:check.vw,innerWidth:check.innerWidth,docWidth:check.docWidth,overflowPx:check.overflowPx,clippedPx:check.clippedPx,docClipped:check.docClipped,partial:check.partial,scanned:check.scanned,
+        error:count.error,warn:count.warn,info:count.info,truncated:check.truncatedItems||0,
+        items:check.items.map(item=>({level:item.level,label:item.el?item.label:'문서',reason:item.reason,x:item.doc?item.doc.x:null,y:item.doc?item.doc.y:null}))});
+    }else if(check.status!=='no-url'&&check.status!=='not-loaded'){
+      report.check.reason=(scrollAccessReasons[check.status]||check.status).split(' · ')[0];
+    }
+    return report;
+  }
+
+  function formatLayoutCheckLines(report){
+    const check=report.check;
+    const lines=[];
+    if(check.status==='no-url'||check.status==='not-loaded'){lines.push('레이아웃 검사: 결과 없음 — '+(check.status==='no-url'?'페이지 없음':'불러오는 중'));return lines;}
+    if(check.status==='manual'){lines.push('레이아웃 검사: 큰 페이지 · 다시 검사 필요');return lines;}
+    if(check.status!=='ok'){
+      lines.push('자동 레이아웃 검사: 불가 — '+check.reason);
+      lines.push(check.status==='file-origin'?'도구를 file:// 로 열어 페이지 내부 DOM 을 읽을 수 없습니다(Live Server 등 서버로 열어야 검사 가능).':'브라우저 보안 정책상 페이지 내부 DOM 을 읽을 수 없습니다.');
+      return lines;
+    }
+    lines.push('사이트 viewport '+report.viewport.width+'px · Breakpoint '+report.breakpoint);
+    lines.push('document width(clientWidth): '+check.vw+'px · innerWidth '+check.innerWidth+'px');
+    lines.push('document scrollWidth: '+check.docWidth+'px');
+    lines.push('가로 overflow: '+(check.overflowPx?check.overflowPx+'px':'없음')+(check.clippedPx?' (문서 overflow-x 가 hidden/clip — 내용 '+check.clippedPx+'px 가 잘림)':''));
+    lines.push('문제: '+check.error+' · 주의: '+check.warn+' · 예외 후보(의도된 가로 스크롤 등): '+check.info);
+    if(check.partial)lines.push('검사 일부 제한: 요소 '+check.scanned+'개까지 확인(시간 한도) — 결과가 전부가 아닐 수 있습니다.');
+    if(!check.items.length)lines.push('(넘침 후보 없음)');
+    check.items.forEach((item,index)=>{
+      lines.push('');
+      lines.push((index+1)+'. ['+LAYOUT_LEVEL_LABELS[item.level]+'] '+item.label+' · '+item.reason);
+      if(item.x!=null)lines.push('   위치: 문서 x '+item.x+', y '+item.y);
+    });
+    if(check.truncated)lines.push('… 그 밖 '+check.truncated+'개');
+    return lines;
+  }
+
+  function formatLayoutReportFooter(){
+    return['※ 자동 레이아웃 QA 결과이며 CSS 오류 여부는 수동 확인이 필요합니다.','※ carousel · table wrapper · code 영역 등 의도된 가로 스크롤은 예외일 수 있습니다.',
+      '※ 문서 가로 넘침은 scrollWidth 와 viewport 폭의 차이가 1 CSS px 를 넘을 때만 표시합니다(소수 폭 반올림 허용).'];
+  }
+
+  function formatLayoutReportText(report){
+    const lines=['[Device Preview 레이아웃 깨짐 검사]'];
+    if(report.page)lines.push('페이지: '+report.page.text+(report.page.trimmed?' (쿼리·해시 생략)':''));
+    lines.push(...formatReportEnvLines(report,'기기: '));
+    lines.push('');
+    lines.push(...formatLayoutCheckLines(report));
+    lines.push('');
+    lines.push(...formatLayoutReportFooter());
+    lines.push('');
+    lines.push('검사 시각: '+formatReportTime(report.createdAt));
+    return lines.join('\n');
+  }
+
+  function formatCompareLayoutReportText(reports){
+    const lines=['[Device Preview 레이아웃 깨짐 검사 · 다중 비교]'];
+    if(reports[0]&&reports[0].page)lines.push('페이지: '+reports[0].page.text+(reports[0].page.trimmed?' (쿼리·해시 생략)':''));
+    lines.push('비교 기기: '+reports.length+'개');
+    reports.forEach((report,index)=>{
+      lines.push('');
+      lines.push(...formatReportEnvLines(report,'['+(index+1)+'] '));
+      lines.push(...formatLayoutCheckLines(report));
+    });
+    lines.push('');
+    lines.push(...formatLayoutReportFooter());
+    lines.push('');
+    lines.push('검사 시각: '+formatReportTime(reports[0]?reports[0].createdAt:new Date()));
+    return lines.join('\n');
+  }
+
+  function setLayoutCopyBox(text){
+    const dom=getLayoutDom();
+    if(!dom.copyBox)return;
+    dom.copyBox.hidden=text==null;
+    dom.copyText.value=text||'';
+    if(text!=null){setLayoutListOpen(false);dom.copyText.focus();dom.copyText.select();}
+  }
+
+  function copyLayoutReport(){
+    const views=visibleViews().filter(isLayoutCheckView);
+    if(!views.length||!currentUrl)return;
+    views.forEach(view=>runLayoutCheck(view,{manual:true}));   /* 복사 직전 최신 검사 한 번 */
+    if(!views.some(view=>view.layout&&view.layout.status!=='no-url'&&view.layout.status!=='not-loaded'))return;
+    const text=viewMode==='single'?formatLayoutReportText(buildLayoutReport(views[0])):formatCompareLayoutReportText(views.map(buildLayoutReport));
+    const button=getLayoutDom().copy;
+    copyTextWithFallback(text).then(result=>{
+      if(result==='blocked'){setLayoutCopyBox(text);announce('자동 복사가 막혔습니다. 표시된 리포트를 직접 복사해 주세요.');return;}
+      setLayoutCopyBox(null);
+      clearTimeout(button.copiedTimer);
+      button.textContent='복사됨';
+      button.copiedTimer=setTimeout(()=>{button.textContent='리포트 복사';},2000);
+      announce('레이아웃 깨짐 검사 결과를 복사했습니다');
+    });
+  }
+
+  function setLayoutEnabled(enabled){
+    layoutEnabled=Boolean(enabled);
+    if(primaryView){
+      if(layoutEnabled)visibleViews().forEach(view=>runLayoutCheck(view,{}));
+      else allViews().forEach(resetLayoutView);
+    }
+    updateLayoutStatus();
+  }
+
+  function bindLayoutControls(){
+    const dom=getLayoutDom();
+    if(!dom.btn)return;
+    dom.btn.addEventListener('click',()=>{
+      setLayoutEnabled(!layoutEnabled);
+      saveDisplayPreference();
+      announce('레이아웃 깨짐 검사를 '+(layoutEnabled?'켰습니다.':'껐습니다.'));
+    });
+    dom.recheck.addEventListener('click',()=>{if(primaryView)visibleViews().forEach(view=>runLayoutCheck(view,{manual:true}));});
+    dom.listBtn.addEventListener('click',()=>{
+      setLayoutCopyBox(null);
+      const open=dom.list.hidden;
+      if(open){setOcclusionListOpen(false);setOcclusionCopyBox(null);setTouchListOpen(false);setTouchCopyBox(null);setFocusListOpen(false);setFocusCopyBox(null);setCompatListOpen(false);}   /* 같은 자리의 목록이 겹치지 않게 */
+      setLayoutListOpen(open);
+    });
+    [elements.occlusionListBtn,getTouchDom().listBtn,getFocusDom().listBtn,getCompatDom().listBtn].forEach(btn=>btn&&btn.addEventListener('click',()=>{setLayoutListOpen(false);setLayoutCopyBox(null);}));
+    dom.copy.addEventListener('click',copyLayoutReport);
+    dom.copyClose.addEventListener('click',()=>{setLayoutCopyBox(null);dom.copy.focus();});
+    dom.copyBox.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();setLayoutCopyBox(null);dom.copy.focus();}});
+    const pick=event=>{const item=event.target.closest('button[data-layout-index]');if(item)highlightLayoutResult(item.dataset.view?compareViews.get(item.dataset.view):primaryView,Number(item.dataset.layoutIndex));};
+    dom.items.addEventListener('click',pick);
+    dom.items.addEventListener('focusin',pick);
+    dom.items.addEventListener('pointerover',event=>{const item=event.target.closest('button[data-layout-index]');if(item&&item!==dom.items.lastHover){dom.items.lastHover=item;pick(event);}});
+    dom.items.addEventListener('pointerleave',()=>{dom.items.lastHover=null;});
+    [dom.list,dom.listBtn].forEach(el=>el.addEventListener('keydown',event=>{if(event.key==='Escape'&&!dom.list.hidden){event.preventDefault();setLayoutListOpen(false,true);}}));
+    updateLayoutStatus();
+  }
+
   /* 동기화 스위치를 켤 때: 첫 접근 가능 카드 기준으로 즉시 정렬 */
   function realignScrollSync(){
     const reference=Array.from(compareViews.values()).find(view=>getSyncAccess(view).mode);
@@ -3934,6 +5232,8 @@
     if(view.compare)updateCompareItem(view,siteViewport);
     scheduleOcclusionCheck(view,OCCLUSION_RENDER_DELAY);   /* 가림 검사(켜져 있을 때만): iframe 크기 전환이 끝난 뒤 최종 rect 로 */
     scheduleTouchCheck(view,OCCLUSION_RENDER_DELAY);   /* 터치 타깃 검사(켜져 있을 때만): 같은 시점 */
+    scheduleFocusCheck(view,OCCLUSION_RENDER_DELAY);   /* 키보드·포커스 검사(켜져 있을 때만): 같은 시점 */
+    scheduleLayoutCheck(view,OCCLUSION_RENDER_DELAY);   /* 레이아웃 깨짐 검사(켜져 있을 때만): 같은 시점 */
     return siteViewport;
   }
 
@@ -4685,7 +5985,7 @@
       name:item.querySelector('.compare_name'),meta:item.querySelector('.compare_meta_text'),
       stateSelect:item.querySelector('.compare_state'),rotate:item.querySelector('.compare_rotate'),
       refresh:item.querySelector('.compare_refresh'),remove:item.querySelector('.compare_remove'),badge:item.querySelector('.compare_badge'),
-      occlusion:item.querySelector('.compare_occlusion'),touch:item.querySelector('.compare_touch')
+      occlusion:item.querySelector('.compare_occlusion'),touch:item.querySelector('.compare_touch'),focus:item.querySelector('.compare_focus'),layout:item.querySelector('.compare_layout')
     });
     const view=createView(dom,{compare:true});
     setViewDevice(view,deviceId,settings.stateId,settings.rotated);
@@ -4755,6 +6055,10 @@
     updateOcclusionStatus();
     resetTouchView(view);            /* 터치 타깃 검사 타이머 · 강조 정리 */
     updateTouchStatus();
+    resetFocusView(view);            /* 키보드·포커스 검사 정리 */
+    updateFocusStatus();
+    resetLayoutView(view);           /* 레이아웃 깨짐 검사 정리 */
+    updateLayoutStatus();
     updateNavWatch();
     compareViews.forEach(updateScale);
     updateSyncAvailability();
@@ -4775,6 +6079,8 @@
     compareViews.clear();
     removed.forEach(resetOcclusionView);   /* 가림 검사 타이머 · 강조 정리 */
     removed.forEach(resetTouchView);       /* 터치 타깃 검사도 같은 정리 */
+    removed.forEach(resetFocusView);       /* 키보드·포커스 검사도 같은 정리 */
+    removed.forEach(resetLayoutView);      /* 레이아웃 깨짐 검사도 같은 정리 */
   }
 
   function setViewMode(mode,options){
@@ -4810,6 +6116,8 @@
     updateNavWatch();
     syncOcclusionViews();   /* 가림 검사: 숨겨진 view 정리 · 보이는 view 검사 예약 */
     syncTouchViews();       /* 터치 타깃 검사: 같은 정리 · 예약 */
+    syncFocusViews();       /* 키보드·포커스 검사: 같은 정리 · 예약 */
+    syncLayoutViews();      /* 레이아웃 깨짐 검사: 같은 정리 · 예약 */
     saveComparePreference();
     return true;
   }
@@ -4825,7 +6133,7 @@
 
   function saveDisplayPreference(){
     try{
-      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,manualScale,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser,safariLayout,viewportFit,occlusionCheck:occlusionEnabled,touchCheck:touchEnabled,safariVersion,keyboardMode,keyboardHeight}));
+      localStorage.setItem('viewportLabDisplay',JSON.stringify({scaleMode,manualScale,showAddressBar,showBottomBar,uiMode,safeAreaGuide,browserByPlatform,urlBarPositionByBrowser,safariLayout,viewportFit,occlusionCheck:occlusionEnabled,touchCheck:touchEnabled,focusCheck:focusEnabled,layoutCheck:layoutEnabled,safariVersion,keyboardMode,keyboardHeight}));
     }catch(error){}
   }
 
@@ -4853,6 +6161,8 @@
       if(saved&&VIEWPORT_FITS.includes(saved.viewportFit))viewportFit=saved.viewportFit;
       if(saved&&typeof saved.occlusionCheck==='boolean')occlusionEnabled=saved.occlusionCheck;
       if(saved&&typeof saved.touchCheck==='boolean')touchEnabled=saved.touchCheck;
+      if(saved&&typeof saved.focusCheck==='boolean')focusEnabled=saved.focusCheck;
+      if(saved&&typeof saved.layoutCheck==='boolean')layoutEnabled=saved.layoutCheck;
       if(saved&&KEYBOARD_MODES.includes(saved.keyboardMode))keyboardMode=saved.keyboardMode;
       if(saved&&typeof saved.keyboardHeight==='number'&&Number.isFinite(saved.keyboardHeight))keyboardHeight=Math.max(KEYBOARD_MIN,Math.min(900,Math.round(saved.keyboardHeight)));
       if(saved&&typeof saved.safariVersion==='string'&&/^\d+(\.\d+)?$/.test(saved.safariVersion))safariVersion=saved.safariVersion;
@@ -5095,6 +6405,8 @@
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.defaultPrevented&&document.body.classList.contains('is_device_only')){event.preventDefault();setDeviceOnly(false);deviceOnlyBtn.focus();}});
   bindCompatControls();
   bindTouchControls();
+  bindFocusControls();
+  bindLayoutControls();
   getCompatDom().listBtn.addEventListener('click',()=>{setTouchListOpen(false);setTouchCopyBox(null);});   /* Safari 호환성 목록과 겹치지 않게 */
   bindBrowserSettings();
   bindKeyboardControls();
